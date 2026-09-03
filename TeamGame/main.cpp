@@ -13,10 +13,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         return -1; // エラーが起きたら直ちに終了
     }
-    
+    //ss
     // 描画先を裏画面に設定
     SetDrawScreen(DX_SCREEN_BACK);
-
+  
     // メインループ
     while (ProcessMessage() == 0 && ClearDrawScreen() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
     {
