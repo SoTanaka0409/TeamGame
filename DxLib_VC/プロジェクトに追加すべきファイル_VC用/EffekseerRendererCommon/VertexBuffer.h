@@ -6,79 +6,76 @@
 #include <stdint.h>
 #include <vector>
 
-namespace EffekseerRenderer
-{
+namespace EffekseerRenderer {
 
-class VertexBuffer
-{
+class VertexBuffer {
 protected:
-	int32_t size_ = 0;
+  int32_t size_ = 0;
 
 public:
-	virtual ~VertexBuffer() = default;
-	virtual bool GetIsValid() const = 0;
-	virtual bool CanAllocate(int32_t size, int32_t alignment) = 0;
-	virtual bool Allocate(int32_t size, int32_t alignment, std::tuple<void*, int32_t>& result) = 0;
-	virtual Effekseer::Backend::VertexBufferRef Upload() = 0;
-	virtual Effekseer::Backend::VertexBufferRef GetCurrentBuffer() = 0;
+  virtual ~VertexBuffer() = default;
+  virtual bool GetIsValid() const = 0;
+  virtual bool CanAllocate(int32_t size, int32_t alignment) = 0;
+  virtual bool Allocate(int32_t size, int32_t alignment,
+                        std::tuple<void *, int32_t> &result) = 0;
+  virtual Effekseer::Backend::VertexBufferRef Upload() = 0;
+  virtual Effekseer::Backend::VertexBufferRef GetCurrentBuffer() = 0;
 
-	virtual void RenewBuffer() = 0;
+  virtual void RenewBuffer() = 0;
 
-	virtual int32_t GetSize() const
-	{
-		return size_;
-	}
+  virtual int32_t GetSize() const { return size_; }
 
-	static int GetNextAliginedOffset(int32_t offset, int32_t alignment)
-	{
-		return (offset + alignment - 1) / alignment * alignment;
-	}
+  static int GetNextAliginedOffset(int32_t offset, int32_t alignment) {
+    return (offset + alignment - 1) / alignment * alignment;
+  }
 };
 
-class VertexBufferMultiSize : public VertexBuffer
-{
-	int32_t offset_ = 0;
-	Effekseer::CustomAlignedVector<uint8_t> buffer_;
-	std::vector<Effekseer::Backend::VertexBufferRef> vertexBuffers_;
+class VertexBufferMultiSize : public VertexBuffer {
+  int32_t offset_ = 0;
+  Effekseer::CustomAlignedVector<uint8_t> buffer_;
+  std::vector<Effekseer::Backend::VertexBufferRef> vertexBuffers_;
 
 public:
-	VertexBufferMultiSize(Effekseer::Backend::GraphicsDeviceRef graphicsDevice, int32_t size);
+  VertexBufferMultiSize(Effekseer::Backend::GraphicsDeviceRef graphicsDevice,
+                        int32_t size);
 
-	bool GetIsValid() const override;
+  bool GetIsValid() const override;
 
-	bool CanAllocate(int32_t size, int32_t alignment) override;
+  bool CanAllocate(int32_t size, int32_t alignment) override;
 
-	bool Allocate(int32_t size, int32_t alignment, std::tuple<void*, int32_t>& result) override;
+  bool Allocate(int32_t size, int32_t alignment,
+                std::tuple<void *, int32_t> &result) override;
 
-	Effekseer::Backend::VertexBufferRef Upload() override;
+  Effekseer::Backend::VertexBufferRef Upload() override;
 
-	Effekseer::Backend::VertexBufferRef GetCurrentBuffer() override;
+  Effekseer::Backend::VertexBufferRef GetCurrentBuffer() override;
 
-	void RenewBuffer() override;
+  void RenewBuffer() override;
 };
 
-class VertexBufferRing : public VertexBuffer
-{
-	int currentIndex_ = 0;
-	int offset_ = 0;
-	int previous_offset_ = 0;
-	Effekseer::CustomAlignedVector<uint8_t> buffer_;
-	std::vector<Effekseer::Backend::VertexBufferRef> vertexBuffers_;
+class VertexBufferRing : public VertexBuffer {
+  int currentIndex_ = 0;
+  int offset_ = 0;
+  int previous_offset_ = 0;
+  Effekseer::CustomAlignedVector<uint8_t> buffer_;
+  std::vector<Effekseer::Backend::VertexBufferRef> vertexBuffers_;
 
 public:
-	VertexBufferRing(Effekseer::Backend::GraphicsDeviceRef graphicsDevice, int32_t size, int32_t ringCount);
+  VertexBufferRing(Effekseer::Backend::GraphicsDeviceRef graphicsDevice,
+                   int32_t size, int32_t ringCount);
 
-	bool GetIsValid() const override;
+  bool GetIsValid() const override;
 
-	bool CanAllocate(int32_t size, int32_t alignment) override;
+  bool CanAllocate(int32_t size, int32_t alignment) override;
 
-	bool Allocate(int32_t size, int32_t alignment, std::tuple<void*, int32_t>& result) override;
+  bool Allocate(int32_t size, int32_t alignment,
+                std::tuple<void *, int32_t> &result) override;
 
-	Effekseer::Backend::VertexBufferRef Upload() override;
+  Effekseer::Backend::VertexBufferRef Upload() override;
 
-	Effekseer::Backend::VertexBufferRef GetCurrentBuffer() override;
+  Effekseer::Backend::VertexBufferRef GetCurrentBuffer() override;
 
-	void RenewBuffer() override;
+  void RenewBuffer() override;
 };
 
 } // namespace EffekseerRenderer

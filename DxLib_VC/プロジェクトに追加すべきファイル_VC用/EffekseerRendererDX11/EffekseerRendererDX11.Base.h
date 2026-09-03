@@ -19,8 +19,7 @@
 #include <string>
 #include <vector>
 
-namespace EffekseerRendererDX11
-{
+namespace EffekseerRendererDX11 {
 
 class RendererImplemented;
 

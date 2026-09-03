@@ -57,17 +57,15 @@
 #pragma comment(lib, "opengl32.lib")
 #endif
 
-namespace EffekseerRendererGL
-{
+namespace EffekseerRendererGL {
 
 class Renderer;
 
-enum class OpenGLDeviceType
-{
-	OpenGL2,
-	OpenGL3,
-	OpenGLES2,
-	OpenGLES3,
+enum class OpenGLDeviceType {
+  OpenGL2,
+  OpenGL3,
+  OpenGLES2,
+  OpenGLES3,
 };
 
 } // namespace EffekseerRendererGL

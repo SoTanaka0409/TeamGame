@@ -3,26 +3,24 @@
 
 #include <Effekseer.h>
 
-namespace EffekseerRenderer
-{
+namespace EffekseerRenderer {
 
-class ModelLoader : public ::Effekseer::ModelLoader
-{
+class ModelLoader : public ::Effekseer::ModelLoader {
 private:
-	::Effekseer::Backend::GraphicsDeviceRef graphicsDevice_;
-	::Effekseer::FileInterfaceRef fileInterface_;
+  ::Effekseer::Backend::GraphicsDeviceRef graphicsDevice_;
+  ::Effekseer::FileInterfaceRef fileInterface_;
 
 public:
-	ModelLoader(::Effekseer::Backend::GraphicsDeviceRef graphicsDevice,
-				::Effekseer::FileInterfaceRef fileInterface = nullptr);
-	virtual ~ModelLoader();
+  ModelLoader(::Effekseer::Backend::GraphicsDeviceRef graphicsDevice,
+              ::Effekseer::FileInterfaceRef fileInterface = nullptr);
+  virtual ~ModelLoader();
 
 public:
-	Effekseer::ModelRef Load(const char16_t* path) override;
+  Effekseer::ModelRef Load(const char16_t *path) override;
 
-	Effekseer::ModelRef Load(const void* data, int32_t size) override;
+  Effekseer::ModelRef Load(const void *data, int32_t size) override;
 
-	void Unload(Effekseer::ModelRef data) override;
+  void Unload(Effekseer::ModelRef data) override;
 };
 
 } // namespace EffekseerRenderer

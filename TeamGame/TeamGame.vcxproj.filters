@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <Filter Include="ソース ファイル">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
@@ -14,4 +14,4 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
-</Project>
+<ItemGroup><ClCompile Include="main.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Object2D.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="ObjectManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Collider.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="ColliderManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="SceneManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="SoundManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="EffectManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Player.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="TitleScene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="GameScene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="ResultScene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="InputManager.cpp"><Filter>ソース ファイル</Filter></ClCompile></ItemGroup><ItemGroup><ClInclude Include="Object2D.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="ObjectManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Collider.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="ColliderManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="BaseScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="SceneManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="SoundManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="EffectManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Player.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="TitleScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="GameScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="ResultScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="InputManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude></ItemGroup></Project>

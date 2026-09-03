@@ -19,97 +19,86 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-class ModelRenderer : public ReferenceObject
-{
+class ModelRenderer : public ReferenceObject {
 public:
-	struct NodeParameter
-	{
-		float LocalTime;
-		Effect* EffectPointer;
-		bool ZTest;
-		bool ZWrite;
-		BillboardType Billboard;
+  struct NodeParameter {
+    float LocalTime;
+    Effect *EffectPointer;
+    bool ZTest;
+    bool ZWrite;
+    BillboardType Billboard;
 
-		// bool				Lighting;
-		CullingType Culling;
-		int32_t ModelIndex;
-		float Magnification;
-		bool IsRightHand;
-		float Maginification = 1.0f;
+    // bool				Lighting;
+    CullingType Culling;
+    int32_t ModelIndex;
+    float Magnification;
+    bool IsRightHand;
+    float Maginification = 1.0f;
 
-		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
-		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+    NodeRendererDepthParameter *DepthParameterPtr = nullptr;
+    NodeRendererBasicParameter *BasicParameterPtr = nullptr;
 
-		bool EnableFalloff;
-		FalloffParameter FalloffParam;
+    bool EnableFalloff;
+    FalloffParameter FalloffParam;
 
-		bool EnableViewOffset = false;
+    bool EnableViewOffset = false;
 
-		bool IsProceduralMode = false;
-		bool IsExternalMode = false;
-		ModelRef ExternalModel = nullptr;
-		SIMD::Mat43f ExternalModelTransform = SIMD::Mat43f::Identity;
+    bool IsProceduralMode = false;
+    bool IsExternalMode = false;
+    ModelRef ExternalModel = nullptr;
+    SIMD::Mat43f ExternalModelTransform = SIMD::Mat43f::Identity;
 
-		RefPtr<RenderingUserData> UserData;
-	};
+    RefPtr<RenderingUserData> UserData;
+  };
 
-	struct InstanceParameter
-	{
-		SIMD::Mat43f SRTMatrix43;
-		RectF UV;
+  struct InstanceParameter {
+    SIMD::Mat43f SRTMatrix43;
+    RectF UV;
 
-		RectF AlphaUV;
+    RectF AlphaUV;
 
-		RectF UVDistortionUV;
+    RectF UVDistortionUV;
 
-		RectF BlendUV;
+    RectF BlendUV;
 
-		RectF BlendAlphaUV;
+    RectF BlendAlphaUV;
 
-		RectF BlendUVDistortionUV;
+    RectF BlendUVDistortionUV;
 
-		float FlipbookIndexAndNextRate;
+    float FlipbookIndexAndNextRate;
 
-		float AlphaThreshold;
+    float AlphaThreshold;
 
-		float ViewOffsetDistance;
+    float ViewOffsetDistance;
 
-		Color AllColor;
-		int32_t Time;
-		SIMD::Vec3f Direction;
+    Color AllColor;
+    int32_t Time;
+    SIMD::Vec3f Direction;
 
-		float ParticleTimes[2];
+    float ParticleTimes[2];
 
-		std::array<float, 4> CustomData1;
-		std::array<float, 4> CustomData2;
-	};
+    std::array<float, 4> CustomData1;
+    std::array<float, 4> CustomData2;
+  };
 
 public:
-	ModelRenderer()
-	{
-	}
+  ModelRenderer() {}
 
-	virtual ~ModelRenderer()
-	{
-	}
+  virtual ~ModelRenderer() {}
 
-	virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRendering(const NodeParameter &parameter, int32_t count,
+                              void *userData) {}
 
-	virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData)
-	{
-	}
+  virtual void Rendering(const NodeParameter &parameter,
+                         const InstanceParameter &instanceParameter,
+                         void *userData) {}
 
-	virtual void EndRendering(const NodeParameter& parameter, void* userData)
-	{
-	}
+  virtual void EndRendering(const NodeParameter &parameter, void *userData) {}
 };
 
 //----------------------------------------------------------------------------------

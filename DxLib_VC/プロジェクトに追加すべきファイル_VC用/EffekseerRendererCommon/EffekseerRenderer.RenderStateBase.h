@@ -13,47 +13,46 @@
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-namespace EffekseerRenderer
-{
+namespace EffekseerRenderer {
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-class RenderStateBase
-{
+class RenderStateBase {
 public:
-	struct State
-	{
-		bool DepthTest : 1;
-		bool DepthWrite : 1;
-		::Effekseer::AlphaBlendType AlphaBlend;
-		::Effekseer::CullingType CullingType;
-		std::array<::Effekseer::TextureFilterType, Effekseer::TextureSlotMax> TextureFilterTypes;
-		std::array<::Effekseer::TextureWrapType, Effekseer::TextureSlotMax> TextureWrapTypes;
+  struct State {
+    bool DepthTest : 1;
+    bool DepthWrite : 1;
+    ::Effekseer::AlphaBlendType AlphaBlend;
+    ::Effekseer::CullingType CullingType;
+    std::array<::Effekseer::TextureFilterType, Effekseer::TextureSlotMax>
+        TextureFilterTypes;
+    std::array<::Effekseer::TextureWrapType, Effekseer::TextureSlotMax>
+        TextureWrapTypes;
 
-		//! for OpenGL
-		std::array<uint64_t, Effekseer::TextureSlotMax> TextureIDs;
+    //! for OpenGL
+    std::array<uint64_t, Effekseer::TextureSlotMax> TextureIDs;
 
-		State();
+    State();
 
-		void Reset();
+    void Reset();
 
-		void CopyTo(State& state);
-	};
+    void CopyTo(State &state);
+  };
 
 protected:
-	std::stack<State> stateStack_;
-	State active_;
-	State next_;
+  std::stack<State> stateStack_;
+  State active_;
+  State next_;
 
 public:
-	RenderStateBase();
-	virtual ~RenderStateBase();
+  RenderStateBase();
+  virtual ~RenderStateBase();
 
-	virtual void Update(bool forced) = 0;
+  virtual void Update(bool forced) = 0;
 
-	State& Push();
-	void Pop();
-	State& GetActiveState();
+  State &Push();
+  void Pop();
+  State &GetActiveState();
 };
 
 //-----------------------------------------------------------------------------------

@@ -8,31 +8,17 @@
 
 #if defined(EFK_SIMD_SSE2)
 
-namespace Effekseer
-{
+namespace Effekseer {
 
-namespace SIMD
-{
+namespace SIMD {
 
-inline Int4 Float4::Convert4i() const
-{
-	return _mm_cvttps_epi32(s);
-}
+inline Int4 Float4::Convert4i() const { return _mm_cvttps_epi32(s); }
 
-inline Int4 Float4::Cast4i() const
-{
-	return _mm_castps_si128(s);
-}
+inline Int4 Float4::Cast4i() const { return _mm_castps_si128(s); }
 
-inline Float4 Int4::Convert4f() const
-{
-	return _mm_cvtepi32_ps(s);
-}
+inline Float4 Int4::Convert4f() const { return _mm_cvtepi32_ps(s); }
 
-inline Float4 Int4::Cast4f() const
-{
-	return _mm_castsi128_ps(s);
-}
+inline Float4 Int4::Cast4f() const { return _mm_castsi128_ps(s); }
 
 } // namespace SIMD
 

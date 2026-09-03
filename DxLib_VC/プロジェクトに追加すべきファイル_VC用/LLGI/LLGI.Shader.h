@@ -3,15 +3,13 @@
 
 #include "LLGI.Base.h"
 
-namespace LLGI
-{
+namespace LLGI {
 
-class Shader : public ReferenceObject
-{
+class Shader : public ReferenceObject {
 private:
 public:
-	Shader() = default;
-	~Shader() override = default;
+  Shader() = default;
+  ~Shader() override = default;
 };
 
 } // namespace LLGI

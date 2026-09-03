@@ -18,8 +18,7 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 
 struct NodeRendererTextureUVTypeParameter;
 
@@ -27,95 +26,83 @@ struct NodeRendererTextureUVTypeParameter;
 //
 //----------------------------------------------------------------------------------
 
-class RibbonRenderer : public ReferenceObject
-{
+class RibbonRenderer : public ReferenceObject {
 public:
-	struct NodeParameter
-	{
-		float LocalTime;
-		Effect* EffectPointer;
-		bool ZTest;
-		bool ZWrite;
-		bool ViewpointDependent;
+  struct NodeParameter {
+    float LocalTime;
+    Effect *EffectPointer;
+    bool ZTest;
+    bool ZWrite;
+    bool ViewpointDependent;
 
-		bool IsRightHand;
-		float GlobalScale = 1.0f;
-		float Maginification = 1.0f;
+    bool IsRightHand;
+    float GlobalScale = 1.0f;
+    float Maginification = 1.0f;
 
-		int32_t SplineDivision;
-		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
-		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
-		NodeRendererTextureUVTypeParameter* TextureUVTypeParameterPtr = nullptr;
+    int32_t SplineDivision;
+    NodeRendererDepthParameter *DepthParameterPtr = nullptr;
+    NodeRendererBasicParameter *BasicParameterPtr = nullptr;
+    NodeRendererTextureUVTypeParameter *TextureUVTypeParameterPtr = nullptr;
 
-		bool EnableViewOffset = false;
+    bool EnableViewOffset = false;
 
-		RefPtr<RenderingUserData> UserData;
-	};
+    RefPtr<RenderingUserData> UserData;
+  };
 
-	struct InstanceParameter
-	{
-		int32_t InstanceCount;
-		int32_t InstanceIndex;
-		SIMD::Mat43f SRTMatrix43;
-		Color AllColor;
+  struct InstanceParameter {
+    int32_t InstanceCount;
+    int32_t InstanceIndex;
+    SIMD::Mat43f SRTMatrix43;
+    Color AllColor;
 
-		// Lower left, Lower right, Upper left, Upper right
-		Color Colors[4];
+    // Lower left, Lower right, Upper left, Upper right
+    Color Colors[4];
 
-		float Positions[4];
+    float Positions[4];
 
-		RectF UV;
+    RectF UV;
 
-		RectF AlphaUV;
+    RectF AlphaUV;
 
-		RectF UVDistortionUV;
+    RectF UVDistortionUV;
 
-		RectF BlendUV;
+    RectF BlendUV;
 
-		RectF BlendAlphaUV;
+    RectF BlendAlphaUV;
 
-		RectF BlendUVDistortionUV;
+    RectF BlendUVDistortionUV;
 
-		float FlipbookIndexAndNextRate;
+    float FlipbookIndexAndNextRate;
 
-		float AlphaThreshold;
+    float AlphaThreshold;
 
-		float ViewOffsetDistance;
+    float ViewOffsetDistance;
 
-		float ParticleTimes[2];
+    float ParticleTimes[2];
 
-		std::array<float, 4> CustomData1;
-		std::array<float, 4> CustomData2;
-	};
+    std::array<float, 4> CustomData1;
+    std::array<float, 4> CustomData2;
+  };
 
 public:
-	RibbonRenderer()
-	{
-	}
+  RibbonRenderer() {}
 
-	virtual ~RibbonRenderer()
-	{
-	}
+  virtual ~RibbonRenderer() {}
 
-	virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRendering(const NodeParameter &parameter, int32_t count,
+                              void *userData) {}
 
-	virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData)
-	{
-	}
+  virtual void Rendering(const NodeParameter &parameter,
+                         const InstanceParameter &instanceParameter,
+                         void *userData) {}
 
-	virtual void EndRendering(const NodeParameter& parameter, void* userData)
-	{
-	}
+  virtual void EndRendering(const NodeParameter &parameter, void *userData) {}
 
-	virtual void BeginRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRenderingGroup(const NodeParameter &parameter,
+                                   int32_t count, void *userData) {}
 
-	virtual void EndRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void EndRenderingGroup(const NodeParameter &parameter, int32_t count,
+                                 void *userData) {}
 };
 
 //----------------------------------------------------------------------------------

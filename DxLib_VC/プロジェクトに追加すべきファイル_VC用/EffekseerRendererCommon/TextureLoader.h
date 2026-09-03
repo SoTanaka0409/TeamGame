@@ -3,12 +3,13 @@
 
 #include <Effekseer.h>
 
-namespace EffekseerRenderer
-{
+namespace EffekseerRenderer {
 
-::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice,
-												  ::Effekseer::FileInterfaceRef fileInterface = nullptr,
-												  ::Effekseer::ColorSpaceType colorSpaceType = ::Effekseer::ColorSpaceType::Gamma);
+::Effekseer::TextureLoaderRef
+CreateTextureLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice,
+                    ::Effekseer::FileInterfaceRef fileInterface = nullptr,
+                    ::Effekseer::ColorSpaceType colorSpaceType =
+                        ::Effekseer::ColorSpaceType::Gamma);
 
 } // namespace EffekseerRenderer
 

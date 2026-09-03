@@ -5,9 +5,6 @@
 #include <Effekseer.h>
 #include <d3d12.h>
 
-namespace EffekseerRendererDX12
-{
-
-}
+namespace EffekseerRendererDX12 {}
 
 #endif

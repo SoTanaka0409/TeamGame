@@ -8,31 +8,17 @@
 
 #if defined(EFK_SIMD_NEON)
 
-namespace Effekseer
-{
+namespace Effekseer {
 
-namespace SIMD
-{
+namespace SIMD {
 
-inline Int4 Float4::Convert4i() const
-{
-	return vcvtq_s32_f32(s);
-}
+inline Int4 Float4::Convert4i() const { return vcvtq_s32_f32(s); }
 
-inline Int4 Float4::Cast4i() const
-{
-	return vreinterpretq_s32_f32(s);
-}
+inline Int4 Float4::Cast4i() const { return vreinterpretq_s32_f32(s); }
 
-inline Float4 Int4::Convert4f() const
-{
-	return vcvtq_f32_s32(s);
-}
+inline Float4 Int4::Convert4f() const { return vcvtq_f32_s32(s); }
 
-inline Float4 Int4::Cast4f() const
-{
-	return vreinterpretq_f32_s32(s);
-}
+inline Float4 Int4::Cast4f() const { return vreinterpretq_f32_s32(s); }
 
 } // namespace SIMD
 

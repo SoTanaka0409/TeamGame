@@ -18,115 +18,100 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 
 struct NodeRendererTextureUVTypeParameter;
 
-class TrackRenderer : public ReferenceObject
-{
+class TrackRenderer : public ReferenceObject {
 public:
-	struct NodeParameter
-	{
-		float LocalTime;
-		Effect* EffectPointer;
-		bool ZTest;
-		bool ZWrite;
+  struct NodeParameter {
+    float LocalTime;
+    Effect *EffectPointer;
+    bool ZTest;
+    bool ZWrite;
 
-		int32_t SplineDivision;
+    int32_t SplineDivision;
 
-		bool IsRightHand;
-		float GlobalScale = 1.0f;
-		float Maginification = 1.0f;
+    bool IsRightHand;
+    float GlobalScale = 1.0f;
+    float Maginification = 1.0f;
 
-		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
-		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
-		NodeRendererTextureUVTypeParameter* TextureUVTypeParameterPtr = nullptr;
+    NodeRendererDepthParameter *DepthParameterPtr = nullptr;
+    NodeRendererBasicParameter *BasicParameterPtr = nullptr;
+    NodeRendererTextureUVTypeParameter *TextureUVTypeParameterPtr = nullptr;
 
-		RendererMaterialType MaterialType = RendererMaterialType::Default;
-		MaterialRenderData* MaterialRenderDataPtr = nullptr;
+    RendererMaterialType MaterialType = RendererMaterialType::Default;
+    MaterialRenderData *MaterialRenderDataPtr = nullptr;
 
-		bool EnableViewOffset = false;
+    bool EnableViewOffset = false;
 
-		TrailSmoothingType SmoothingType = TrailSmoothingType::Off;
+    TrailSmoothingType SmoothingType = TrailSmoothingType::Off;
 
-		RefPtr<RenderingUserData> UserData;
-	};
+    RefPtr<RenderingUserData> UserData;
+  };
 
-	struct InstanceGroupParameter
-	{
-	};
+  struct InstanceGroupParameter {};
 
-	struct InstanceParameter
-	{
-		int32_t InstanceCount;
-		int32_t InstanceIndex;
-		SIMD::Mat43f SRTMatrix43;
+  struct InstanceParameter {
+    int32_t InstanceCount;
+    int32_t InstanceIndex;
+    SIMD::Mat43f SRTMatrix43;
 
-		Color ColorLeft;
-		Color ColorCenter;
-		Color ColorRight;
+    Color ColorLeft;
+    Color ColorCenter;
+    Color ColorRight;
 
-		Color ColorLeftMiddle;
-		Color ColorCenterMiddle;
-		Color ColorRightMiddle;
+    Color ColorLeftMiddle;
+    Color ColorCenterMiddle;
+    Color ColorRightMiddle;
 
-		float SizeFor;
-		float SizeMiddle;
-		float SizeBack;
+    float SizeFor;
+    float SizeMiddle;
+    float SizeBack;
 
-		RectF UV;
+    RectF UV;
 
-		RectF AlphaUV;
+    RectF AlphaUV;
 
-		RectF UVDistortionUV;
+    RectF UVDistortionUV;
 
-		RectF BlendUV;
+    RectF BlendUV;
 
-		RectF BlendAlphaUV;
+    RectF BlendAlphaUV;
 
-		RectF BlendUVDistortionUV;
+    RectF BlendUVDistortionUV;
 
-		float FlipbookIndexAndNextRate;
+    float FlipbookIndexAndNextRate;
 
-		float AlphaThreshold;
+    float AlphaThreshold;
 
-		float ViewOffsetDistance;
+    float ViewOffsetDistance;
 
-		float ParticleTimes[2];
+    float ParticleTimes[2];
 
-		std::array<float, 4> CustomData1;
-		std::array<float, 4> CustomData2;
-	};
+    std::array<float, 4> CustomData1;
+    std::array<float, 4> CustomData2;
+  };
 
 public:
-	TrackRenderer()
-	{
-	}
+  TrackRenderer() {}
 
-	virtual ~TrackRenderer()
-	{
-	}
+  virtual ~TrackRenderer() {}
 
-	virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRendering(const NodeParameter &parameter, int32_t count,
+                              void *userData) {}
 
-	virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData)
-	{
-	}
+  virtual void Rendering(const NodeParameter &parameter,
+                         const InstanceParameter &instanceParameter,
+                         void *userData) {}
 
-	virtual void EndRendering(const NodeParameter& parameter, void* userData)
-	{
-	}
+  virtual void EndRendering(const NodeParameter &parameter, void *userData) {}
 
-	virtual void BeginRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRenderingGroup(const NodeParameter &parameter,
+                                   int32_t count, void *userData) {}
 
-	virtual void EndRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void EndRenderingGroup(const NodeParameter &parameter, int32_t count,
+                                 void *userData) {}
 };
 
 //----------------------------------------------------------------------------------

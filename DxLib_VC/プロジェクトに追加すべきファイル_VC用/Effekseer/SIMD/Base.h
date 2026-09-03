@@ -17,7 +17,8 @@
 
 #include <arm_neon.h>
 
-#elif (defined(_M_AMD64) || defined(_M_X64)) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || defined(__SSE2__)
+#elif (defined(_M_AMD64) || defined(_M_X64)) ||                                \
+    (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || defined(__SSE2__)
 // x86/x86-64 SSE2/AVX2
 
 #define EFK_SIMD_SSE2

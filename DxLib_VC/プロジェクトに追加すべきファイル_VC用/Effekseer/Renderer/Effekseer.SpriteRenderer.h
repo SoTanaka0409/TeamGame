@@ -17,91 +17,80 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-class SpriteRenderer : public ReferenceObject
-{
+class SpriteRenderer : public ReferenceObject {
 public:
-	struct NodeParameter
-	{
-		float LocalTime;
-		Effect* EffectPointer;
-		bool ZTest;
-		bool ZWrite;
-		BillboardType Billboard;
-		bool IsRightHand;
-		float Maginification = 1.0f;
+  struct NodeParameter {
+    float LocalTime;
+    Effect *EffectPointer;
+    bool ZTest;
+    bool ZWrite;
+    BillboardType Billboard;
+    bool IsRightHand;
+    float Maginification = 1.0f;
 
-		ZSortType ZSort;
+    ZSortType ZSort;
 
-		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
-		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+    NodeRendererDepthParameter *DepthParameterPtr = nullptr;
+    NodeRendererBasicParameter *BasicParameterPtr = nullptr;
 
-		bool EnableViewOffset = false;
+    bool EnableViewOffset = false;
 
-		RefPtr<RenderingUserData> UserData;
-	};
+    RefPtr<RenderingUserData> UserData;
+  };
 
-	struct InstanceParameter
-	{
-		SIMD::Mat43f SRTMatrix43;
-		Color AllColor;
+  struct InstanceParameter {
+    SIMD::Mat43f SRTMatrix43;
+    Color AllColor;
 
-		// Lower left, Lower right, Upper left, Upper right
-		Color Colors[4];
+    // Lower left, Lower right, Upper left, Upper right
+    Color Colors[4];
 
-		SIMD::Vec2f Positions[4];
+    SIMD::Vec2f Positions[4];
 
-		RectF UV;
+    RectF UV;
 
-		RectF AlphaUV;
+    RectF AlphaUV;
 
-		RectF UVDistortionUV;
+    RectF UVDistortionUV;
 
-		RectF BlendUV;
+    RectF BlendUV;
 
-		RectF BlendAlphaUV;
+    RectF BlendAlphaUV;
 
-		RectF BlendUVDistortionUV;
+    RectF BlendUVDistortionUV;
 
-		float FlipbookIndexAndNextRate;
+    float FlipbookIndexAndNextRate;
 
-		float AlphaThreshold;
+    float AlphaThreshold;
 
-		float ViewOffsetDistance;
+    float ViewOffsetDistance;
 
-		SIMD::Vec3f Direction;
+    SIMD::Vec3f Direction;
 
-		float ParticleTimes[2];
+    float ParticleTimes[2];
 
-		std::array<float, 4> CustomData1;
-		std::array<float, 4> CustomData2;
-	};
+    std::array<float, 4> CustomData1;
+    std::array<float, 4> CustomData2;
+  };
 
 public:
-	SpriteRenderer()
-	{
-	}
+  SpriteRenderer() {}
 
-	virtual ~SpriteRenderer()
-	{
-	}
+  virtual ~SpriteRenderer() {}
 
-	virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRendering(const NodeParameter &parameter, int32_t count,
+                              void *userData) {}
 
-	virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData)
-	{
-	}
+  virtual void Rendering(const NodeParameter &parameter,
+                         const InstanceParameter &instanceParameter,
+                         void *userData) {}
 
-	virtual void EndRendering(const NodeParameter& parameter, void* userData)
-	{
-	}
+  virtual void EndRendering(const NodeParameter &parameter, void *userData) {}
 };
 
 //----------------------------------------------------------------------------------

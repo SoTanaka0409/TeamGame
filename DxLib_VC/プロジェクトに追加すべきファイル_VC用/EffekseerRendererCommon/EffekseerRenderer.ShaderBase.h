@@ -7,29 +7,21 @@
 #include <sstream>
 #include <string.h>
 
-namespace EffekseerRenderer
-{
-class ShaderBase
-{
+namespace EffekseerRenderer {
+class ShaderBase {
 public:
-	ShaderBase()
-	{
-	}
-	virtual ~ShaderBase()
-	{
-	}
+  ShaderBase() {}
+  virtual ~ShaderBase() {}
 
-	virtual void OverrideShader(::Effekseer::Backend::ShaderRef shader)
-	{
-	}
+  virtual void OverrideShader(::Effekseer::Backend::ShaderRef shader) {}
 
-	virtual void SetVertexConstantBufferSize(int32_t size) = 0;
-	virtual void SetPixelConstantBufferSize(int32_t size) = 0;
+  virtual void SetVertexConstantBufferSize(int32_t size) = 0;
+  virtual void SetPixelConstantBufferSize(int32_t size) = 0;
 
-	virtual void* GetVertexConstantBuffer() = 0;
-	virtual void* GetPixelConstantBuffer() = 0;
+  virtual void *GetVertexConstantBuffer() = 0;
+  virtual void *GetPixelConstantBuffer() = 0;
 
-	virtual void SetConstantBuffer() = 0;
+  virtual void SetConstantBuffer() = 0;
 };
 
 } // namespace EffekseerRenderer

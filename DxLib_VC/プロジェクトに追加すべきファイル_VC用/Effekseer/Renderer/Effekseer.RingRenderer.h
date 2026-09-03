@@ -18,97 +18,86 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-class RingRenderer : public ReferenceObject
-{
+class RingRenderer : public ReferenceObject {
 public:
-	struct NodeParameter
-	{
-		float LocalTime;
-		Effect* EffectPointer;
-		bool ZTest;
-		bool ZWrite;
-		BillboardType Billboard;
-		int32_t VertexCount;
-		bool IsRightHand;
-		float Maginification = 1.0f;
+  struct NodeParameter {
+    float LocalTime;
+    Effect *EffectPointer;
+    bool ZTest;
+    bool ZWrite;
+    BillboardType Billboard;
+    int32_t VertexCount;
+    bool IsRightHand;
+    float Maginification = 1.0f;
 
-		float StartingFade = 0.0f;
-		float EndingFade = 0.0f;
+    float StartingFade = 0.0f;
+    float EndingFade = 0.0f;
 
-		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
-		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+    NodeRendererDepthParameter *DepthParameterPtr = nullptr;
+    NodeRendererBasicParameter *BasicParameterPtr = nullptr;
 
-		NodeRendererBasicParameter BasicParameter;
+    NodeRendererBasicParameter BasicParameter;
 
-		bool EnableViewOffset = false;
+    bool EnableViewOffset = false;
 
-		RefPtr<RenderingUserData> UserData;
-	};
+    RefPtr<RenderingUserData> UserData;
+  };
 
-	struct InstanceParameter
-	{
-		SIMD::Mat43f SRTMatrix43;
-		SIMD::Vec2f OuterLocation;
-		SIMD::Vec2f InnerLocation;
-		float ViewingAngleStart;
-		float ViewingAngleEnd;
-		float CenterRatio;
-		Color OuterColor;
-		Color CenterColor;
-		Color InnerColor;
+  struct InstanceParameter {
+    SIMD::Mat43f SRTMatrix43;
+    SIMD::Vec2f OuterLocation;
+    SIMD::Vec2f InnerLocation;
+    float ViewingAngleStart;
+    float ViewingAngleEnd;
+    float CenterRatio;
+    Color OuterColor;
+    Color CenterColor;
+    Color InnerColor;
 
-		RectF UV;
+    RectF UV;
 
-		RectF AlphaUV;
+    RectF AlphaUV;
 
-		RectF UVDistortionUV;
+    RectF UVDistortionUV;
 
-		RectF BlendUV;
+    RectF BlendUV;
 
-		RectF BlendAlphaUV;
+    RectF BlendAlphaUV;
 
-		RectF BlendUVDistortionUV;
+    RectF BlendUVDistortionUV;
 
-		float FlipbookIndexAndNextRate;
+    float FlipbookIndexAndNextRate;
 
-		float AlphaThreshold;
+    float AlphaThreshold;
 
-		float ViewOffsetDistance;
+    float ViewOffsetDistance;
 
-		SIMD::Vec3f Direction;
+    SIMD::Vec3f Direction;
 
-		float ParticleTimes[2];
+    float ParticleTimes[2];
 
-		std::array<float, 4> CustomData1;
-		std::array<float, 4> CustomData2;
-	};
+    std::array<float, 4> CustomData1;
+    std::array<float, 4> CustomData2;
+  };
 
 public:
-	RingRenderer()
-	{
-	}
+  RingRenderer() {}
 
-	virtual ~RingRenderer()
-	{
-	}
+  virtual ~RingRenderer() {}
 
-	virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData)
-	{
-	}
+  virtual void BeginRendering(const NodeParameter &parameter, int32_t count,
+                              void *userData) {}
 
-	virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData)
-	{
-	}
+  virtual void Rendering(const NodeParameter &parameter,
+                         const InstanceParameter &instanceParameter,
+                         void *userData) {}
 
-	virtual void EndRendering(const NodeParameter& parameter, void* userData)
-	{
-	}
+  virtual void EndRendering(const NodeParameter &parameter, void *userData) {}
 };
 
 //----------------------------------------------------------------------------------

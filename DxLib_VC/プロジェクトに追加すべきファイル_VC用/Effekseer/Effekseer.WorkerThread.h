@@ -15,50 +15,40 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-class WorkerThread
-{
+class WorkerThread {
 private:
-	std::thread m_Thread;
-	std::function<void()> m_Task;
-	std::mutex m_Mutex;
-	std::condition_variable m_TaskRequestCV;
-	std::condition_variable m_TaskWaitCV;
-	std::atomic<bool> m_TaskRequested;
-	std::atomic<bool> m_TaskCompleted;
-	std::atomic<bool> m_QuitRequested;
+  std::thread m_Thread;
+  std::function<void()> m_Task;
+  std::mutex m_Mutex;
+  std::condition_variable m_TaskRequestCV;
+  std::condition_variable m_TaskWaitCV;
+  std::atomic<bool> m_TaskRequested;
+  std::atomic<bool> m_TaskCompleted;
+  std::atomic<bool> m_QuitRequested;
 
 public:
-	WorkerThread();
+  WorkerThread();
 
-	WorkerThread(const WorkerThread&)
-	{
-	}
+  WorkerThread(const WorkerThread &) {}
 
-	~WorkerThread();
+  ~WorkerThread();
 
-	void Launch();
+  void Launch();
 
-	void Shutdown();
+  void Shutdown();
 
-	ThreadNativeHandleType GetThreadHandle()
-	{
-		return m_Thread.native_handle();
-	}
+  ThreadNativeHandleType GetThreadHandle() { return m_Thread.native_handle(); }
 
-	std::thread::id GetThreadId()
-	{
-		return m_Thread.get_id();
-	}
+  std::thread::id GetThreadId() { return m_Thread.get_id(); }
 
-	void RunAsync(std::function<void()> task);
+  void RunAsync(std::function<void()> task);
 
-	void WaitForComplete();
+  void WaitForComplete();
 };
 
 //----------------------------------------------------------------------------------

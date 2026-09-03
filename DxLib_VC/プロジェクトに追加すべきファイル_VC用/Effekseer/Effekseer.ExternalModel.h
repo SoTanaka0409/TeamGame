@@ -10,24 +10,16 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 
-struct ExternalModel
-{
-	ModelRef Model;
-	Matrix43 Transform;
+struct ExternalModel {
+  ModelRef Model;
+  Matrix43 Transform;
 
-	ExternalModel()
-	{
-		Transform.Indentity();
-	}
+  ExternalModel() { Transform.Indentity(); }
 
-	ExternalModel(const ModelRef& model, const Matrix43& transform)
-		: Model(model)
-		, Transform(transform)
-	{
-	}
+  ExternalModel(const ModelRef &model, const Matrix43 &transform)
+      : Model(model), Transform(transform) {}
 };
 
 //----------------------------------------------------------------------------------

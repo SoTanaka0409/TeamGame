@@ -14,61 +14,59 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+namespace Effekseer {
 
 /**
-	\~English	Curve loader
-	\~Japanese	カーブ読み込み破棄関数指定クラス
+        \~English	Curve loader
+        \~Japanese	カーブ読み込み破棄関数指定クラス
 */
-class CurveLoader : public ReferenceObject
-{
+class CurveLoader : public ReferenceObject {
 private:
-	::Effekseer::FileInterfaceRef fileInterface_ = nullptr;
+  ::Effekseer::FileInterfaceRef fileInterface_ = nullptr;
 
 public:
-	CurveLoader(::Effekseer::FileInterfaceRef fileInterface = nullptr);
+  CurveLoader(::Effekseer::FileInterfaceRef fileInterface = nullptr);
 
-	virtual ~CurveLoader() = default;
+  virtual ~CurveLoader() = default;
 
-	/*
-	@brief
-	\~English load a curve
-	\~Japanese カーブを読み込む。
-	@param path
-	\~English a file path
-	\~Japanese 読み込み元パス
-	@ return
-	\~English a pointer of loaded a curve
-	\~Japanese 読み込まれたカーブのポインタ
-	*/
-	virtual CurveRef Load(const char16_t* path);
+  /*
+  @brief
+  \~English load a curve
+  \~Japanese カーブを読み込む。
+  @param path
+  \~English a file path
+  \~Japanese 読み込み元パス
+  @ return
+  \~English a pointer of loaded a curve
+  \~Japanese 読み込まれたカーブのポインタ
+  */
+  virtual CurveRef Load(const char16_t *path);
 
-	/*
-	@brief
-	\~English load a curve
-	\~Japanese カーブを読み込む。
-	@param	data
-	\~English	data pointer
-	\~Japanese	データのポインタ
-	@param	size
-	\~English	the size of data
-	\~Japanese	データの大きさ
-	@ return
-	\~English a pointer of loaded a curve
-	\~Japanese 読み込まれたカーブのポインタ
-	*/
-	virtual CurveRef Load(const void* data, int32_t size);
+  /*
+  @brief
+  \~English load a curve
+  \~Japanese カーブを読み込む。
+  @param	data
+  \~English	data pointer
+  \~Japanese	データのポインタ
+  @param	size
+  \~English	the size of data
+  \~Japanese	データの大きさ
+  @ return
+  \~English a pointer of loaded a curve
+  \~Japanese 読み込まれたカーブのポインタ
+  */
+  virtual CurveRef Load(const void *data, int32_t size);
 
-	/**
-		@brief
-		\~English	dispose a curve
-		\~Japanese	カーブを破棄する。
-		@param	data
-		\~English	a pointer of loaded a curve
-		\~Japanese	読み込まれたカーブのポインタ
-	*/
-	virtual void Unload(CurveRef data);
+  /**
+          @brief
+          \~English	dispose a curve
+          \~Japanese	カーブを破棄する。
+          @param	data
+          \~English	a pointer of loaded a curve
+          \~Japanese	読み込まれたカーブのポインタ
+  */
+  virtual void Unload(CurveRef data);
 };
 
 //----------------------------------------------------------------------------------
