@@ -1,20 +1,20 @@
 #pragma once
 #include "Character.h"
 
-class Player : public Character
+class Enemy : public Character
 {
   private:
-    int damageColorTimer;
-    Vector2 facingDir;
+    int hp;
 
   public:
-    Player(float startX, float startY);
-    virtual ~Player();
+    Enemy(float startX, float startY);
+    virtual ~Enemy();
 
     void Update() override;
     void Draw() override;
 
-    // 引数が Collider* に変更
+    void Damage();
+
     void OnCollisionEnter(Collider *otherCollider) override;
     void OnCollisionStay(Collider *otherCollider) override;
     void OnCollisionExit(Collider *otherCollider) override;

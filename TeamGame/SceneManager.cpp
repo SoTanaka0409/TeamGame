@@ -8,7 +8,7 @@ SceneManager::~SceneManager()
 {
 }
 
-void SceneManager::ChangeScene(std::shared_ptr<BaseScene> newScene)
+void SceneManager::ChangeScene(std::shared_ptr<Scene> newScene)
 {
     nextScene = newScene;
 }

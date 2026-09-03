@@ -1,12 +1,12 @@
 #pragma once
-#include "BaseScene.h"
+#include "Scene.h"
 #include <memory>
 
 class SceneManager
 {
   private:
-    std::shared_ptr<BaseScene> currentScene;
-    std::shared_ptr<BaseScene> nextScene;
+    std::shared_ptr<Scene> currentScene;
+    std::shared_ptr<Scene> nextScene;
 
     SceneManager();
     ~SceneManager();
@@ -21,7 +21,12 @@ class SceneManager
     SceneManager(const SceneManager &) = delete;
     SceneManager &operator=(const SceneManager &) = delete;
 
-    void ChangeScene(std::shared_ptr<BaseScene> newScene);
+    void ChangeScene(std::shared_ptr<Scene> newScene);
     void Update();
     void Draw();
+
+    std::shared_ptr<Scene> GetCurrentScene() const
+    {
+        return currentScene;
+    }
 };

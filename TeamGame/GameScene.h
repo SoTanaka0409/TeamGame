@@ -1,7 +1,7 @@
 #pragma once
-#include "BaseScene.h"
+#include "Scene.h"
 
-class GameScene : public BaseScene
+class GameScene : public Scene
 {
   public:
     GameScene();
@@ -10,5 +10,4 @@ class GameScene : public BaseScene
     void Init() override;
     void Update() override;
     void Draw() override;
-    void Finalize() override;
 };

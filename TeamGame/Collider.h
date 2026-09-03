@@ -1,50 +1,46 @@
 #pragma once
+#include <string>
 
 class Object2D;
-
-enum class ColliderType
-{
-    Rectangle,
-    Circle
-};
+class CircleCollider;
+class RectCollider;
 
 class Collider
 {
-  private:
-    ColliderType type;
+  protected:
     Object2D *owner;
-    float radius;        // For circle
-    float width, height; // For rectangle
     float offsetX, offsetY;
+    std::string
+        tag; // コライダーを識別するタグ（"Body", "WeakPoint", "Weapon"など）
 
   public:
-    Collider(Object2D *owner, float radius);     // Circle constructor
-    Collider(Object2D *owner, float w, float h); // Rect constructor
-    ~Collider();
+    Collider(Object2D *owner, const std::string &tag = "");
+    virtual ~Collider();
 
-    ColliderType GetType() const
-    {
-        return type;
-    }
     Object2D *GetOwner() const
     {
         return owner;
     }
+    std::string GetTag() const
+    {
+        return tag;
+    }
+    void SetTag(const std::string &t)
+    {
+        tag = t;
+    }
 
     float GetWorldX() const;
     float GetWorldY() const;
-    float GetRadius() const
+
+    void SetOffset(float x, float y)
     {
-        return radius;
-    }
-    float GetWidth() const
-    {
-        return width;
-    }
-    float GetHeight() const
-    {
-        return height;
+        offsetX = x;
+        offsetY = y;
     }
 
-    bool IsCollision(Collider *other) const;
+    // ダブルディスパッチ用関数群
+    virtual bool IsCollision(Collider *other) const = 0;
+    virtual bool IsCollisionWithCircle(const CircleCollider *circle) const = 0;
+    virtual bool IsCollisionWithRect(const RectCollider *rect) const = 0;
 };

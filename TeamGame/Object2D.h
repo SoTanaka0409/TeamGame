@@ -1,9 +1,12 @@
 #pragma once
+#include "Vector2.h"
+
+class Collider;
 
 class Object2D
 {
   protected:
-    float x, y;
+    Vector2 position;
     float width, height;
     bool isActive;
 
@@ -14,14 +17,26 @@ class Object2D
     virtual void Update() = 0;
     virtual void Draw() = 0;
 
-    float GetX() const
+    // 引数を Object2D* から Collider* に変更
+    virtual void OnCollisionEnter(Collider *otherCollider)
     {
-        return x;
     }
-    float GetY() const
+    virtual void OnCollisionStay(Collider *otherCollider)
     {
-        return y;
     }
+    virtual void OnCollisionExit(Collider *otherCollider)
+    {
+    }
+
+    Vector2 GetPosition() const
+    {
+        return position;
+    }
+    void SetPosition(const Vector2 &pos)
+    {
+        position = pos;
+    }
+
     float GetWidth() const
     {
         return width;

@@ -1,14 +1,12 @@
 #pragma once
-#include "BaseScene.h"
+#include "Scene.h"
 
-class ResultScene : public BaseScene
+class ResultScene : public Scene
 {
   public:
     ResultScene();
     ~ResultScene() override;
 
-    void Init() override;
     void Update() override;
     void Draw() override;
-    void Finalize() override;
 };
