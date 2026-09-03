@@ -52,7 +52,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -70,9 +69,7 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-
   <PropertyGroup Label="UserMacros" />
-
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -81,7 +78,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-    <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions></ClCompile>
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -98,7 +96,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-    <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions></ClCompile>
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -113,7 +112,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-    <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions></ClCompile>
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -130,16 +130,21 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-    <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions></ClCompile>
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-
   <ItemGroup>
-    <ClCompile Include="main.cpp"><AdditionalOptions>%(AdditionalOptions)</AdditionalOptions></ClCompile>
+    <ClCompile Include="main.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Object2D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

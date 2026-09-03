@@ -9,6 +9,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetMainWindowText("TeamGame");
 
     // DXライブラリの初期化
+    SetUseCharCodeFormat(DX_CHARCODEFORMAT_UTF8);
     if (DxLib_Init() == -1)
     {
         return -1; // エラーが起きたら直ちに終了
