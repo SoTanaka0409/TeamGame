@@ -2,19 +2,27 @@
 #include "Bullet.h"
 #include "DxLib.h"
 #include "Enemy.h"
+#include "Handgun.h"
 #include "InputManager.h"
+#include "Shotgun.h"
 #include <cmath>
 
 Player::Player(float startX, float startY)
-    : Character(startX, startY, 20.0f), damageColorTimer(0),
+    : Character(startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     speed = 5.0f;
     collider->SetTag("Player");
+    weapons.push_back(new Handgun());
+    weapons.push_back(new Shotgun());
+    currentWeaponIndex = 0;
 }
 
 Player::~Player()
 {
+    for (auto w : weapons)
+        delete w;
+    weapons.clear();
 }
 
 void Player::Update()
@@ -60,10 +68,24 @@ void Player::Update()
         damageColorTimer--;
     }
 
-    // Zキーで弾を発射
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Z))
+    if (!weapons.empty())
     {
-        new Bullet(position.x, position.y, facingDir, 15.0f);
+        weapons[currentWeaponIndex]->Update();
+    }
+
+    // Qキーで武器チェンジ
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
+    {
+        currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+    }
+
+    // Zキーを押しっぱなしで発射（クールタイムはWeaponクラスが管理）
+    if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z))
+    {
+        if (!weapons.empty())
+        {
+            weapons[currentWeaponIndex]->Fire(position, facingDir);
+        }
     }
 }
 
@@ -94,6 +116,14 @@ void Player::Draw()
 
     // 白い線を描画（太さ2）
     DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+
+    if (!weapons.empty())
+    {
+        DrawString(static_cast<int>(position.x) - 20,
+                   static_cast<int>(position.y) - 30,
+                   weapons[currentWeaponIndex]->GetName().c_str(),
+                   GetColor(255, 255, 255));
+    }
 }
 
 void Player::OnCollisionEnter(Collider *otherCollider)

@@ -3,6 +3,9 @@
 
 class GameScene : public Scene
 {
+  private:
+    class Player *player;
+
   public:
     GameScene();
     ~GameScene() override;

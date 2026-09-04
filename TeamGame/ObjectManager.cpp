@@ -17,22 +17,24 @@ void ObjectManager::AddObject(Object2D *obj)
 
 void ObjectManager::Update()
 {
-    for (auto obj : objects)
+    size_t count = objects.size();
+    for (size_t i = 0; i < count; ++i)
     {
-        if (obj->IsActive())
+        if (objects[i]->IsActive())
         {
-            obj->Update();
+            objects[i]->Update();
         }
     }
 }
 
 void ObjectManager::Draw()
 {
-    for (auto obj : objects)
+    size_t count = objects.size();
+    for (size_t i = 0; i < count; ++i)
     {
-        if (obj->IsActive())
+        if (objects[i]->IsActive())
         {
-            obj->Draw();
+            objects[i]->Draw();
         }
     }
 }
