@@ -11,7 +11,7 @@ class Character : public Object2D
     float radius;
 
   public:
-    Character(float startX, float startY, float radius);
+    Character(ObjectTag tag, float startX, float startY, float radius);
     virtual ~Character();
 
     CircleCollider *GetCollider() const

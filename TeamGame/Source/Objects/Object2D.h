@@ -1,6 +1,16 @@
 #pragma once
 #include "Vector2.h"
 
+enum class ObjectTag
+{
+    None,
+    Player,
+    Enemy,
+    PlayerWeapon,
+    EnemyWeapon,
+    Object
+};
+
 class Collider;
 
 class Object2D
@@ -9,10 +19,13 @@ class Object2D
     Vector2 position;
     float width, height;
     bool isActive;
+    ObjectTag objectTag;
 
   public:
-    Object2D();
+    Object2D(ObjectTag tag = ObjectTag::None);
     virtual ~Object2D();
+
+    ObjectTag GetObjectTag() const { return objectTag; }
 
     virtual void Update() = 0;
     virtual void Draw() = 0;

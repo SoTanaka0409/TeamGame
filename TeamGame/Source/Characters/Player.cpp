@@ -7,11 +7,12 @@
 #include "Handgun.h"
 #include "InputManager.h"
 #include "Shotgun.h"
+#include "GameSettings.h"
 #include <cmath>
 #include <algorithm>
 
 Player::Player(float startX, float startY)
-    : Character(startX, startY, 35.0f), damageColorTimer(0),
+    : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     speed = 5.0f;
@@ -30,6 +31,13 @@ Player::~Player()
 
 void Player::Update()
 {
+    if (m_isRemote)
+    {
+        // リモートプレイヤーの場合は移動や入力を処理しない
+        // （アニメーションなどの更新が必要ならここに書く）
+        return;
+    }
+
     // 右クリックで懐中電灯 ON / OFF トグル切り替え
     bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
     if (currMouseRight && !m_prevMouseRight)
@@ -122,16 +130,37 @@ void Player::Update()
         weapons[currentWeaponIndex]->Update();
     }
 
-    // マウスで視点移動（照準を合わせる）
-    int mouseX, mouseY;
-    GetMousePoint(&mouseX, &mouseY);
-    float dx = mouseX - position.x;
-    float dy = mouseY - position.y;
-    float dirLen = std::sqrt(dx * dx + dy * dy);
-    if (dirLen > 0.0001f)
+    // GameSettingsの取得
+    bool currE = (CheckHitKey(KEY_INPUT_E) != 0);
+
+    if (GameSettings::GetInstance().isAimLockHoldMode)
     {
-        facingDir.x = dx / dirLen;
-        facingDir.y = dy / dirLen;
+        // ONの場合: Eキーを押している間は視点固定
+        m_isAimLocked = currE;
+    }
+    else
+    {
+        // OFFの場合: Eキーが押された時に視点固定をトグル（eeが押されるまで）
+        if (currE && !m_prevE)
+        {
+            m_isAimLocked = !m_isAimLocked;
+        }
+    }
+    m_prevE = currE;
+
+    // マウスで視点移動（照準を合わせる） - 視点固定されていない時のみ
+    if (!m_isAimLocked)
+    {
+        int mouseX, mouseY;
+        GetMousePoint(&mouseX, &mouseY);
+        float dx = mouseX - position.x;
+        float dy = mouseY - position.y;
+        float dirLen = std::sqrt(dx * dx + dy * dy);
+        if (dirLen > 0.0001f)
+        {
+            facingDir.x = dx / dirLen;
+            facingDir.y = dy / dirLen;
+        }
     }
 
     // Qキーで武器チェンジ

@@ -6,7 +6,7 @@
 #include "SceneManager.h"
 
 Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed)
-    : myColliderManager(nullptr), radius(5.0f)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(5.0f)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -54,7 +54,7 @@ void Bullet::Draw()
 void Bullet::OnCollisionEnter(Collider *otherCollider)
 {
     // 敵に当たったらダメージを与えて自身も消滅
-    if (otherCollider->GetTag() == "Enemy")
+    if (otherCollider->GetOwner() && otherCollider->GetOwner()->GetObjectTag() == ObjectTag::Enemy)
     {
         Enemy *enemy = dynamic_cast<Enemy *>(otherCollider->GetOwner());
         if (enemy)

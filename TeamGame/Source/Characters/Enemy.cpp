@@ -3,7 +3,7 @@
 #include "Player.h"
 
 Enemy::Enemy(float startX, float startY)
-    : Character(startX, startY, 25.0f), hp(3)
+    : Character(ObjectTag::Enemy, startX, startY, 25.0f), hp(3)
 {
     speed = 2.0f;
     collider->SetTag("Enemy");
