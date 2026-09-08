@@ -1,10 +1,14 @@
 #pragma once
 #include "Scene.h"
+#include "Stage.h"
 
 class GameScene : public Scene
 {
   private:
     class Player *player;
+    Stage stage;
+    int themeIdx;
+    int varIdx;
 
   public:
     GameScene();

@@ -6,6 +6,8 @@ class Weapon;
 class Player : public Character
 {
   private:
+    class Stage* currentStage = nullptr;
+    float cellSize = 1.0f;
     int damageColorTimer;
     Vector2 facingDir;
     std::vector<Weapon *> weapons;
@@ -19,6 +21,7 @@ class Player : public Character
     Player(float startX, float startY);
     virtual ~Player();
 
+    void SetStage(class Stage* s, float cSize) { currentStage = s; cellSize = cSize; }
     void Update() override;
     void Draw() override;
 

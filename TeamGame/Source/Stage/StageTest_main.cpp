@@ -1,3 +1,4 @@
+#if 0 // Conflict disabled
 #include "DxLib.h"
 #include "StageGenerator.h"
 #include <string>
@@ -224,3 +225,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     DxLib_End();
     return 0;
 }
+
+#endif

@@ -13,11 +13,42 @@ GameScene::~GameScene()
 {
 }
 
+#include "StageGenerator.h"
+#include <random>
+#include <ctime>
+
 void GameScene::Init()
 {
     Scene::Init();
-    player = new Player(320.0f, 240.0f);
-    new Enemy(400.0f, 100.0f);
+    
+    // ステージ生成
+    std::random_device rd;
+    unsigned int seed = rd() ^ static_cast<unsigned int>(std::time(nullptr));
+    StageGenConfig config;
+    themeIdx = seed % 4;
+    varIdx = seed % 4;
+    config.theme = static_cast<ThemePattern>(themeIdx);
+    config.variation = varIdx;
+    
+    ThemePattern currTheme = config.theme;
+    int currVar = config.variation;
+    
+    stage = StageGenerator::Generate(config, seed, &currTheme, &currVar);
+    
+    // セルサイズ計算 (1920x1080画面に合わせる)
+    float cellW = 1920.0f / stage.GetWidth();
+    float cellH = 1080.0f / stage.GetHeight();
+    float cellSize = (cellW < cellH) ? cellW : cellH;
+    
+    Point2D startGrid = stage.GetPlayerStartPos();
+    float startX = (startGrid.x + 0.5f) * cellSize;
+    float startY = (startGrid.y + 0.5f) * cellSize;
+    
+    player = new Player(startX, startY);
+    player->SetStage(&stage, cellSize);
+    
+    // 敵のスポーン位置も追加できるが、とりあえず固定位置に1体
+    new Enemy(startX + 200.0f, startY + 200.0f);
 }
 
 void GameScene::Update()
@@ -35,12 +66,26 @@ void GameScene::Update()
 
 void GameScene::Draw()
 {
-    // 背景を暗いグレーにして、グリッド線を描く（何もない空間だと視界が分かりにくいため）
-    DrawBox(0, 0, 1920, 1080, GetColor(40, 40, 40), TRUE);
-    for (int x = 0; x < 1920; x += 100)
-        DrawLine(x, 0, x, 1080, GetColor(60, 60, 60), 1);
-    for (int y = 0; y < 1080; y += 100)
-        DrawLine(0, y, 1920, y, GetColor(60, 60, 60), 1);
+    float cellW = 1920.0f / stage.GetWidth();
+    float cellH = 1080.0f / stage.GetHeight();
+    float cellSize = (cellW < cellH) ? cellW : cellH;
+    
+    float playerGridX = 0;
+    float playerGridY = 0;
+    float facingAngle = 0;
+    
+    if (player && player->IsActive())
+    {
+        Vector2 pos = player->GetPosition();
+        Vector2 dir = player->GetFacingDir();
+        playerGridX = pos.x / cellSize;
+        playerGridY = pos.y / cellSize;
+        facingAngle = std::atan2(dir.y, dir.x);
+    }
+    
+    // ステージ描画
+    std::string stageName = StageGenerator::GetFullStageName(static_cast<ThemePattern>(themeIdx), varIdx);
+    stage.DrawFitToArea(0, 0, 1920, 1080, true, playerGridX, playerGridY, facingAngle, stageName.c_str(), -1);
 
     Scene::Draw();
 

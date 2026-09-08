@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Object2D.h"
+#include "StageTypes.h"
 
 // 地形タイルの種類
 enum class CellType
