@@ -7,11 +7,11 @@
 enum class CellType
 {
     EMPTY_FLOOR = 0, // オレンジ・サンド床
-    WALL_BLOCK,      // 茶色の木箱・丸太ブロック壁（通行不可）
-    OUTER_WALL,      // 外周封鎖壁（絶対通行不可の外枠）
-    BUSH,            // 草むら・茂み（Grass1.pngテクスチャ適用・当たり判定あり）
-    WATER,           // 青い水場・池（通行不可）
-    CACTUS           // サボテン・たる障害物（通行不可）
+    WALL_BLOCK,      // 茶色の木箱・丸太ブロック壁（通行不可・光遮断）
+    OUTER_WALL,      // 外周封鎖壁（絶対通行不可の外枠・光遮断）
+    BUSH,            // 草むら・茂み（進入可能・草の中に隠れられる・光透過）
+    WATER,           // 青い水場・池（通行不可・光透過）
+    CACTUS           // サボテン・たる障害物（通行不可・光遮断）
 };
 
 // スポーン・目的要素の種類
@@ -48,12 +48,17 @@ public:
     Point2D GetPlayerStartPos() const { return m_playerStartPos; }
     void SetPlayerStartPos(Point2D pos) { m_playerStartPos = pos; }
 
+    // 移動不可の壁・障害物判定 (草むらBUSHは進入可能)
     bool IsSolidWall(int gridX, int gridY) const;
+
+    // 光を遮断して影を作る壁障害物判定 (水WATERと草BUSHは光が奥まで届く)
+    bool IsLightBlockingWall(int gridX, int gridY) const;
+
     bool IsOutOfBounds(int gridX, int gridY) const;
 
     void SetGrassGraph(int handle) { m_hGrassGraph = handle; }
 
-    // 1920x1080 フィッティング描画（Grass1.png 画像テクスチャ描画対応）
+    // 1920x1080 フィッティング描画
     void DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDebugMode, float playerX, float playerY, float lightAngle = 0.0f, const char* patternName = "", int hGrass = -1) const;
 
 private:

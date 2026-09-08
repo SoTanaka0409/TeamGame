@@ -35,12 +35,19 @@ void Stage::AddSpawnPoint(Point2D pos, SpawnType type)
     m_spawnPoints.push_back({ pos, type });
 }
 
+// 【移動不可障害物の判定】 (草むら BUSH は進入・歩行可能)
 bool Stage::IsSolidWall(int gridX, int gridY) const
 {
     CellType type = GetCell(gridX, gridY);
     return type == CellType::OUTER_WALL || type == CellType::WALL_BLOCK || 
-           type == CellType::WATER || type == CellType::CACTUS || 
-           type == CellType::BUSH;
+           type == CellType::WATER || type == CellType::CACTUS;
+}
+
+// 【光を遮断して影を作る壁障害物】 (水 WATER と 草 BUSH は光が奥まで届く)
+bool Stage::IsLightBlockingWall(int gridX, int gridY) const
+{
+    CellType type = GetCell(gridX, gridY);
+    return type == CellType::OUTER_WALL || type == CellType::WALL_BLOCK || type == CellType::CACTUS;
 }
 
 bool Stage::IsOutOfBounds(int gridX, int gridY) const
@@ -64,10 +71,6 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
     float startDrawX = rectX + (rectW - mapPixelWidth) / 2.0f;
     float startDrawY = rectY + (rectH - mapPixelHeight) / 2.0f;
 
-    // プレイヤーのピクセル座標
-    float playerPixelX = startDrawX + playerWorldX * cellSize;
-    float playerPixelY = startDrawY + playerWorldY * cellSize;
-
     // カラーパレット
     const unsigned int colorFloor1      = GetColor(242, 162, 108);
     const unsigned int colorFloor2      = GetColor(232, 150, 95);
@@ -81,7 +84,7 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
     const unsigned int colorOuterBorder = GetColor(130, 140, 160);
     const unsigned int colorCactus      = GetColor(40, 160, 80);
 
-    // 1. 各タイルのフルカラー標準描画（BUSHタイルは Grass1.png 画像を使用）
+    // 1. 各タイルのフルカラー標準描画
     for (int y = 0; y < m_height; ++y)
     {
         for (int x = 0; x < m_width; ++x)
@@ -112,15 +115,12 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
                 break;
 
             case CellType::BUSH:
-                // 【Grass1.png 画像テクスチャ描画】
                 if (useGrass != -1)
                 {
-                    // 画像で草むらを描画
                     DrawExtendGraph(x1 - 1, y1 - 1, x2 + 1, y2 + 1, useGrass, TRUE);
                 }
                 else
                 {
-                    // フォールバックベクター描画
                     DrawCircle(cx, cy, static_cast<int>(cellSize * 0.65f), colorBush, TRUE);
                     DrawCircle(cx - 3, cy - 3, static_cast<int>(cellSize * 0.40f), colorBushDetail, TRUE);
                 }
@@ -163,73 +163,4 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
             DrawString(cx - 5, cy - 6, "★", GetColor(255, 255, 255));
         }
     }
-
-    // 3. 【高精度ピクセル描画暗闇マスク】 (通常時)
-    if (!isDebugMode)
-    {
-        float maxSpotDist = cellSize * 14.0f; // 60度扇形ライト射程
-        float closeRadius = cellSize * 2.0f;   // 足元のやや見える円半径
-        float fanAngleHalf = 0.5236f;          // 60度 (±30度)
-
-        int resolutionStep = 2; // 高解像度 2px
-
-        for (int py = rectY; py < rectY + rectH; py += resolutionStep)
-        {
-            for (int px = rectX; px < rectX + rectW; px += resolutionStep)
-            {
-                float dx = px - playerPixelX;
-                float dy = py - playerPixelY;
-                float dist = std::sqrt(dx * dx + dy * dy);
-
-                float lightVal = 0.0f;
-
-                // A. プレイヤー周囲の控えめな円形明かり
-                float ambientLight = 0.0f;
-                if (dist < closeRadius)
-                {
-                    ambientLight = 0.38f * (1.0f - (dist / closeRadius) * 0.6f);
-                }
-
-                // B. 前方60°扇形スポットライト
-                float cellAngle = std::atan2(dy, dx);
-                float angleDiff = std::abs(cellAngle - lightAngle);
-                while (angleDiff > 3.14159265f) angleDiff = std::abs(angleDiff - 2.0f * 3.14159265f);
-
-                float spotLight = 0.0f;
-                if (dist < maxSpotDist && angleDiff < fanAngleHalf)
-                {
-                    float distFade = 1.0f - (dist / maxSpotDist);
-                    distFade = distFade * distFade;
-                    float angleFade = 1.0f - (angleDiff / fanAngleHalf);
-                    spotLight = distFade * angleFade * 0.95f;
-                }
-
-                lightVal = std::max(ambientLight, spotLight);
-
-                if (lightVal < 0.98f)
-                {
-                    int alpha = static_cast<int>((1.0f - std::min(1.0f, lightVal)) * 248);
-                    if (alpha > 8)
-                    {
-                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-                        DrawBox(px, py, px + resolutionStep, py + resolutionStep, GetColor(4, 5, 10), TRUE);
-                    }
-                }
-            }
-        }
-
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
-
-    // 4. 【デバッグプレイヤー P】 の描画
-    int px = static_cast<int>(playerPixelX);
-    int py = static_cast<int>(playerPixelY);
-    
-    int pr = static_cast<int>(cellSize * 0.55f);
-    if (pr < 4) pr = 4;
-
-    DrawCircle(px, py, pr + 1, GetColor(255, 255, 255), FALSE);
-    DrawCircle(px, py, pr, GetColor(0, 220, 100), TRUE);
-    DrawCircle(px, py, pr, GetColor(0, 120, 50), FALSE);
-    DrawString(px - 4, py - 6, "P", GetColor(0, 0, 0));
 }

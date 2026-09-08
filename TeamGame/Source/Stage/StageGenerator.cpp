@@ -25,7 +25,7 @@ Stage StageGenerator::Generate(const StageGenConfig& config, unsigned int seed, 
         for (int x = 0; x < config.mapWidth; ++x)
             stage.SetCell(x, y, CellType::EMPTY_FLOOR);
 
-    // 2. 4テーマ × 4バリエーションレイアウト生成
+    // 2. 障害物を増強した4テーマ × 4バリエーションレイアウト生成
     switch (theme)
     {
     case ThemePattern::EMERALD_MEADOW:
@@ -42,7 +42,7 @@ Stage StageGenerator::Generate(const StageGenConfig& config, unsigned int seed, 
         break;
     }
 
-    // 3. 【外枠の封鎖】外周全域に外枠封鎖壁 (OUTER_WALL) を配置
+    // 3. 【外枠の封鎖】外周全域に絶対出られない外枠封鎖壁 (OUTER_WALL) を配置
     for (int x = 0; x < config.mapWidth; ++x)
     {
         stage.SetCell(x, 0, CellType::OUTER_WALL);
@@ -121,148 +121,168 @@ void StageGenerator::AddSymmetricOrganicCluster(Stage& stage, CellType type, flo
 }
 
 // ----------------------------------------------------
-// テーマ 1: エメラルド草原 (4つのバリエーションステージ)
+// テーマ 1: エメラルド草原 (障害物・壁・茂み増強版)
 // ----------------------------------------------------
 void StageGenerator::GenerateEmeraldMeadow(Stage& stage, int variation, const StageGenConfig& config, std::mt19937& rng)
 {
     switch (variation)
     {
-    case 0: // 1-A: オーソドックス双子池 & 中央エメラルド茂み
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 10.0f, 6.0f, 4.0f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 9.0f, 10.0f, 2.5f, 2.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 9.0f, 15.0f, 5.0f, 3.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 12.0f, 4.0f, 1.2f, 1.2f, rng);
+    case 0:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 10.0f, 6.0f, 4.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 9.0f, 10.0f, 3.0f, 2.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 18.0f, 5.0f, 3.5f, 2.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 9.0f, 15.0f, 5.5f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 20.0f, 14.0f, 4.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 12.0f, 4.0f, 1.5f, 1.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 15.0f, 17.0f, 1.4f, 1.4f, rng);
         break;
 
-    case 1: // 1-B: 外周茂みレーン & 散在木箱
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 8.0f, 4.0f, 6.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 14.0f, 16.0f, 5.5f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 12.0f, 8.0f, 3.0f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 5.0f, 3.0f, 3.0f, rng);
+    case 1:
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 8.0f, 4.0f, 6.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 14.0f, 16.0f, 6.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 12.0f, 8.0f, 4.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 12.0f, 2.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 5.0f, 4.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 10.0f, 18.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 2: // 1-C: 中央サンド広場 & コーナー森林
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 6.0f, 5.0f, 4.5f, 4.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 16.0f, 14.0f, 4.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 15.0f, 6.0f, 2.5f, 3.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 8.0f, 18.0f, 1.5f, 1.5f, rng);
+    case 2:
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 6.0f, 5.0f, 5.0f, 5.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 12.0f, 12.0f, 4.5f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 16.0f, 14.0f, 4.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 15.0f, 6.0f, 3.5f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 8.0f, 14.0f, 3.0f, 2.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 18.0f, 18.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 3: // 1-D: 草原迷路 & アメーバ池
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 10.0f, 8.0f, 4.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 7.0f, 15.0f, 3.5f, 3.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 17.0f, 10.0f, 3.5f, 2.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 14.0f, 18.0f, 1.3f, 1.3f, rng);
+    case 3:
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 10.0f, 8.0f, 5.0f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 7.0f, 15.0f, 4.0f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 17.0f, 10.0f, 4.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 11.0f, 16.0f, 3.5f, 2.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 14.0f, 18.0f, 1.5f, 1.5f, rng);
         break;
     }
 }
 
 // ----------------------------------------------------
-// テーマ 2: 十字路 & 水場砦 (4つのバリエーションステージ)
+// テーマ 2: 十字路 & 水場砦 (障害物・壁・水場増強版)
 // ----------------------------------------------------
 void StageGenerator::GenerateCrossRoads(Stage& stage, int variation, const StageGenConfig& config, std::mt19937& rng)
 {
     switch (variation)
     {
-    case 0: // 2-A: 十字路中央ウォーター砦
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 12.0f, 6.0f, 5.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 7.0f, 8.0f, 2.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 10.0f, 15.0f, 4.5f, 3.5f, rng);
+    case 0:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 12.0f, 6.0f, 5.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 7.0f, 8.0f, 3.0f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 16.0f, 6.0f, 3.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 10.0f, 15.0f, 5.0f, 4.0f, rng);
         AddSymmetricOrganicCluster(stage, CellType::CACTUS, 14.0f, 18.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 1: // 2-B: 左右ダブルリング水場
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 8.0f, 7.0f, 4.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 7.0f, 4.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 13.0f, 14.0f, 3.5f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 16.0f, 16.0f, 4.0f, 3.0f, rng);
+    case 1:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 8.0f, 7.0f, 4.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 7.0f, 4.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 13.0f, 14.0f, 4.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 15.0f, 3.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 16.0f, 16.0f, 4.5f, 3.5f, rng);
         break;
 
-    case 2: // 2-C: S字ウォーターライン
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 14.0f, 5.0f, 6.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 9.0f, 12.0f, 3.0f, 3.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 6.0f, 6.0f, 4.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 18.0f, 15.0f, 1.4f, 1.4f, rng);
+    case 2:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 14.0f, 5.0f, 6.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 9.0f, 12.0f, 3.5f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 18.0f, 10.0f, 3.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 6.0f, 6.0f, 4.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 18.0f, 15.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 3: // 2-D: アイランド砦水場
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 10.0f, 10.0f, 5.0f, 5.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 10.0f, 10.0f, 2.0f, 2.0f, rng); // 中央アイランド
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 17.0f, 6.0f, 4.5f, 3.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 6.0f, 17.0f, 1.2f, 1.2f, rng);
+    case 3:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 10.0f, 10.0f, 5.5f, 5.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 10.0f, 10.0f, 2.5f, 2.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 17.0f, 13.0f, 3.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 17.0f, 6.0f, 5.0f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::CACTUS, 6.0f, 17.0f, 1.5f, 1.5f, rng);
         break;
     }
 }
 
 // ----------------------------------------------------
-// テーマ 3: サイド茂み & 丸太砦 (4つのバリエーションステージ)
+// テーマ 3: サイド茂み & 丸太砦 (障害物・茂み増強版)
 // ----------------------------------------------------
 void StageGenerator::GenerateSideForests(Stage& stage, int variation, const StageGenConfig& config, std::mt19937& rng)
 {
     switch (variation)
     {
-    case 0: // 3-A: 左右密林レーン
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 7.0f, 5.0f, 6.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 10.0f, 11.0f, 3.5f, 2.2f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 16.0f, 4.0f, 3.5f, 2.8f, rng);
+    case 0:
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 7.0f, 5.0f, 6.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 10.0f, 11.0f, 4.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 18.0f, 12.0f, 3.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 16.0f, 4.0f, 4.0f, 3.2f, rng);
         AddSymmetricOrganicCluster(stage, CellType::CACTUS, 8.0f, 18.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 1: // 3-B: ジグザグ茂み通路
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 9.0f, 3.0f, 5.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 15.0f, 10.0f, 4.5f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 14.0f, 3.0f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 16.0f, 3.5f, 2.5f, rng);
+    case 1:
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 9.0f, 3.0f, 5.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 15.0f, 10.0f, 5.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 14.0f, 3.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 12.0f, 16.0f, 3.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 16.0f, 4.0f, 3.0f, rng);
         break;
 
-    case 2: // 3-C: 中央巨大ジャングル
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 13.0f, 8.0f, 7.0f, 4.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 6.0f, 2.5f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 8.0f, 16.0f, 3.0f, 3.0f, rng);
+    case 2:
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 13.0f, 8.0f, 7.5f, 5.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 6.0f, 3.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 17.0f, 15.0f, 3.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 8.0f, 16.0f, 3.5f, 3.5f, rng);
         AddSymmetricOrganicCluster(stage, CellType::CACTUS, 18.0f, 4.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 3: // 3-D: 丸太迷路砦
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 8.0f, 5.0f, 4.0f, 2.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 15.0f, 13.0f, 2.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 12.0f, 17.0f, 5.0f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 6.0f, 3.0f, 3.0f, rng);
+    case 3:
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 8.0f, 5.0f, 4.5f, 2.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 15.0f, 13.0f, 2.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 11.0f, 10.0f, 3.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 12.0f, 17.0f, 5.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 6.0f, 3.5f, 3.5f, rng);
         break;
     }
 }
 
 // ----------------------------------------------------
-// テーマ 4: 中央アメーバ大池 (4つのバリエーションステージ)
+// テーマ 4: 中央アメーバ大池 (障害物・壁増強版)
 // ----------------------------------------------------
 void StageGenerator::GenerateCenterLake(Stage& stage, int variation, const StageGenConfig& config, std::mt19937& rng)
 {
     switch (variation)
     {
-    case 0: // 4-A: 巨大中央湖
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 9.0f, 4.5f, 3.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 9.0f, 6.0f, 3.5f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 8.0f, 12.0f, 5.5f, 4.0f, rng);
+    case 0:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 18.0f, 9.0f, 5.0f, 4.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 9.0f, 6.0f, 4.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 15.0f, 15.0f, 3.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 8.0f, 12.0f, 6.0f, 4.5f, rng);
         AddSymmetricOrganicCluster(stage, CellType::CACTUS, 12.0f, 19.0f, 1.5f, 1.5f, rng);
         break;
 
-    case 1: // 4-B: 二重同心円水場
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 11.0f, 6.0f, 4.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 16.0f, 14.0f, 5.0f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 7.0f, 15.0f, 4.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 18.0f, 5.0f, 3.0f, 3.0f, rng);
+    case 1:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 11.0f, 6.0f, 4.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 16.0f, 14.0f, 5.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 7.0f, 15.0f, 4.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 18.0f, 5.0f, 3.5f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 8.0f, 10.0f, 3.0f, 2.5f, rng);
         break;
 
-    case 2: // 4-C: 三連アメーバ池
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 7.0f, 8.0f, 3.5f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 15.0f, 7.0f, 3.5f, 3.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 11.0f, 16.0f, 4.0f, 2.5f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 16.0f, 15.0f, 4.5f, 3.5f, rng);
+    case 2:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 7.0f, 8.0f, 4.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 15.0f, 7.0f, 4.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 11.0f, 16.0f, 4.5f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 11.0f, 9.0f, 3.0f, 3.0f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 16.0f, 15.0f, 5.0f, 4.0f, rng);
         break;
 
-    case 3: // 4-D: デルタ流木ゾーン
-        AddSymmetricOrganicCluster(stage, CellType::WATER, 13.0f, 8.0f, 5.5f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 9.0f, 3.0f, 4.0f, rng);
-        AddSymmetricOrganicCluster(stage, CellType::BUSH, 18.0f, 8.0f, 4.0f, 4.0f, rng);
+    case 3:
+        AddSymmetricOrganicCluster(stage, CellType::WATER, 13.0f, 8.0f, 6.0f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 6.0f, 9.0f, 3.5f, 4.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::WALL_BLOCK, 17.0f, 14.0f, 3.0f, 3.5f, rng);
+        AddSymmetricOrganicCluster(stage, CellType::BUSH, 18.0f, 8.0f, 4.5f, 4.5f, rng);
         AddSymmetricOrganicCluster(stage, CellType::CACTUS, 9.0f, 17.0f, 1.5f, 1.5f, rng);
         break;
     }
