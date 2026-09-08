@@ -65,6 +65,9 @@ public:
     // 1920x1080 フィッティング描画
     void DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDebugMode, float playerX, float playerY, float lightAngle = 0.0f, const char* patternName = "", int hGrass = -1) const;
 
+    // プレイヤー中心ズームカメラ描画 (1920x1080の中央 960, 540 にプレイヤー配置)
+    void DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCellSize, float worldCellSize, bool isDebugMode, const char* patternName = "", int hGrass = -1) const;
+
 private:
     int m_width = 0;   // 横セル数 (48)
     int m_height = 0;  // 縦セル数 (27)

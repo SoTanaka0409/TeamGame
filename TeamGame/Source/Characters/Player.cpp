@@ -7,12 +7,11 @@
 #include "Handgun.h"
 #include "InputManager.h"
 #include "Shotgun.h"
-#include "GameSettings.h"
 #include <cmath>
 #include <algorithm>
 
 Player::Player(float startX, float startY)
-    : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
+    : Character(startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     speed = 5.0f;
@@ -31,13 +30,6 @@ Player::~Player()
 
 void Player::Update()
 {
-    if (m_isRemote)
-    {
-        // リモートプレイヤーの場合は移動や入力を処理しない
-        // （アニメーションなどの更新が必要ならここに書く）
-        return;
-    }
-
     // 右クリックで懐中電灯 ON / OFF トグル切り替え
     bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
     if (currMouseRight && !m_prevMouseRight)
@@ -130,37 +122,16 @@ void Player::Update()
         weapons[currentWeaponIndex]->Update();
     }
 
-    // GameSettingsの取得
-    bool currE = (CheckHitKey(KEY_INPUT_E) != 0);
-
-    if (GameSettings::GetInstance().isAimLockHoldMode)
+    // マウスで視点移動（1920x1080画面中央 960, 540 のプレイヤー中心照準）
+    int mouseX, mouseY;
+    GetMousePoint(&mouseX, &mouseY);
+    float dx = mouseX - 960.0f;
+    float dy = mouseY - 540.0f;
+    float dirLen = std::sqrt(dx * dx + dy * dy);
+    if (dirLen > 0.0001f)
     {
-        // ONの場合: Eキーを押している間は視点固定
-        m_isAimLocked = currE;
-    }
-    else
-    {
-        // OFFの場合: Eキーが押された時に視点固定をトグル（eeが押されるまで）
-        if (currE && !m_prevE)
-        {
-            m_isAimLocked = !m_isAimLocked;
-        }
-    }
-    m_prevE = currE;
-
-    // マウスで視点移動（照準を合わせる） - 視点固定されていない時のみ
-    if (!m_isAimLocked)
-    {
-        int mouseX, mouseY;
-        GetMousePoint(&mouseX, &mouseY);
-        float dx = mouseX - position.x;
-        float dy = mouseY - position.y;
-        float dirLen = std::sqrt(dx * dx + dy * dy);
-        if (dirLen > 0.0001f)
-        {
-            facingDir.x = dx / dirLen;
-            facingDir.y = dy / dirLen;
-        }
+        facingDir.x = dx / dirLen;
+        facingDir.y = dy / dirLen;
     }
 
     // Qキーで武器チェンジ
@@ -181,6 +152,10 @@ void Player::Update()
 
 void Player::Draw()
 {
+    // 画面中央 (960, 540) に固定描画
+    float screenX = 960.0f;
+    float screenY = 540.0f;
+
     if (m_isInBush)
     {
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
@@ -188,7 +163,7 @@ void Player::Draw()
 
     unsigned int color =
         (damageColorTimer > 0) ? GetColor(255, 255, 0) : GetColor(0, 255, 0);
-    DrawCircle(static_cast<int>(position.x), static_cast<int>(position.y),
+    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(radius), color, TRUE);
 
     // 向いている方角を線で描画
@@ -204,18 +179,54 @@ void Player::Draw()
         ny /= len;
     }
 
-    int x1 = static_cast<int>(position.x);
-    int y1 = static_cast<int>(position.y);
-    int x2 = static_cast<int>(position.x + nx * lineLen);
-    int y2 = static_cast<int>(position.y + ny * lineLen);
+    int x1 = static_cast<int>(screenX);
+    int y1 = static_cast<int>(screenY);
+    int x2 = static_cast<int>(screenX + nx * lineLen);
+    int y2 = static_cast<int>(screenY + ny * lineLen);
 
     // 白い線を描画（太さ2）
     DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
 
+    // 【赤色でやや透明な弾道予測線】
+    if (currentStage && cellSize > 0.0f)
+    {
+        float zoomCellSize = 75.0f;
+        float maxRange = cellSize * 12.0f;
+        float stepDist = cellSize * 0.4f;
+        float currDist = radius + 5.0f;
+        Vector2 hitPos = Vector2(position.x + nx * maxRange, position.y + ny * maxRange);
+
+        while (currDist < maxRange)
+        {
+            float testX = position.x + nx * currDist;
+            float testY = position.y + ny * currDist;
+            int gX = static_cast<int>(testX / cellSize);
+            int gY = static_cast<int>(testY / cellSize);
+
+            if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsSolidWall(gX, gY))
+            {
+                hitPos = Vector2(testX, testY);
+                break;
+            }
+            currDist += stepDist;
+        }
+
+        float zoomScale = zoomCellSize / cellSize;
+        float hitScreenX = 960.0f + (hitPos.x - position.x) * zoomScale;
+        float hitScreenY = 540.0f + (hitPos.y - position.y) * zoomScale;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
+        DrawLine(static_cast<int>(screenX), static_cast<int>(screenY),
+                 static_cast<int>(hitScreenX), static_cast<int>(hitScreenY),
+                 GetColor(255, 60, 60), 2);
+        DrawCircle(static_cast<int>(hitScreenX), static_cast<int>(hitScreenY), 4, GetColor(255, 100, 100), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+
     if (!weapons.empty())
     {
-        DrawString(static_cast<int>(position.x) - 20,
-                   static_cast<int>(position.y) - 30,
+        DrawString(static_cast<int>(screenX) - 20,
+                   static_cast<int>(screenY) - 30,
                    weapons[currentWeaponIndex]->GetName().c_str(),
                    GetColor(255, 255, 255));
     }
@@ -226,14 +237,14 @@ void Player::Draw()
     }
 }
 
+void Player::TakeDamage()
+{
+    damageColorTimer = 30;
+}
+
 void Player::OnCollisionEnter(Collider *otherCollider)
 {
-    Enemy *enemy = dynamic_cast<Enemy *>(otherCollider->GetOwner());
-    if (enemy)
-    {
-        enemy->Damage();
-        damageColorTimer = 30;
-    }
+    // 接触によるダメージは0
 }
 
 void Player::OnCollisionStay(Collider *otherCollider)
@@ -248,11 +259,15 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 {
     if (!currentStage || cellSize <= 0.0f) return;
 
-    float playerPixelX = position.x;
-    float playerPixelY = position.y;
+    // プレイヤーの画面上での中心位置 (960, 540)
+    float playerPixelX = 960.0f;
+    float playerPixelY = 540.0f;
 
-    float maxSpotDist = cellSize * m_maxSpotDistCells;
-    float closeRadius = cellSize * m_closeRadiusCells;
+    float zoomCellSize = 75.0f;
+    float zoomScale = zoomCellSize / cellSize;
+
+    float maxSpotDist = zoomCellSize * m_maxSpotDistCells;
+    float closeRadius = zoomCellSize * m_closeRadiusCells;
 
     int stageWidth = currentStage->GetWidth();
     int stageHeight = currentStage->GetHeight();
@@ -278,7 +293,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 lightVal = (std::max)(lightVal, ambientLight);
             }
 
-            // B. 前方60°扇形スポットライト (ライトスイッチがONの時のみ照射)
+            // B. 前方60°扇形スポットライト
             if (m_isLightOn && dist < maxSpotDist)
             {
                 float cellAngle = std::atan2(dy, dx);
@@ -289,10 +304,9 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 {
                     bool isBlocked = false;
 
-                    // 水場WATERと草むらBUSHは光が透過し、壁・木箱・サボテンのみが光を遮断
-                    if (dist > cellSize * 0.8f)
+                    if (dist > zoomCellSize * 0.8f)
                     {
-                        int raySteps = static_cast<int>(dist / (cellSize * 0.60f));
+                        int raySteps = static_cast<int>(dist / (zoomCellSize * 0.60f));
                         if (raySteps < 2) raySteps = 2;
 
                         float stepX = dx / raySteps;
@@ -303,8 +317,11 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
                         for (int s = 1; s < raySteps; ++s)
                         {
-                            int gX = static_cast<int>((currPx - startDrawX) / cellSize);
-                            int gY = static_cast<int>((currPy - startDrawY) / cellSize);
+                            float worldX = position.x + (currPx - 960.0f) / zoomScale;
+                            float worldY = position.y + (currPy - 540.0f) / zoomScale;
+
+                            int gX = static_cast<int>(worldX / cellSize);
+                            int gY = static_cast<int>(worldY / cellSize);
 
                             if (gX < 0 || gX >= stageWidth || gY < 0 || gY >= stageHeight || currentStage->IsLightBlockingWall(gX, gY))
                             {

@@ -29,4 +29,9 @@ class Scene
     {
         return colliderManager;
     }
+
+    virtual const class Stage* GetStage() const
+    {
+        return nullptr;
+    }
 };

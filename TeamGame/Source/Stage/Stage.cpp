@@ -164,3 +164,117 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
         }
     }
 }
+
+void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCellSize, float worldCellSize, bool isDebugMode, const char* patternName, int hGrass) const
+{
+    if (m_width <= 0 || m_height <= 0 || worldCellSize <= 0.0f) return;
+
+    int useGrass = (hGrass != -1) ? hGrass : m_hGrassGraph;
+
+    // プレイヤーの位置(playerWorldX, playerWorldY)が画面中央 (960, 540) にくるような基準オフセット
+    float startDrawX = 960.0f - (playerWorldX / worldCellSize) * zoomCellSize;
+    float startDrawY = 540.0f - (playerWorldY / worldCellSize) * zoomCellSize;
+
+    // カラーパレット
+    const unsigned int colorFloor1      = GetColor(242, 162, 108);
+    const unsigned int colorFloor2      = GetColor(232, 150, 95);
+    const unsigned int colorBush        = GetColor(45, 178, 48);
+    const unsigned int colorBushDetail  = GetColor(25, 142, 28);
+    const unsigned int colorWater       = GetColor(40, 152, 242);
+    const unsigned int colorWaterBorder = GetColor(18, 112, 204);
+    const unsigned int colorWallBlock   = GetColor(192, 122, 78);
+    const unsigned int colorWallBorder  = GetColor(132, 72, 38);
+    const unsigned int colorOuterWall   = GetColor(65, 70, 85);
+    const unsigned int colorOuterBorder = GetColor(130, 140, 160);
+    const unsigned int colorCactus      = GetColor(40, 160, 80);
+
+    for (int y = 0; y < m_height; ++y)
+    {
+        for (int x = 0; x < m_width; ++x)
+        {
+            float x1_f = startDrawX + x * zoomCellSize;
+            float y1_f = startDrawY + y * zoomCellSize;
+            float x2_f = x1_f + zoomCellSize;
+            float y2_f = y1_f + zoomCellSize;
+
+            // 画面外のタイルはカリング (高速化)
+            if (x2_f < -100.0f || x1_f > 2020.0f || y2_f < -100.0f || y1_f > 1180.0f)
+            {
+                continue;
+            }
+
+            int x1 = static_cast<int>(x1_f);
+            int y1 = static_cast<int>(y1_f);
+            int x2 = static_cast<int>(x2_f);
+            int y2 = static_cast<int>(y2_f);
+
+            CellType type = GetCell(x, y);
+
+            unsigned int fColor = ((x + y) % 2 == 0) ? colorFloor1 : colorFloor2;
+            DrawBox(x1, y1, x2, y2, fColor, TRUE);
+
+            int cx = (x1 + x2) / 2;
+            int cy = (y1 + y2) / 2;
+
+            switch (type)
+            {
+            case CellType::EMPTY_FLOOR:
+                if (isDebugMode) DrawBox(x1, y1, x2, y2, GetColor(215, 138, 85), FALSE);
+                break;
+
+            case CellType::OUTER_WALL:
+                DrawBox(x1, y1, x2, y2, colorOuterWall, TRUE);
+                DrawBox(x1, y1, x2, y2, colorOuterBorder, FALSE);
+                DrawLine(x1, y1, x2, y2, GetColor(90, 100, 120));
+                break;
+
+            case CellType::BUSH:
+                if (useGrass != -1)
+                {
+                    DrawExtendGraph(x1 - 1, y1 - 1, x2 + 1, y2 + 1, useGrass, TRUE);
+                }
+                else
+                {
+                    DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.65f), colorBush, TRUE);
+                    DrawCircle(cx - 3, cy - 3, static_cast<int>(zoomCellSize * 0.40f), colorBushDetail, TRUE);
+                }
+                if (isDebugMode) DrawBox(x1, y1, x2, y2, GetColor(100, 240, 100), FALSE);
+                break;
+
+            case CellType::WATER:
+                DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.68f), colorWater, TRUE);
+                DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.68f), colorWaterBorder, FALSE);
+                break;
+
+            case CellType::WALL_BLOCK:
+                DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
+                DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
+                DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                break;
+
+            case CellType::CACTUS:
+                {
+                    int r = static_cast<int>(zoomCellSize * 0.45f);
+                    DrawCircle(cx, cy, r, colorCactus, TRUE);
+                    DrawCircle(cx, cy, r, GetColor(20, 100, 40), FALSE);
+                }
+                break;
+            }
+        }
+    }
+
+    // スポーン要素
+    for (const auto& spawn : m_spawnPoints)
+    {
+        int cx = static_cast<int>(startDrawX + (spawn.gridPos.x + 0.5f) * zoomCellSize);
+        int cy = static_cast<int>(startDrawY + (spawn.gridPos.y + 0.5f) * zoomCellSize);
+
+        if (spawn.type == SpawnType::CENTER_STAR)
+        {
+            int rStar = static_cast<int>(zoomCellSize * 0.9f);
+            DrawCircle(cx, cy, rStar, GetColor(0, 115, 255), TRUE);
+            DrawCircle(cx, cy, rStar, GetColor(255, 255, 255), FALSE);
+            DrawString(cx - 5, cy - 6, "★", GetColor(255, 255, 255));
+        }
+    }
+}
