@@ -5,35 +5,92 @@
 #include "Player.h"
 #include "ResultScene.h"
 #include "SceneManager.h"
+#include <algorithm>
+#include <cmath>
+#include <random>
 
-GameScene::GameScene() : player(nullptr)
+GameScene::GameScene() : player(nullptr), isDebugView(false)
 {
 }
+
 GameScene::~GameScene()
 {
 }
 
-#include "StageGenerator.h"
-#include <random>
-#include <ctime>
+void GameScene::ClearEnemies()
+{
+    for (auto e : enemies)
+    {
+        if (e)
+        {
+            e->SetActive(false);
+        }
+    }
+    enemies.clear();
+}
+
+void GameScene::SpawnEnemiesRandomly(int count)
+{
+    ClearEnemies();
+
+    const Stage& stage = stageManager.GetCurrentStage();
+    float cellW = 1920.0f / stage.GetWidth();
+    float cellH = 1080.0f / stage.GetHeight();
+    float cellSize = (cellW < cellH) ? cellW : cellH;
+    Point2D pStart = stage.GetPlayerStartPos();
+
+    std::vector<Point2D> validCells;
+    for (int y = 1; y < stage.GetHeight() - 1; ++y)
+    {
+        for (int x = 1; x < stage.GetWidth() - 1; ++x)
+        {
+            CellType cell = stage.GetCell(x, y);
+            // 水(WATER)、障害物壁(WALL_BLOCK, CACTUS)、外枠(OUTER_WALL)を除外し、床と草むらのみ対象
+            if (cell == CellType::EMPTY_FLOOR || cell == CellType::BUSH)
+            {
+                if (!stage.IsSolidWall(x, y) && cell != CellType::WATER)
+                {
+                    // プレイヤー初期位置から一定距離(5マス以上)を離してスポーン
+                    int dx = x - pStart.x;
+                    int dy = y - pStart.y;
+                    if ((dx * dx + dy * dy) >= 25)
+                    {
+                        validCells.push_back({ x, y });
+                    }
+                }
+            }
+        }
+    }
+
+    if (validCells.empty()) return;
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::shuffle(validCells.begin(), validCells.end(), rng);
+
+    Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
+    int numToSpawn = (std::min)(count, static_cast<int>(validCells.size()));
+
+    for (int i = 0; i < numToSpawn; ++i)
+    {
+        float ex = (validCells[i].x + 0.5f) * cellSize;
+        float ey = (validCells[i].y + 0.5f) * cellSize;
+        Enemy* enemy = new Enemy(ex, ey);
+        enemy->SetStage(stagePtr, cellSize);
+        enemy->SetTargetPlayer(player);
+        enemies.push_back(enemy);
+    }
+}
 
 void GameScene::Init()
 {
     Scene::Init();
     
-    // ステージ生成
-    std::random_device rd;
-    unsigned int seed = rd() ^ static_cast<unsigned int>(std::time(nullptr));
-    StageGenConfig config;
-    themeIdx = seed % 4;
-    varIdx = seed % 4;
-    config.theme = static_cast<ThemePattern>(themeIdx);
-    config.variation = varIdx;
+    // StageManagerの初期化
+    stageManager.Initialize(48, 27);
+    isDebugView = false; // 最初から暗闇モード
     
-    ThemePattern currTheme = config.theme;
-    int currVar = config.variation;
-    
-    stage = StageGenerator::Generate(config, seed, &currTheme, &currVar);
+    const Stage& stage = stageManager.GetCurrentStage();
     
     // セルサイズ計算 (1920x1080画面に合わせる)
     float cellW = 1920.0f / stage.GetWidth();
@@ -45,15 +102,57 @@ void GameScene::Init()
     float startY = (startGrid.y + 0.5f) * cellSize;
     
     player = new Player(startX, startY);
-    player->SetStage(&stage, cellSize);
+    Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
+    player->SetStage(stagePtr, cellSize);
     
-    // 敵のスポーン位置も追加できるが、とりあえず固定位置に1体
-    new Enemy(startX + 200.0f, startY + 200.0f);
+    // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
+    SpawnEnemiesRandomly(5);
 }
 
 void GameScene::Update()
 {
     Scene::Update(); // 自身の持つobjectManagerやcolliderManagerが実行される
+
+    // Tabキー または F1キーで暗闇モード / デバッグ表示切り替え
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
+        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
+    {
+        isDebugView = !isDebugView;
+    }
+
+    // Rキーでステージバリエーション切替
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
+    {
+        stageManager.NextVariation();
+        if (player)
+        {
+            const Stage& stage = stageManager.GetCurrentStage();
+            float cellW = 1920.0f / stage.GetWidth();
+            float cellH = 1080.0f / stage.GetHeight();
+            float cellSize = (cellW < cellH) ? cellW : cellH;
+            Point2D startGrid = stage.GetPlayerStartPos();
+            player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+            player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+            SpawnEnemiesRandomly(5);
+        }
+    }
+
+    // Tキーでテーマ切替
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
+    {
+        stageManager.NextTheme();
+        if (player)
+        {
+            const Stage& stage = stageManager.GetCurrentStage();
+            float cellW = 1920.0f / stage.GetWidth();
+            float cellH = 1080.0f / stage.GetHeight();
+            float cellSize = (cellW < cellH) ? cellW : cellH;
+            Point2D startGrid = stage.GetPlayerStartPos();
+            player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+            player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+            SpawnEnemiesRandomly(5);
+        }
+    }
 
     if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE))
     {
@@ -62,45 +161,32 @@ void GameScene::Update()
     }
 }
 
-#include <cmath>
-
 void GameScene::Draw()
 {
+    const Stage& stage = stageManager.GetCurrentStage();
+    std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
-    float cellSize = (cellW < cellH) ? cellW : cellH;
-    
-    float playerGridX = 0;
-    float playerGridY = 0;
-    float facingAngle = 0;
-    
+    float worldCellSize = (cellW < cellH) ? cellW : cellH;
+    float zoomCellSize = 75.0f; // プレイヤー中心ズームのセルサイズ
+
+    float playerWorldX = 0.0f, playerWorldY = 0.0f;
     if (player && player->IsActive())
     {
         Vector2 pos = player->GetPosition();
-        Vector2 dir = player->GetFacingDir();
-        playerGridX = pos.x / cellSize;
-        playerGridY = pos.y / cellSize;
-        facingAngle = std::atan2(dir.y, dir.x);
+        playerWorldX = pos.x;
+        playerWorldY = pos.y;
     }
-    
-    // ステージ描画
-    std::string stageName = StageGenerator::GetFullStageName(static_cast<ThemePattern>(themeIdx), varIdx);
-    stage.DrawFitToArea(0, 0, 1920, 1080, true, playerGridX, playerGridY, facingAngle, stageName.c_str(), -1);
 
+    // 1. プレイヤーの位置(playerWorldX, playerWorldY)を 1920x1080 画面中央 (960, 540) に配置するズームカメラ描画
+    stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+
+    // 2. オブジェクト類 (プレイヤー・敵・弾丸) のカメラ相対描画
     Scene::Draw();
 
-    if (player && player->IsActive())
+    // 3. プレイヤーを中心とするホラー暗闇スポットライトマスクの描画 (非デバッグ表示時)
+    if (!isDebugView && player && player->IsActive())
     {
-        // プレイヤー自身の描画は Scene::Draw() の中(objectManager)で行われているため、
-        // ここでは暗闇とライト（マスク）のみを描画する
-        
-        // 描画エリアは 1920x1080
-        float mapPixelWidth = stage.GetWidth() * cellSize;
-        float mapPixelHeight = stage.GetHeight() * cellSize;
-        float startDrawX = (1920 - mapPixelWidth) / 2.0f;
-        float startDrawY = (1080 - mapPixelHeight) / 2.0f;
-
-        // 【eitaの暗闇・ライト機能】
-        player->RenderLightMask(0, 0, 1920, 1080, startDrawX, startDrawY);
+        player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
     }
 }

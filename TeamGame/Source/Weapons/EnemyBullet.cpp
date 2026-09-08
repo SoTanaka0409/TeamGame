@@ -1,19 +1,19 @@
-#include "Bullet.h"
+#include "EnemyBullet.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
-#include "Enemy.h"
+#include "Player.h"
 #include "Scene.h"
 #include "SceneManager.h"
 
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed)
-    : myColliderManager(nullptr), radius(5.0f)
+EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed)
+    : myColliderManager(nullptr), radius(6.0f)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
     height = radius * 2.0f;
     velocity = Vector2(dir.x * speed, dir.y * speed);
 
-    collider = new CircleCollider(this, radius, "PlayerBullet");
+    collider = new CircleCollider(this, radius, "EnemyBullet");
 
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene)
@@ -23,7 +23,7 @@ Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed)
     }
 }
 
-Bullet::~Bullet()
+EnemyBullet::~EnemyBullet()
 {
     if (myColliderManager)
     {
@@ -34,7 +34,7 @@ Bullet::~Bullet()
 
 #include "Stage.h"
 
-void Bullet::Update()
+void EnemyBullet::Update()
 {
     position.x += velocity.x;
     position.y += velocity.y;
@@ -64,9 +64,8 @@ void Bullet::Update()
 }
 
 #include "ObjectManager.h"
-#include "Player.h"
 
-void Bullet::Draw()
+void EnemyBullet::Draw()
 {
     float screenX = position.x;
     float screenY = position.y;
@@ -89,18 +88,19 @@ void Bullet::Draw()
     }
 
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(radius), GetColor(0, 255, 255), TRUE);
+               static_cast<int>(radius), GetColor(255, 60, 60), TRUE);
+    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+               static_cast<int>(radius + 2.0f), GetColor(255, 200, 200), FALSE);
 }
 
-void Bullet::OnCollisionEnter(Collider *otherCollider)
+void EnemyBullet::OnCollisionEnter(Collider *otherCollider)
 {
-    // 敵に当たったらダメージを与えて自身も消滅
-    if (otherCollider->GetTag() == "Enemy")
+    if (otherCollider->GetTag() == "Player")
     {
-        Enemy *enemy = dynamic_cast<Enemy *>(otherCollider->GetOwner());
-        if (enemy)
+        Player *player = dynamic_cast<Player *>(otherCollider->GetOwner());
+        if (player)
         {
-            enemy->Damage();
+            player->TakeDamage();
         }
         SetActive(false);
     }

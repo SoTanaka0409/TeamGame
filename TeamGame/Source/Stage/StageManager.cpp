@@ -102,13 +102,19 @@ void StageManager::Draw(const Player& player, bool isDebugMode, int screenWidth,
 
     std::string stageName = GetCurrentStageName();
 
-    // 1. Stageクラスの背景描画 (地形・水場・木箱・Grass1.png草むら)
-    m_stage.DrawFitToArea(0, 0, screenWidth, screenHeight, isDebugMode, player.GetX(), player.GetY(), player.GetLightAngle(), stageName.c_str(), m_hGrassGraph);
-
     // スケール計算
     float cellW = static_cast<float>(screenWidth) / m_stage.GetWidth();
     float cellH = static_cast<float>(screenHeight) / m_stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
+
+    Vector2 pos = player.GetPosition();
+    Vector2 dir = player.GetFacingDir();
+    float playerGridX = pos.x / cellSize;
+    float playerGridY = pos.y / cellSize;
+    float lightAngle = std::atan2(dir.y, dir.x);
+
+    // 1. Stageクラスの背景描画 (地形・水場・木箱・Grass1.png草むら)
+    m_stage.DrawFitToArea(0, 0, screenWidth, screenHeight, isDebugMode, playerGridX, playerGridY, lightAngle, stageName.c_str(), m_hGrassGraph);
 
     float mapPixelWidth = m_stage.GetWidth() * cellSize;
     float mapPixelHeight = m_stage.GetHeight() * cellSize;
@@ -118,12 +124,9 @@ void StageManager::Draw(const Player& player, bool isDebugMode, int screenWidth,
     // 2. 【通常ホラー暗闇モード時】 レイキャスティング壁遮光・影付きライトマスク描画
     if (!isDebugMode)
     {
-        player.RenderLightMask(m_stage, 0, 0, screenWidth, screenHeight, startDrawX, startDrawY, cellSize);
+        player.RenderLightMask(0, 0, screenWidth, screenHeight, startDrawX, startDrawY);
     }
 
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     SetDrawBright(255, 255, 255);
-
-    // 3. Player本体の描画 (草むら潜伏演出対応)
-    player.Draw(startDrawX, startDrawY, cellSize, isDebugMode);
 }

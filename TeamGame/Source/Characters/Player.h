@@ -1,6 +1,7 @@
 #pragma once
 #include "Character.h"
 #include <vector>
+#include <cmath>
 class Weapon;
 
 class Player : public Character
@@ -18,10 +19,14 @@ class Player : public Character
     {
         return facingDir;
     }
+    float GetX() const { return position.x; }
+    float GetY() const { return position.y; }
+    float GetLightAngle() const { return std::atan2(facingDir.y, facingDir.x); }
     Player(float startX, float startY);
     virtual ~Player();
 
     void SetStage(class Stage* s, float cSize) { currentStage = s; cellSize = cSize; }
+    void TakeDamage();
     void Update() override;
     void Draw() override;
 
