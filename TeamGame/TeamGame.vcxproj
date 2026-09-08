@@ -142,17 +142,25 @@
     <ClCompile Include="Source\main.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Player.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Stage.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\StageGenerator.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\StageManager.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Object2D.h" />
+    <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\Stage.h" />
     <ClInclude Include="Source\StageGenerator.h" />
+    <ClInclude Include="Source\StageManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
