@@ -1,7 +1,11 @@
 #pragma once
 
 #include <vector>
-#include "StageTypes.h"
+
+struct Point2D {
+    int x;
+    int y;
+};
 
 // 地形タイルの種類
 enum class CellType

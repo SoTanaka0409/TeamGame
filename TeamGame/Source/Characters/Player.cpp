@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
 #include "Bullet.h"
@@ -7,6 +8,7 @@
 #include "InputManager.h"
 #include "Shotgun.h"
 #include <cmath>
+#include <algorithm>
 
 Player::Player(float startX, float startY)
     : Character(startX, startY, 35.0f), damageColorTimer(0),
@@ -28,6 +30,28 @@ Player::~Player()
 
 void Player::Update()
 {
+    // 右クリックで懐中電灯 ON / OFF トグル切り替え
+    bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+    if (currMouseRight && !m_prevMouseRight)
+    {
+        m_isLightOn = !m_isLightOn;
+    }
+    m_prevMouseRight = currMouseRight;
+
+    // 草むら隠れ状態判定
+    if (currentStage)
+    {
+        int pGridX = static_cast<int>(position.x / cellSize);
+        int pGridY = static_cast<int>(position.y / cellSize);
+        if (pGridX >= 0 && pGridX < currentStage->GetWidth() && pGridY >= 0 && pGridY < currentStage->GetHeight())
+        {
+            m_isInBush = (currentStage->GetCell(pGridX, pGridY) == CellType::BUSH);
+        }
+        else
+        {
+            m_isInBush = false;
+        }
+    }
     bool isMoving = false;
     Vector2 moveDir(0.0f, 0.0f);
 
@@ -59,10 +83,6 @@ void Player::Update()
         {
             float velX = (moveDir.x / length) * speed;
             float velY = (moveDir.y / length) * speed;
-            
-            // 進行方向を向く
-            facingDir.x = moveDir.x / length;
-            facingDir.y = moveDir.y / length;
             
             // X軸の移動と衝突判定
             if (currentStage)
@@ -102,6 +122,18 @@ void Player::Update()
         weapons[currentWeaponIndex]->Update();
     }
 
+    // マウスで視点移動（照準を合わせる）
+    int mouseX, mouseY;
+    GetMousePoint(&mouseX, &mouseY);
+    float dx = mouseX - position.x;
+    float dy = mouseY - position.y;
+    float dirLen = std::sqrt(dx * dx + dy * dy);
+    if (dirLen > 0.0001f)
+    {
+        facingDir.x = dx / dirLen;
+        facingDir.y = dy / dirLen;
+    }
+
     // Qキーで武器チェンジ
     if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
     {
@@ -120,6 +152,11 @@ void Player::Update()
 
 void Player::Draw()
 {
+    if (m_isInBush)
+    {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+    }
+
     unsigned int color =
         (damageColorTimer > 0) ? GetColor(255, 255, 0) : GetColor(0, 255, 0);
     DrawCircle(static_cast<int>(position.x), static_cast<int>(position.y),
@@ -153,6 +190,11 @@ void Player::Draw()
                    weapons[currentWeaponIndex]->GetName().c_str(),
                    GetColor(255, 255, 255));
     }
+
+    if (m_isInBush)
+    {
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
 }
 
 void Player::OnCollisionEnter(Collider *otherCollider)
@@ -171,4 +213,103 @@ void Player::OnCollisionStay(Collider *otherCollider)
 
 void Player::OnCollisionExit(Collider *otherCollider)
 {
+}
+
+void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY) const
+{
+    if (!currentStage || cellSize <= 0.0f) return;
+
+    float playerPixelX = position.x;
+    float playerPixelY = position.y;
+
+    float maxSpotDist = cellSize * m_maxSpotDistCells;
+    float closeRadius = cellSize * m_closeRadiusCells;
+
+    int stageWidth = currentStage->GetWidth();
+    int stageHeight = currentStage->GetHeight();
+
+    const int resolutionStep = 4; // 高速4pxステップ
+
+    float lightAngle = std::atan2(facingDir.y, facingDir.x);
+
+    for (int py = rectY; py < rectY + rectH; py += resolutionStep)
+    {
+        for (int px = rectX; px < rectX + rectW; px += resolutionStep)
+        {
+            float dx = px - playerPixelX;
+            float dy = py - playerPixelY;
+            float dist = std::sqrt(dx * dx + dy * dy);
+
+            float lightVal = 0.0f;
+
+            // A. プレイヤー周囲の足元明かり
+            if (dist < closeRadius)
+            {
+                float ambientLight = 0.38f * (1.0f - (dist / closeRadius) * 0.6f);
+                lightVal = (std::max)(lightVal, ambientLight);
+            }
+
+            // B. 前方60°扇形スポットライト (ライトスイッチがONの時のみ照射)
+            if (m_isLightOn && dist < maxSpotDist)
+            {
+                float cellAngle = std::atan2(dy, dx);
+                float angleDiff = std::abs(cellAngle - lightAngle);
+                while (angleDiff > 3.14159265f) angleDiff = std::abs(angleDiff - 2.0f * 3.14159265f);
+
+                if (angleDiff < m_fanAngleHalf)
+                {
+                    bool isBlocked = false;
+
+                    // 水場WATERと草むらBUSHは光が透過し、壁・木箱・サボテンのみが光を遮断
+                    if (dist > cellSize * 0.8f)
+                    {
+                        int raySteps = static_cast<int>(dist / (cellSize * 0.60f));
+                        if (raySteps < 2) raySteps = 2;
+
+                        float stepX = dx / raySteps;
+                        float stepY = dy / raySteps;
+
+                        float currPx = playerPixelX + stepX;
+                        float currPy = playerPixelY + stepY;
+
+                        for (int s = 1; s < raySteps; ++s)
+                        {
+                            int gX = static_cast<int>((currPx - startDrawX) / cellSize);
+                            int gY = static_cast<int>((currPy - startDrawY) / cellSize);
+
+                            if (gX < 0 || gX >= stageWidth || gY < 0 || gY >= stageHeight || currentStage->IsLightBlockingWall(gX, gY))
+                            {
+                                isBlocked = true;
+                                break;
+                            }
+                            currPx += stepX;
+                            currPy += stepY;
+                        }
+                    }
+
+                    if (!isBlocked)
+                    {
+                        float distFade = 1.0f - (dist / maxSpotDist);
+                        distFade = distFade * distFade;
+                        float angleFade = 1.0f - (angleDiff / m_fanAngleHalf);
+                        float spotLight = distFade * angleFade * 0.95f;
+
+                        lightVal = (std::max)(lightVal, spotLight);
+                    }
+                }
+            }
+
+            if (lightVal < 0.98f)
+            {
+                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, lightVal)) * 248);
+                if (alpha > 8)
+                {
+                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+                    DrawBox(px, py, px + resolutionStep, py + resolutionStep, GetColor(4, 5, 10), TRUE);
+                }
+            }
+        }
+    }
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
