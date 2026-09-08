@@ -1,4 +1,11 @@
-#include "GameScene.h"
+# -*- coding: utf-8 -*-
+import re
+
+with open('TeamGame/Source/Scenes/GameScene.cpp', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# Add includes
+includes = '''#include "GameScene.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "InputManager.h"
@@ -11,92 +18,68 @@
 #include "GameSettings.h"
 #include <algorithm>
 #include <cmath>
-#include <random>
+#include <random>'''
+content = re.sub(r'#include "GameScene\.h".*?<random>', includes, content, flags=re.DOTALL)
 
-GameScene::GameScene() : player(nullptr), isDebugView(false)
+# Add ProcessNetworkPackets
+process_network = '''
+void GameScene::ProcessNetworkPackets()
 {
-}
-
-GameScene::~GameScene()
-{
-}
-
-void GameScene::ClearEnemies()
-{
-    for (auto e : enemies)
+    auto packets = NetworkManager::GetInstance().ReceivePackets();
+    for (const auto& data : packets)
     {
-        if (e)
+        if (data.size() < sizeof(PacketHeader)) continue;
+        
+        const PacketHeader* header = reinterpret_cast<const PacketHeader*>(data.data());
+        
+        if (header->type == PacketType::STAGE_INIT && !NetworkManager::GetInstance().IsHost())
         {
-            e->SetActive(false);
-        }
-    }
-    enemies.clear();
-}
-
-void GameScene::SpawnEnemiesRandomly(int count)
-{
-    ClearEnemies();
-
-    const Stage& stage = stageManager.GetCurrentStage();
-    float cellW = 1920.0f / stage.GetWidth();
-    float cellH = 1080.0f / stage.GetHeight();
-    float cellSize = (cellW < cellH) ? cellW : cellH;
-    Point2D pStart = stage.GetPlayerStartPos();
-
-    std::vector<Point2D> validCells;
-    for (int y = 1; y < stage.GetHeight() - 1; ++y)
-    {
-        for (int x = 1; x < stage.GetWidth() - 1; ++x)
-        {
-            CellType cell = stage.GetCell(x, y);
-            // æ°´(WATER)ã€éšœå®³ç‰©å£(WALL_BLOCK, CACTUS)ã€å¤–æ (OUTER_WALL)ã‚’é™¤å¤–ã—ã€åºŠã¨è‰ã‚€ã‚‰ã®ã¿å¯¾è±¡
-            if (cell == CellType::EMPTY_FLOOR || cell == CellType::BUSH)
-            {
-                if (!stage.IsSolidWall(x, y) && cell != CellType::WATER)
-                {
-                    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼åˆæœŸä½ç½®ã‹ã‚‰ä¸€å®šè·é›¢(5ãƒã‚¹ä»¥ä¸Š)ã‚’é›¢ã—ã¦ã‚¹ãƒãƒ¼ãƒ³
-                    int dx = x - pStart.x;
-                    int dy = y - pStart.y;
-                    if ((dx * dx + dy * dy) >= 25)
-                    {
-                        validCells.push_back({ x, y });
-                    }
-                }
+            const PacketStageInit* packet = reinterpret_cast<const PacketStageInit*>(data.data());
+            
+            stageManager.Regenerate(packet->seed);
+            
+            const Stage& stage = stageManager.GetCurrentStage();
+            float cellW = 1920.0f / stage.GetWidth();
+            float cellH = 1080.0f / stage.GetHeight();
+            float cellSize = (cellW < cellH) ? cellW : cellH;
+            
+            if (player) {
+                Point2D startGrid = stage.GetPlayerStartPos();
+                player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+                player->SetStage(const_cast<Stage*>(&stage), cellSize);
             }
+            SpawnEnemiesRandomly(5);
+        }
+        else if (header->type == PacketType::PLAYER_STATE && remotePlayer)
+        {
+            const PacketPlayerState* packet = reinterpret_cast<const PacketPlayerState*>(data.data());
+            remotePlayer->SetPosition(Vector2(packet->x, packet->y));
+            remotePlayer->SetFacingDir(Vector2(packet->facingX, packet->facingY));
+            if (packet->isLightOn && !remotePlayer->IsLightOn()) remotePlayer->ToggleLight();
+            if (!packet->isLightOn && remotePlayer->IsLightOn()) remotePlayer->ToggleLight();
+            remotePlayer->SetInBush(packet->isInBush);
         }
     }
-
-    if (validCells.empty()) return;
-
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(validCells.begin(), validCells.end(), rng);
-
-    Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
-    int numToSpawn = (std::min)(count, static_cast<int>(validCells.size()));
-
-    for (int i = 0; i < numToSpawn; ++i)
-    {
-        float ex = (validCells[i].x + 0.5f) * cellSize;
-        float ey = (validCells[i].y + 0.5f) * cellSize;
-        Enemy* enemy = new Enemy(ex, ey);
-        enemy->SetStage(stagePtr, cellSize);
-        enemy->SetTargetPlayer(player);
-        enemies.push_back(enemy);
-    }
 }
+'''
 
-void GameScene::Init()
+content = content.replace('GameScene::~GameScene()\n{\n}', 'GameScene::~GameScene()\n{\n}\n' + process_network)
+
+# Modify Init()
+init_code = '''void GameScene::Init()
 {
     Scene::Init();
     
-    // StageManagerã®åˆæœŸåŒ–
+    // StageManager‚Ì‰Šú‰»
     stageManager.Initialize(48, 27);
-    isDebugView = false; // æœ€åˆã‹ã‚‰æš—é—‡ãƒ¢ãƒ¼ãƒ‰
+    isDebugView = false; // Å‰‚©‚çˆÃˆÅƒ‚[ƒh
+    
+    bool isMultiplayer = NetworkManager::GetInstance().IsConnected();
+    bool isHostOrSingle = !isMultiplayer || NetworkManager::GetInstance().IsHost();
+    
+    // ƒNƒ‰ƒCƒAƒ“ƒg‘¤‚ÍŒã‚ÅSTAGE_INIT‚ğóM‚µ‚ÄÄ¶¬‚·‚é‚ªA‚Æ‚è‚ ‚¦‚¸‰Šúó‘Ô‚ğ—pˆÓ
     
     const Stage& stage = stageManager.GetCurrentStage();
-    
-    // ã‚»ãƒ«ã‚µã‚¤ã‚ºè¨ˆç®— (1920x1080ç”»é¢ã«åˆã‚ã›ã‚‹)
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
@@ -109,11 +92,37 @@ void GameScene::Init()
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     player->SetStage(stagePtr, cellSize);
     
-    // æ•µã‚’æ°´ãƒ»å£ãƒ»å¤–æ ã‚’é¿ã‘ã¦ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‹ã‚‰é›¢ã‚ŒãŸãƒ©ãƒ³ãƒ€ãƒ ä½ç½®ã«ã‚¹ãƒãƒ¼ãƒ³
-    SpawnEnemiesRandomly(5);
-}
+    if (isMultiplayer)
+    {
+        remotePlayer = new Player(startX, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetRemote(true);
+    }
+    else
+    {
+        remotePlayer = nullptr;
+    }
+    
+    if (isHostOrSingle)
+    {
+        if (isMultiplayer)
+        {
+            PacketStageInit packet;
+            packet.header.type = PacketType::STAGE_INIT;
+            packet.seed = stageManager.GetCurrentSeed();
+            packet.themeIdx = static_cast<int>(stageManager.GetCurrentTheme());
+            packet.varIdx = stageManager.GetCurrentVariation();
+            NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+        }
+        
+        // “G‚ğ…E•ÇEŠO˜g‚ğ”ğ‚¯‚ÄƒvƒŒƒCƒ„[‚©‚ç—£‚ê‚½ƒ‰ƒ“ƒ_ƒ€ˆÊ’u‚ÉƒXƒ|[ƒ“
+        SpawnEnemiesRandomly(5);
+    }
+}'''
 
-void GameScene::Update()
+content = re.sub(r'void GameScene::Init\(\).*?SpawnEnemiesRandomly\(5\);\n}', init_code, content, flags=re.DOTALL)
+
+update_code = '''void GameScene::Update()
 {
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
@@ -129,14 +138,16 @@ void GameScene::Update()
         }
         else
         {
-            Scene::Update(); 
+            Scene::Update(); // ©g‚Ì‚ÂobjectManager‚âcolliderManager‚ªÀs‚³‚ê‚é
 
+            // TabƒL[ ‚Ü‚½‚Í F1ƒL[‚ÅˆÃˆÅƒ‚[ƒh / ƒfƒoƒbƒO•\¦Ø‘Ö
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
                 InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
             {
                 isDebugView = !isDebugView;
             }
 
+            // RƒL[‚ÅƒXƒe[ƒWƒoƒŠƒG[ƒVƒ‡ƒ“Ø‘Ö
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
             {
                 stageManager.NextVariation();
@@ -153,6 +164,7 @@ void GameScene::Update()
                 }
             }
 
+            // TƒL[‚Åƒe[ƒ}Ø‘Ö
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
             {
                 stageManager.NextTheme();
@@ -169,6 +181,7 @@ void GameScene::Update()
                 }
             }
 
+            // ƒlƒbƒgƒ[ƒN“¯Šú
             if (NetworkManager::GetInstance().IsConnected() && player)
             {
                 PacketPlayerState packet;
@@ -225,16 +238,18 @@ void GameScene::Update()
     prevUp = currUp;
     prevDown = currDown;
     prevEnter = currEnter;
-}
+}'''
 
-void GameScene::Draw()
+content = re.sub(r'void GameScene::Update\(\).*?ResultScene\>\(\)\);\n    }\n}', update_code, content, flags=re.DOTALL)
+
+draw_code = '''void GameScene::Draw()
 {
     const Stage& stage = stageManager.GetCurrentStage();
     std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float worldCellSize = (cellW < cellH) ? cellW : cellH;
-    float zoomCellSize = 75.0f;
+    float zoomCellSize = 75.0f; // ƒvƒŒƒCƒ„[’†SƒY[ƒ€‚ÌƒZƒ‹ƒTƒCƒY
 
     float playerWorldX = 0.0f, playerWorldY = 0.0f;
     if (player && player->IsActive())
@@ -244,25 +259,31 @@ void GameScene::Draw()
         playerWorldY = pos.y;
     }
 
+    // 1. ƒvƒŒƒCƒ„[‚ÌˆÊ’u(playerWorldX, playerWorldY)‚ğ 1920x1080 ‰æ–Ê’†‰› (960, 540) ‚É”z’u‚·‚éƒY[ƒ€ƒJƒƒ‰•`‰æ
     stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+
+    // 2. ƒIƒuƒWƒFƒNƒg—Ş (ƒvƒŒƒCƒ„[E“GE’eŠÛ) ‚ÌƒJƒƒ‰‘Š‘Î•`‰æ
     Scene::Draw();
 
+    // 3. ƒvƒŒƒCƒ„[‚ğ’†S‚Æ‚·‚éƒzƒ‰[ˆÃˆÅƒXƒ|ƒbƒgƒ‰ƒCƒgƒ}ƒXƒN‚Ì•`‰æ (”ñƒfƒoƒbƒO•\¦)
     if (!isDebugView && player && player->IsActive())
     {
         player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
     }
     
-    DrawString(10, 10, "[ESC]ã‚­ãƒ¼ã§ãƒãƒ¼ã‚º", GetColor(255, 255, 255));
+    // ƒI[ƒo[ƒŒƒCHUD
+    DrawString(10, 10, "[ESC]ƒL[‚Åƒ|[ƒY", GetColor(255, 255, 255));
     DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(150, 150, 150));
     DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(150, 150, 150));
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
     {
+        // ”¼“§–¾‚Ì•”wŒi
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
         DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawString(1920 / 2 - 50, 200, "== ãƒãƒ¼ã‚º ==", GetColor(255, 255, 0));
+        DrawString(1920 / 2 - 50, 200, "== ƒ|[ƒY ==", GetColor(255, 255, 0));
 
         const int menuStartX = 1920 / 2 - 100;
         const int menuStartY = 400;
@@ -270,7 +291,7 @@ void GameScene::Draw()
         
         if (state == GameState::PAUSED)
         {
-            const char* items[] = { "ã‚²ãƒ¼ãƒ ã«æˆ»ã‚‹", "è¨­å®š", "ã‚¿ã‚¤ãƒˆãƒ«ã¸æˆ»ã‚‹", "ã‚²ãƒ¼ãƒ çµ‚äº†" };
+            const char* items[] = { "ƒQ[ƒ€‚É–ß‚é", "İ’è", "ƒ^ƒCƒgƒ‹‚Ö–ß‚é", "ƒQ[ƒ€I—¹" };
             for (int i = 0; i < 4; i++)
             {
                 unsigned int color = (i == pauseMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
@@ -281,11 +302,11 @@ void GameScene::Draw()
         else if (state == GameState::SETTINGS)
         {
             std::string items[] = { 
-                std::string("è¦–ç‚¹å›ºå®šãƒ¢ãƒ¼ãƒ‰ (Eã‚­ãƒ¼) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "é•·æŠ¼ã— (ON)" : "åˆ‡ã‚Šæ›¿ãˆ (OFF)"),
-                std::string("ãƒ‡ãƒãƒƒã‚°è¡¨ç¤º : ") + (isDebugView ? "ON" : "OFF"), 
-                "ãƒ†ãƒ¼ãƒå¤‰æ›´", 
-                "ãƒãƒƒãƒ—å¤‰æ›´", 
-                "æˆ»ã‚‹" 
+                std::string("‹“_ŒÅ’èƒ‚[ƒh (EƒL[) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "’·‰Ÿ‚µ (ON)" : "Ø‚è‘Ö‚¦ (OFF)"),
+                std::string("ƒfƒoƒbƒO•\¦ : ") + (isDebugView ? "ON" : "OFF"), 
+                "ƒe[ƒ}•ÏX", 
+                "ƒ}ƒbƒv•ÏX", 
+                "–ß‚é" 
             };
             for (int i = 0; i < 5; i++)
             {
@@ -295,60 +316,28 @@ void GameScene::Draw()
             }
         }
         
+        // ‘€ìà–¾Eƒ‹[ƒ‹‚Ì•`‰æi‰æ–Ê‰E‘¤j
         int ruleX = 1300;
         int ruleY = 300;
         DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(30, 30, 40), TRUE);
         DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(100, 100, 100), FALSE);
-        DrawString(ruleX, ruleY, "ã€éŠã³æ–¹ãƒ»æ“ä½œã€‘", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 40, "W A S D : ç§»å‹•", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 80, "ãƒã‚¦ã‚¹ : è¦–ç‚¹ç§»å‹• / ç‹™ã†", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 120, "å·¦ã‚¯ãƒªãƒƒã‚¯ : æ’ƒã¤ (ã¾ãŸã¯ Z ã‚­ãƒ¼)", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 160, "å³ã‚¯ãƒªãƒƒã‚¯ : æ‡ä¸­é›»ç¯ON/OFF", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 200, "Q ã‚­ãƒ¼ : æ­¦å™¨åˆ‡ã‚Šæ›¿ãˆ", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 240, "E ã‚­ãƒ¼ : è¦–ç‚¹å›ºå®š", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY, "y—V‚Ñ•ûE‘€ìz", GetColor(255, 200, 0));
+        DrawString(ruleX, ruleY + 40, "W A S D : ˆÚ“®", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 80, "ƒ}ƒEƒX : ‹“_ˆÚ“® / ‘_‚¤", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 120, "¶ƒNƒŠƒbƒN : Œ‚‚Â (‚Ü‚½‚Í Z ƒL[)", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 160, "‰EƒNƒŠƒbƒN : ‰ù’†“d“”ON/OFF", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 200, "Q ƒL[ : •ŠíØ‚è‘Ö‚¦", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 240, "E ƒL[ : ‹“_ŒÅ’è", GetColor(255, 255, 255));
         
-        DrawString(ruleX, ruleY + 300, "[ ãƒ«ãƒ¼ãƒ« ]", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 340, "- æ•µã®æ”»æ’ƒã‚’é¿ã‘ãªãŒã‚‰é€²ã‚€", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 380, "- è‰ã‚€ã‚‰ã«ã„ã‚‹ã¨æ•µã‹ã‚‰è¦‹ãˆã«ãããªã‚‹", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 420, "- ãƒ©ã‚¤ãƒˆã‚’æ¶ˆã™ã¨ã‚¹ãƒ†ãƒ«ã‚¹æ€§ãŒä¸ŠãŒã‚‹", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 300, "[ ƒ‹[ƒ‹ ]", GetColor(255, 200, 0));
+        DrawString(ruleX, ruleY + 340, "- “G‚ÌUŒ‚‚ğ”ğ‚¯‚È‚ª‚çi‚Ş", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 380, "- ‘‚Ş‚ç‚É‚¢‚é‚Æ“G‚©‚çŒ©‚¦‚É‚­‚­‚È‚é", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 420, "- ƒ‰ƒCƒg‚ğÁ‚·‚ÆƒXƒeƒ‹ƒX«‚ªã‚ª‚é", GetColor(255, 255, 255));
     }
 }
+'''
 
-void GameScene::ProcessNetworkPackets()
-{
-    auto packets = NetworkManager::GetInstance().ReceivePackets();
-    for (const auto& data : packets)
-    {
-        if (data.size() < sizeof(PacketHeader)) continue;
-        
-        const PacketHeader* header = reinterpret_cast<const PacketHeader*>(data.data());
-        
-        if (header->type == PacketType::STAGE_INIT && !NetworkManager::GetInstance().IsHost())
-        {
-            const PacketStageInit* packet = reinterpret_cast<const PacketStageInit*>(data.data());
-            
-            stageManager.Regenerate(packet->seed);
-            
-            const Stage& stage = stageManager.GetCurrentStage();
-            float cellW = 1920.0f / stage.GetWidth();
-            float cellH = 1080.0f / stage.GetHeight();
-            float cellSize = (cellW < cellH) ? cellW : cellH;
-            
-            if (player) {
-                Point2D startGrid = stage.GetPlayerStartPos();
-                player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-                player->SetStage(const_cast<Stage*>(&stage), cellSize);
-            }
-            SpawnEnemiesRandomly(5);
-        }
-        else if (header->type == PacketType::PLAYER_STATE && remotePlayer)
-        {
-            const PacketPlayerState* packet = reinterpret_cast<const PacketPlayerState*>(data.data());
-            remotePlayer->SetPosition(Vector2(packet->x, packet->y));
-            remotePlayer->SetFacingDir(Vector2(packet->facingX, packet->facingY));
-            if (packet->isLightOn && !remotePlayer->IsLightOn()) remotePlayer->ToggleLight();
-            if (!packet->isLightOn && remotePlayer->IsLightOn()) remotePlayer->ToggleLight();
-            remotePlayer->SetInBush(packet->isInBush);
-        }
-    }
-}
+content = re.sub(r'void GameScene::Draw\(\).*?RenderLightMask\(0, 0, 1920, 1080, 0, 0\);\n    }\n}', draw_code, content, flags=re.DOTALL)
+
+with open('TeamGame/Source/Scenes/GameScene.cpp', 'w', encoding='utf-8') as f:
+    f.write(content)

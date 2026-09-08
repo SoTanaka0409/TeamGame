@@ -41,12 +41,17 @@ class Player : public Character
     bool IsLightOn() const { return m_isLightOn; }
     void ToggleLight() { m_isLightOn = !m_isLightOn; }
     bool IsInBush() const { return m_isInBush; }
+    void SetInBush(bool val) { m_isInBush = val; }
+    void SetFacingDir(const Vector2& dir) { facingDir = dir; }
+    void SetRemote(bool val) { isRemote = val; }
+    bool IsRemote() const { return isRemote; }
 
   private:
     float m_lightAngle = 0.0f;  // 向いている角度
     bool m_isLightOn = true;    // 懐中電灯スイッチ
     bool m_isInBush = false;    // 草むらに隠れているか
     bool m_prevMouseRight = false; // 右クリック判定
+    bool isRemote = false;
 
     // 懐中電灯パラメーター
     float m_maxSpotDistCells = 14.0f;

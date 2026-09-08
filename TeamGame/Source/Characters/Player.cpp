@@ -11,7 +11,7 @@
 #include <algorithm>
 
 Player::Player(float startX, float startY)
-    : Character(startX, startY, 35.0f), damageColorTimer(0),
+    : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     speed = 5.0f;
@@ -30,13 +30,16 @@ Player::~Player()
 
 void Player::Update()
 {
-    // 右クリックで懐中電灯 ON / OFF トグル切り替え
-    bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
-    if (currMouseRight && !m_prevMouseRight)
+    if (!isRemote)
     {
-        m_isLightOn = !m_isLightOn;
+        // 右クリックで懐中電灯 ON / OFF トグル切り替え
+        bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+        if (currMouseRight && !m_prevMouseRight)
+        {
+            m_isLightOn = !m_isLightOn;
+        }
+        m_prevMouseRight = currMouseRight;
     }
-    m_prevMouseRight = currMouseRight;
 
     // 草むら隠れ状態判定
     if (currentStage)
@@ -55,25 +58,28 @@ void Player::Update()
     bool isMoving = false;
     Vector2 moveDir(0.0f, 0.0f);
 
-    if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+    if (!isRemote)
     {
-        moveDir.x -= 1.0f;
-        isMoving = true;
-    }
-    if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
-    {
-        moveDir.x += 1.0f;
-        isMoving = true;
-    }
-    if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
-    {
-        moveDir.y -= 1.0f;
-        isMoving = true;
-    }
-    if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
-    {
-        moveDir.y += 1.0f;
-        isMoving = true;
+        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+        {
+            moveDir.x -= 1.0f;
+            isMoving = true;
+        }
+        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
+        {
+            moveDir.x += 1.0f;
+            isMoving = true;
+        }
+        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
+        {
+            moveDir.y -= 1.0f;
+            isMoving = true;
+        }
+        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
+        {
+            moveDir.y += 1.0f;
+            isMoving = true;
+        }
     }
 
     if (isMoving)
@@ -122,30 +128,32 @@ void Player::Update()
         weapons[currentWeaponIndex]->Update();
     }
 
-    // マウスで視点移動（1920x1080画面中央 960, 540 のプレイヤー中心照準）
-    int mouseX, mouseY;
-    GetMousePoint(&mouseX, &mouseY);
-    float dx = mouseX - 960.0f;
-    float dy = mouseY - 540.0f;
-    float dirLen = std::sqrt(dx * dx + dy * dy);
-    if (dirLen > 0.0001f)
+    if (!isRemote)
     {
-        facingDir.x = dx / dirLen;
-        facingDir.y = dy / dirLen;
-    }
-
-    // Qキーで武器チェンジ
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
-    {
-        currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
-    }
-
-    // 左クリックまたはZキーで発射
-    if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
-    {
-        if (!weapons.empty())
+        int mouseX, mouseY;
+        GetMousePoint(&mouseX, &mouseY);
+        float dx = mouseX - 960.0f;
+        float dy = mouseY - 540.0f;
+        float dirLen = std::sqrt(dx * dx + dy * dy);
+        if (dirLen > 0.0001f)
         {
-            weapons[currentWeaponIndex]->Fire(position, facingDir);
+            facingDir.x = dx / dirLen;
+            facingDir.y = dy / dirLen;
+        }
+
+        // Qキーで武器チェンジ
+        if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
+        {
+            currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+        }
+
+        // 左クリックまたはZキーで発砲
+        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
+        {
+            if (!weapons.empty())
+            {
+                weapons[currentWeaponIndex]->Fire(position, facingDir);
+            }
         }
     }
 }

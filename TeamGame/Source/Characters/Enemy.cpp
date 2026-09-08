@@ -9,7 +9,7 @@
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY)
-    : Character(startX, startY, 25.0f), hp(3), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 25.0f), hp(3), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetPlayer(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0)
