@@ -1,6 +1,7 @@
 #pragma once
 #include "Scene.h"
 #include "StageManager.h"
+#include "DebugManager.h"
 #include <vector>
 
 class Enemy;
@@ -19,7 +20,6 @@ class GameScene : public Scene
     class Player *remotePlayer;
     std::vector<Enemy*> enemies;
     StageManager stageManager;
-    bool isDebugView;
 
     GameState state = GameState::PLAYING;
     int pauseMenuCursor = 0;

@@ -7,6 +7,8 @@
 #include "Handgun.h"
 #include "InputManager.h"
 #include "Shotgun.h"
+#include "SceneManager.h"
+#include "Scene.h"
 #include <cmath>
 #include <algorithm>
 
@@ -156,6 +158,61 @@ void Player::Update()
             }
         }
     }
+
+    // Spaceキーでナイフ暗殺 (敵が未発覚時のみ実行可能)
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE))
+    {
+        auto scene = SceneManager::GetInstance().GetCurrentScene();
+        if (scene && scene->GetObjectManager())
+        {
+            Enemy* targetEnemy = nullptr;
+            float minDistSq = 95.0f * 95.0f; // 暗殺可能距離
+
+            for (auto obj : scene->GetObjectManager()->GetObjects())
+            {
+                Enemy *enemy = dynamic_cast<Enemy *>(obj);
+                if (enemy && enemy->IsActive())
+                {
+                    // 敵がこちらに気づいていない(非ALERT状態)場合のみ暗殺可能
+                    if (!enemy->IsAlerted())
+                    {
+                        Vector2 ePos = enemy->GetPosition();
+                        float dx = ePos.x - position.x;
+                        float dy = ePos.y - position.y;
+                        float distSq = dx * dx + dy * dy;
+                        if (distSq < minDistSq)
+                        {
+                            minDistSq = distSq;
+                            targetEnemy = enemy;
+                        }
+                    }
+                }
+            }
+
+            if (targetEnemy)
+            {
+                Vector2 ePos = targetEnemy->GetPosition();
+                float dx = ePos.x - position.x;
+                float dy = ePos.y - position.y;
+                float dirAngle = std::atan2(dy, dx);
+
+                facingDir = Vector2(dx, dy);
+                float len = std::sqrt(dx * dx + dy * dy);
+                if (len > 0.0001f)
+                {
+                    facingDir.x /= len;
+                    facingDir.y /= len;
+                }
+
+                if (scene->GetEffectManager())
+                {
+                    scene->GetEffectManager()->AddKnifeSlashEffect(ePos.x, ePos.y, dirAngle);
+                }
+
+                targetEnemy->StealthKill();
+            }
+        }
+    }
 }
 
 void Player::Draw()
@@ -237,6 +294,48 @@ void Player::Draw()
                    static_cast<int>(screenY) - 30,
                    weapons[currentWeaponIndex]->GetName().c_str(),
                    GetColor(255, 255, 255));
+    }
+
+    // 未発覚敵の近接ナイフ暗殺案内UI表示
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        Enemy* canKillEnemy = nullptr;
+        float minDistSq = 95.0f * 95.0f;
+
+        for (auto obj : scene->GetObjectManager()->GetObjects())
+        {
+            Enemy *enemy = dynamic_cast<Enemy *>(obj);
+            if (enemy && enemy->IsActive() && !enemy->IsAlerted())
+            {
+                Vector2 ePos = enemy->GetPosition();
+                float dx = ePos.x - position.x;
+                float dy = ePos.y - position.y;
+                float distSq = dx * dx + dy * dy;
+                if (distSq < minDistSq)
+                {
+                    minDistSq = distSq;
+                    canKillEnemy = enemy;
+                }
+            }
+        }
+
+        if (canKillEnemy)
+        {
+            float zoomScale = 75.0f / (cellSize > 0.0f ? cellSize : 40.0f);
+            Vector2 ePos = canKillEnemy->GetPosition();
+            float eScreenX = 960.0f + (ePos.x - position.x) * zoomScale;
+            float eScreenY = 540.0f + (ePos.y - position.y) * zoomScale;
+
+            int boxX1 = static_cast<int>(eScreenX - 75);
+            int boxY1 = static_cast<int>(eScreenY - 55);
+            int boxX2 = static_cast<int>(eScreenX + 75);
+            int boxY2 = static_cast<int>(eScreenY - 30);
+
+            DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(20, 20, 20), TRUE);
+            DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(255, 200, 0), FALSE);
+            DrawStringF(eScreenX - 65.0f, eScreenY - 50.0f, "[SPACE] KNIFE KILL", GetColor(255, 230, 0));
+        }
     }
 
     if (m_isInBush)

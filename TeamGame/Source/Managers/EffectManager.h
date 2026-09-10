@@ -28,6 +28,34 @@ class Effect
     }
 };
 
+class BloodParticle : public Effect
+{
+  public:
+    float vx, vy;
+    float size;
+    unsigned int color;
+
+    BloodParticle(float startX, float startY, float velX, float velY, float pSize, int life, unsigned int col)
+        : Effect(startX, startY, life), vx(velX), vy(velY), size(pSize), color(col)
+    {
+    }
+
+    void Update() override;
+    void Draw() override;
+};
+
+class KnifeSlashEffect : public Effect
+{
+  public:
+    float angle;
+    KnifeSlashEffect(float startX, float startY, float dirAngle)
+        : Effect(startX, startY, 12), angle(dirAngle)
+    {
+    }
+
+    void Draw() override;
+};
+
 class EffectManager
 {
   private:
@@ -38,7 +66,10 @@ class EffectManager
     ~EffectManager();
 
     void AddEffect(Effect *effect);
+    void AddBloodEffect(float worldX, float worldY, int count = 10);
+    void AddKnifeSlashEffect(float worldX, float worldY, float dirAngle);
     void Update();
     void Draw();
     void Clear();
 };
+

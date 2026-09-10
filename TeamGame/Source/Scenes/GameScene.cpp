@@ -1,4 +1,6 @@
 #include "GameScene.h"
+#include "DebugManager.h"
+#include "EffectManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "InputManager.h"
@@ -13,7 +15,7 @@
 #include <cmath>
 #include <random>
 
-GameScene::GameScene() : player(nullptr), isDebugView(false)
+GameScene::GameScene() : player(nullptr)
 {
 }
 
@@ -92,7 +94,6 @@ void GameScene::Init()
     
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
-    isDebugView = false; // 最初から暗闇モード
     
     const Stage& stage = stageManager.GetCurrentStage();
     
@@ -131,11 +132,7 @@ void GameScene::Update()
         {
             Scene::Update(); 
 
-            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
-                InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
-            {
-                isDebugView = !isDebugView;
-            }
+            DebugManager::GetInstance().Update();
 
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
             {
@@ -214,7 +211,7 @@ void GameScene::Update()
         if (currEnter && !prevEnter)
         {
             if (settingsMenuCursor == 0) GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
-            else if (settingsMenuCursor == 1) isDebugView = !isDebugView;
+            else if (settingsMenuCursor == 1) DebugManager::GetInstance().ToggleDebugMode();
             else if (settingsMenuCursor == 2) { stageManager.NextTheme(); }
             else if (settingsMenuCursor == 3) { stageManager.NextVariation(); }
             else if (settingsMenuCursor == 4) state = GameState::PAUSED;
@@ -229,6 +226,7 @@ void GameScene::Update()
 
 void GameScene::Draw()
 {
+    bool isDebugView = DebugManager::GetInstance().IsDebugMode();
     const Stage& stage = stageManager.GetCurrentStage();
     std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
@@ -247,7 +245,7 @@ void GameScene::Draw()
     stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
     Scene::Draw();
 
-    if (!isDebugView && player && player->IsActive())
+    if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
     {
         player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
     }
@@ -312,6 +310,13 @@ void GameScene::Draw()
         DrawString(ruleX, ruleY + 380, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 420, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
     }
+
+    int activeEnemyCount = 0;
+    for (auto e : enemies)
+    {
+        if (e && e->IsActive()) activeEnemyCount++;
+    }
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }
 
 void GameScene::ProcessNetworkPackets()
