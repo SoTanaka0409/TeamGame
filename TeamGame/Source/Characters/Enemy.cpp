@@ -16,6 +16,9 @@ Enemy::Enemy(float startX, float startY)
 {
     // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
     speed = 0.75f;
+
+
+
     collider->SetTag("Enemy");
 }
 
