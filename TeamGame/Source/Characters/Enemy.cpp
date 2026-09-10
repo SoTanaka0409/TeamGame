@@ -1,3 +1,4 @@
+#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "DxLib.h"
@@ -294,10 +295,8 @@ void Enemy::Draw()
 
     if (targetPlayer && targetPlayer->IsActive() && cellSize > 0.0f)
     {
-        float zoomScale = 75.0f / cellSize;
-        Vector2 pPos = targetPlayer->GetPosition();
-        screenX = 960.0f + (position.x - pPos.x) * zoomScale;
-        screenY = 540.0f + (position.y - pPos.y) * zoomScale;
+                screenX = Camera::WorldToScreenX(position.x);
+        screenY = Camera::WorldToScreenY(position.y);
     }
 
     // 画面外のカリング
@@ -335,9 +334,7 @@ void Enemy::Draw()
         // 赤色半透明の弾道予測線 (障害物まで伸ばす)
         if (currentStage && cellSize > 0.0f)
         {
-            float zoomScale = 75.0f / cellSize;
-            Vector2 pPos = targetPlayer->GetPosition();
-
+            
             float maxRange = cellSize * 8.0f;
             float stepDist = cellSize * 0.4f;
             float currDist = radius + 5.0f;
@@ -358,8 +355,8 @@ void Enemy::Draw()
                 currDist += stepDist;
             }
 
-            float hitScreenX = 960.0f + (hitPos.x - pPos.x) * zoomScale;
-            float hitScreenY = 540.0f + (hitPos.y - pPos.y) * zoomScale;
+            float hitScreenX = Camera::WorldToScreenX(hitPos.x);
+            float hitScreenY = Camera::WorldToScreenY(hitPos.y);
 
             // 半透明の赤い弾道予測線
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 115);

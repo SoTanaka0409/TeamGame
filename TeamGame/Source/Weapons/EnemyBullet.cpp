@@ -1,3 +1,4 @@
+#include "Camera.h"
 #include "EnemyBullet.h"
 #include "ColliderManager.h"
 #include "DxLib.h"

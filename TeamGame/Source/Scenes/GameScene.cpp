@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include "Camera.h"
 #include "DebugManager.h"
 #include "EffectManager.h"
 #include "DxLib.h"
@@ -241,6 +242,13 @@ void GameScene::Draw()
         playerWorldX = pos.x;
         playerWorldY = pos.y;
     }
+
+    // カメラの設定
+    Camera::TargetWorldX = playerWorldX;
+    Camera::TargetWorldY = playerWorldY;
+    Camera::ScreenCenterX = 1920.0f / 2.0f;
+    Camera::ScreenCenterY = 1080.0f / 2.0f;
+    Camera::ZoomScale = zoomCellSize / worldCellSize;
 
     stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
     Scene::Draw();

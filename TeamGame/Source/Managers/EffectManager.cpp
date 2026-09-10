@@ -1,3 +1,4 @@
+#include "Camera.h"
 #include "EffectManager.h"
 #include "DxLib.h"
 #include "ObjectManager.h"

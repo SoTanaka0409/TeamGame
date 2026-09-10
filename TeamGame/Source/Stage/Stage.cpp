@@ -1,3 +1,4 @@
+#include "Camera.h"
 #define NOMINMAX
 #include "Stage.h"
 #include "DxLib.h"
@@ -175,8 +176,8 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
     int useGrass = (hGrass != -1) ? hGrass : m_hGrassGraph;
 
     // プレイヤーの位置(playerWorldX, playerWorldY)が画面中央 (960, 540) にくるような基準オフセット
-    float startDrawX = 960.0f - (playerWorldX / worldCellSize) * zoomCellSize;
-    float startDrawY = 540.0f - (playerWorldY / worldCellSize) * zoomCellSize;
+    float startDrawX = Camera::WorldToScreenX(0.0f);
+    float startDrawY = Camera::WorldToScreenY(0.0f);
 
     // カラーパレット
     const unsigned int colorFloor1      = GetColor(242, 162, 108);

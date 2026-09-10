@@ -1,3 +1,4 @@
+#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -134,8 +135,8 @@ void Player::Update()
     {
         int mouseX, mouseY;
         GetMousePoint(&mouseX, &mouseY);
-        float dx = mouseX - 960.0f;
-        float dy = mouseY - 540.0f;
+        float dx = mouseX - Camera::WorldToScreenX(position.x);
+        float dy = mouseY - Camera::WorldToScreenY(position.y);
         float dirLen = std::sqrt(dx * dx + dy * dy);
         if (dirLen > 0.0001f)
         {
@@ -218,8 +219,8 @@ void Player::Update()
 void Player::Draw()
 {
     // 画面中央 (960, 540) に固定描画
-    float screenX = 960.0f;
-    float screenY = 540.0f;
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
 
     if (m_isInBush)
     {
@@ -277,8 +278,8 @@ void Player::Draw()
         }
 
         float zoomScale = zoomCellSize / cellSize;
-        float hitScreenX = 960.0f + (hitPos.x - position.x) * zoomScale;
-        float hitScreenY = 540.0f + (hitPos.y - position.y) * zoomScale;
+        float hitScreenX = Camera::WorldToScreenX(hitPos.x);
+        float hitScreenY = Camera::WorldToScreenY(hitPos.y);
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
         DrawLine(static_cast<int>(screenX), static_cast<int>(screenY),
@@ -324,8 +325,8 @@ void Player::Draw()
         {
             float zoomScale = 75.0f / (cellSize > 0.0f ? cellSize : 40.0f);
             Vector2 ePos = canKillEnemy->GetPosition();
-            float eScreenX = 960.0f + (ePos.x - position.x) * zoomScale;
-            float eScreenY = 540.0f + (ePos.y - position.y) * zoomScale;
+            float eScreenX = Camera::WorldToScreenX(ePos.x);
+            float eScreenY = Camera::WorldToScreenY(ePos.y);
 
             int boxX1 = static_cast<int>(eScreenX - 75);
             int boxY1 = static_cast<int>(eScreenY - 55);
@@ -367,8 +368,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     if (!currentStage || cellSize <= 0.0f) return;
 
     // プレイヤーの画面上での中心位置 (960, 540)
-    float playerPixelX = 960.0f;
-    float playerPixelY = 540.0f;
+    float playerPixelX = Camera::WorldToScreenX(position.x);
+    float playerPixelY = Camera::WorldToScreenY(position.y);
 
     float zoomCellSize = 75.0f;
     float zoomScale = zoomCellSize / cellSize;
@@ -424,8 +425,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
                         for (int s = 1; s < raySteps; ++s)
                         {
-                            float worldX = position.x + (currPx - 960.0f) / zoomScale;
-                            float worldY = position.y + (currPy - 540.0f) / zoomScale;
+                            float worldX = Camera::ScreenToWorldX(currPx);
+                            float worldY = Camera::ScreenToWorldY(currPy);
 
                             int gX = static_cast<int>(worldX / cellSize);
                             int gY = static_cast<int>(worldY / cellSize);
