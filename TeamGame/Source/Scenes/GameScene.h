@@ -6,6 +6,14 @@
 
 class Enemy;
 
+
+enum class PlayMode
+{
+    SOLO,
+    LOCAL_COOP,
+    NETWORK_HOST,
+    NETWORK_CLIENT
+};
 enum class GameState
 {
     PLAYING,
@@ -21,6 +29,7 @@ class GameScene : public Scene
     std::vector<Enemy*> enemies;
     StageManager stageManager;
 
+    PlayMode currentPlayMode = PlayMode::SOLO;
     GameState state = GameState::PLAYING;
     int pauseMenuCursor = 0;
     int settingsMenuCursor = 0;
@@ -33,7 +42,7 @@ class GameScene : public Scene
     void ProcessNetworkPackets();
 
   public:
-    GameScene();
+    GameScene(PlayMode mode = PlayMode::SOLO);
     ~GameScene() override;
 
     void Init() override;

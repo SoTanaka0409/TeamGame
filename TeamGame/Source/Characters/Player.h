@@ -2,6 +2,12 @@
 #include "Character.h"
 #include <vector>
 #include <cmath>
+enum class PlayerInputType
+{
+    KEYBOARD_MOUSE,
+    GAMEPAD_1
+};
+
 class Weapon;
 
 class Player : public Character
@@ -44,6 +50,8 @@ class Player : public Character
     void SetInBush(bool val) { m_isInBush = val; }
     void SetFacingDir(const Vector2& dir) { facingDir = dir; }
     void SetRemote(bool val) { isRemote = val; }
+    void SetInputType(PlayerInputType type) { m_inputType = type; }
+    PlayerInputType GetInputType() const { return m_inputType; }
     bool IsRemote() const { return isRemote; }
 
   private:
@@ -52,6 +60,7 @@ class Player : public Character
     bool m_isInBush = false;    // 草むらに隠れているか
     bool m_prevMouseRight = false; // 右クリック判定
     bool isRemote = false;
+    PlayerInputType m_inputType = PlayerInputType::KEYBOARD_MOUSE;
 
     // 懐中電灯パラメーター
     float m_maxSpotDistCells = 14.0f;

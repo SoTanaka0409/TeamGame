@@ -16,7 +16,6 @@ TitleScene::~TitleScene()
     {
         DeleteUDPSocket(udpHandle);
     }
-    // 万が一待機中に破棄された場合の安全策
     if (state == TitleState::WAITING && !NetworkManager::GetInstance().IsConnected()) {
         NetworkManager::GetInstance().Disconnect();
     }
@@ -24,7 +23,7 @@ TitleScene::~TitleScene()
 
 void TitleScene::Update()
 {
-    Scene::Update(); // Update objects in scene
+    Scene::Update();
 
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
@@ -37,17 +36,36 @@ void TitleScene::Update()
     {
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 5;
-        if (cursor > 5) cursor = 0;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
-            if (cursor == 0) // Single Player
+            if (cursor == 0) { state = TitleState::MODE_SELECT; cursor = 0; }
+            else if (cursor == 1) { state = TitleState::SETTINGS; cursor = 0; }
+            else if (cursor == 2) { PostQuitMessage(0); }
+        }
+    }
+    else if (state == TitleState::MODE_SELECT)
+    {
+        if (currUp && !prevUp) cursor--;
+        if (currDown && !prevDown) cursor++;
+        if (cursor < 0) cursor = 4;
+        if (cursor > 4) cursor = 0;
+
+        if (currEnter && !prevEnter)
+        {
+            if (cursor == 0) // Solo
             {
-                NetworkManager::GetInstance().Disconnect(); // Ensure disconnected
-                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+                NetworkManager::GetInstance().Disconnect();
+                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::SOLO));
             }
-            else if (cursor == 1) // Host Game
+            else if (cursor == 1) // Local Coop
+            {
+                NetworkManager::GetInstance().Disconnect();
+                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_COOP));
+            }
+            else if (cursor == 2) // Host
             {
                 if (NetworkManager::GetInstance().Listen(9876))
                 {
@@ -55,33 +73,50 @@ void TitleScene::Update()
                     state = TitleState::WAITING;
                 }
             }
-            else if (cursor == 2) // Join LAN Auto
+            else if (cursor == 3) // Join
+            {
+                state = TitleState::JOIN_SELECT;
+                cursor = 0;
+            }
+            else if (cursor == 4) // Back
+            {
+                state = TitleState::MAIN;
+                cursor = 0;
+            }
+        }
+    }
+    else if (state == TitleState::JOIN_SELECT)
+    {
+        if (currUp && !prevUp) cursor--;
+        if (currDown && !prevDown) cursor++;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
+
+        if (currEnter && !prevEnter)
+        {
+            if (cursor == 0) // Join LAN Auto
             {
                 udpHandle = MakeUDPSocket(9877);
                 state = TitleState::JOINING_LAN;
                 waitTimer = 0;
             }
-            else if (cursor == 3) // Join LAN Manual
+            else if (cursor == 1) // Join LAN Manual
             {
                 DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
-                DrawString(1920 / 2 - 200, 1080 / 2 - 30, "ホストのIPアドレスを入力:", GetColor(255, 255, 255));
+                DrawString(1920 / 2 - 200, 1080 / 2 - 30, "IP Address", GetColor(255, 255, 255));
                 ScreenFlip();
                 
                 KeyInputString(1920 / 2 - 200, 1080 / 2 + 10, 15, ipBuffer, FALSE);
 
                 if (NetworkManager::GetInstance().Connect(ipBuffer, 9876))
                 {
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
                 }
             }
-            else if (cursor == 4) // Settings
+            else if (cursor == 2) // Back
             {
-                state = TitleState::SETTINGS;
-                cursor = 0;
-            }
-            else if (cursor == 5) // Exit
-            {
-                PostQuitMessage(0);
+                state = TitleState::MODE_SELECT;
+                cursor = 3;
             }
         }
     }
@@ -112,15 +147,15 @@ void TitleScene::Update()
         
         if (NetworkManager::GetInstance().IsConnected())
         {
-            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_HOST));
         }
         
-        if (currEsc) // キャンセル
+        if (currEsc) // �L�����Z��
         {
             NetworkManager::GetInstance().Disconnect();
             if (udpHandle != -1) { DeleteUDPSocket(udpHandle); udpHandle = -1; }
-            state = TitleState::MAIN;
-            cursor = 0;
+            state = TitleState::MODE_SELECT;
+            cursor = 2;
         }
 
         // Broadcast presence
@@ -149,7 +184,7 @@ void TitleScene::Update()
         if (currEsc)
         {
             if (udpHandle != -1) { DeleteUDPSocket(udpHandle); udpHandle = -1; }
-            state = TitleState::MAIN;
+            state = TitleState::JOIN_SELECT;
             cursor = 0;
         }
         
@@ -167,7 +202,7 @@ void TitleScene::Update()
                 {
                     DeleteUDPSocket(udpHandle);
                     udpHandle = -1;
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
                 }
             }
         }
@@ -189,8 +224,28 @@ void TitleScene::Draw()
 
     if (state == TitleState::MAIN)
     {
-        const char* items[] = { "シングルプレイ (1人で遊ぶ)", "ホストになる (部屋を作る)", "LAN参加 (自動検索)", "LAN参加 (IP手動入力)", "設定", "ゲーム終了" };
-        for (int i = 0; i < 6; i++)
+        const char* items[] = { "GAME START", "SETTINGS", "EXIT" };
+        for (int i = 0; i < 3; i++)
+        {
+            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
+            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
+            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
+        }
+    }
+    else if (state == TitleState::MODE_SELECT)
+    {
+        const char* items[] = { "1P (Solo)", "2P (Same PC - Split Screen)", "Host Game (Network)", "Join Game (Network)", "Back" };
+        for (int i = 0; i < 5; i++)
+        {
+            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
+            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
+            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
+        }
+    }
+    else if (state == TitleState::JOIN_SELECT)
+    {
+        const char* items[] = { "Join LAN (Auto Search)", "Join LAN (Manual IP)", "Back" };
+        for (int i = 0; i < 3; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
             if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -199,11 +254,9 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::SETTINGS)
     {
-        DrawString(menuStartX - 50, menuStartY - 100, "--- 設定 ---", GetColor(255, 255, 255));
-
         std::string items[] = {
-            std::string("視点固定モード (Eキー) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (ON)" : "切り替え (OFF)"),
-            "戻る"
+            std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
+            "Back"
         };
         for (int i = 0; i < 2; i++)
         {
@@ -214,34 +267,32 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::WAITING)
     {
-        DrawString(menuStartX - 100, menuStartY, "他のプレイヤーを待っています...", GetColor(150, 255, 150));
+        DrawString(1920 / 2 - 200, 1080 / 2, "Waiting for Player 2 to join...", GetColor(255, 255, 0));
         
         IPDATA myip[10];
         int num = 0;
         if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
         {
-            for (int i = 0; i < num && i < 5; i++)
+            for (int i = 0; i < num; i++)
             {
                 char ipStr[64];
-                sprintf_s(ipStr, sizeof(ipStr), "あなたのIPアドレス%d: %d.%d.%d.%d", i + 1, myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
-                DrawString(menuStartX - 100, menuStartY + 30 + i * 20, ipStr, GetColor(255, 255, 0));
+                sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
+                DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (i * 20), (std::string("Your IP: ") + ipStr).c_str(), GetColor(255, 255, 255));
             }
         }
-
-        if (waitTimer % 60 < 30) {
-            DrawString(menuStartX, menuStartY + 140, "...", GetColor(150, 255, 150));
-        }
         
-        DrawString(menuStartX - 50, menuStartY + 170, "[ESC]キーでキャンセル", GetColor(200, 200, 200));
+        if ((waitTimer / 30) % 2 == 0)
+        {
+            DrawString(1920 / 2 - 150, 1080 / 2 - 50, "Searching for guests...", GetColor(200, 200, 200));
+        }
     }
     else if (state == TitleState::JOINING_LAN)
     {
-        DrawString(menuStartX - 150, menuStartY, "LAN内のホストを自動検索しています...", GetColor(150, 255, 150));
+        DrawString(1920 / 2 - 200, 1080 / 2, "Searching for Hosts on LAN...", GetColor(255, 255, 0));
         
-        if (waitTimer % 60 < 30) {
-            DrawString(menuStartX, menuStartY + 60, "...", GetColor(150, 255, 150));
+        if ((waitTimer / 30) % 2 == 0)
+        {
+            DrawString(1920 / 2 - 150, 1080 / 2 - 50, "Searching...", GetColor(200, 200, 200));
         }
-        
-        DrawString(menuStartX - 50, menuStartY + 120, "[ESC]キーでキャンセル", GetColor(200, 200, 200));
     }
 }

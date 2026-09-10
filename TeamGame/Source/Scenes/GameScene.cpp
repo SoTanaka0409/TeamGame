@@ -16,7 +16,7 @@
 #include <cmath>
 #include <random>
 
-GameScene::GameScene() : player(nullptr)
+GameScene::GameScene(PlayMode mode) : player(nullptr), currentPlayMode(mode)
 {
 }
 
@@ -110,6 +110,22 @@ void GameScene::Init()
     player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     player->SetStage(stagePtr, cellSize);
+    objectManager->AddObject(player);
+
+    if (currentPlayMode == PlayMode::LOCAL_COOP)
+    {
+        remotePlayer = new Player(startX + 50.0f, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        objectManager->AddObject(remotePlayer);
+    }
+    else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
+    {
+        remotePlayer = new Player(startX, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetRemote(true);
+        objectManager->AddObject(remotePlayer);
+    }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
     SpawnEnemiesRandomly(5);
@@ -243,15 +259,46 @@ void GameScene::Draw()
         playerWorldY = pos.y;
     }
 
-    // カメラの設定
-    Camera::TargetWorldX = playerWorldX;
-    Camera::TargetWorldY = playerWorldY;
-    Camera::ScreenCenterX = 1920.0f / 2.0f;
-    Camera::ScreenCenterY = 1080.0f / 2.0f;
-    Camera::ZoomScale = zoomCellSize / worldCellSize;
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive())
+    {
+        // 画面分割 (1P - 左半分)
+        SetDrawArea(0, 0, 1920 / 2, 1080);
+        Camera::TargetWorldX = playerWorldX;
+        Camera::TargetWorldY = playerWorldY;
+        Camera::ScreenCenterX = 1920.0f / 4.0f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
 
-    stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
-    Scene::Draw();
+        // 画面分割 (2P - 右半分)
+        SetDrawArea(1920 / 2, 0, 1920, 1080);
+        Vector2 p2Pos = remotePlayer->GetPosition();
+        Camera::TargetWorldX = p2Pos.x;
+        Camera::TargetWorldY = p2Pos.y;
+        Camera::ScreenCenterX = 1920.0f * 0.75f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
+        
+        // 描画エリアリセット
+        SetDrawArea(0, 0, 1920, 1080);
+        
+        // 分割線
+        DrawLine(1920 / 2, 0, 1920 / 2, 1080, GetColor(255, 255, 255), 3);
+    }
+    else
+    {
+        // 1画面
+        Camera::TargetWorldX = playerWorldX;
+        Camera::TargetWorldY = playerWorldY;
+        Camera::ScreenCenterX = 1920.0f / 2.0f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
+    }
 
     if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
     {

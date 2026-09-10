@@ -63,25 +63,45 @@ void Player::Update()
 
     if (!isRemote)
     {
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            moveDir.x -= 1.0f;
-            isMoving = true;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+            {
+                moveDir.x -= 1.0f;
+                isMoving = true;
+            }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
+            {
+                moveDir.x += 1.0f;
+                isMoving = true;
+            }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
+            {
+                moveDir.y -= 1.0f;
+                isMoving = true;
+            }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
+            {
+                moveDir.y += 1.0f;
+                isMoving = true;
+            }
         }
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
+        else if (m_inputType == PlayerInputType::GAMEPAD_1)
         {
-            moveDir.x += 1.0f;
-            isMoving = true;
-        }
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
-        {
-            moveDir.y -= 1.0f;
-            isMoving = true;
-        }
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
-        {
-            moveDir.y += 1.0f;
-            isMoving = true;
+            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            int ax = 0, ay = 0;
+            GetJoypadAnalogInput(&ax, &ay, DX_INPUT_PAD1);
+            if (ax < -200) moveDir.x -= 1.0f;
+            if (ax > 200) moveDir.x += 1.0f;
+            if (ay < -200) moveDir.y -= 1.0f;
+            if (ay > 200) moveDir.y += 1.0f;
+            
+            if (padState & PAD_INPUT_LEFT) moveDir.x -= 1.0f;
+            if (padState & PAD_INPUT_RIGHT) moveDir.x += 1.0f;
+            if (padState & PAD_INPUT_UP) moveDir.y -= 1.0f;
+            if (padState & PAD_INPUT_DOWN) moveDir.y += 1.0f;
+            
+            if (moveDir.x != 0.0f || moveDir.y != 0.0f) isMoving = true;
         }
     }
 
@@ -133,35 +153,75 @@ void Player::Update()
 
     if (!isRemote)
     {
-        int mouseX, mouseY;
-        GetMousePoint(&mouseX, &mouseY);
-        float dx = mouseX - Camera::WorldToScreenX(position.x);
-        float dy = mouseY - Camera::WorldToScreenY(position.y);
-        float dirLen = std::sqrt(dx * dx + dy * dy);
-        if (dirLen > 0.0001f)
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            facingDir.x = dx / dirLen;
-            facingDir.y = dy / dirLen;
-        }
-
-        // Qキーで武器チェンジ
-        if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
-        {
-            currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
-        }
-
-        // 左クリックまたはZキーで発砲
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
-        {
-            if (!weapons.empty())
+            int mouseX, mouseY;
+            GetMousePoint(&mouseX, &mouseY);
+            float dx = mouseX - Camera::WorldToScreenX(position.x);
+            float dy = mouseY - Camera::WorldToScreenY(position.y);
+            float dirLen = std::sqrt(dx * dx + dy * dy);
+            if (dirLen > 0.0001f)
             {
-                weapons[currentWeaponIndex]->Fire(position, facingDir);
+                facingDir.x = dx / dirLen;
+                facingDir.y = dy / dirLen;
             }
+
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
+            {
+                currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+            }
+
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
+            {
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir);
+            }
+        }
+        else if (m_inputType == PlayerInputType::GAMEPAD_1)
+        {
+            int rx = 0, ry = 0;
+            GetJoypadAnalogInputRight(&rx, &ry, DX_INPUT_PAD1);
+            if (rx < -200 || rx > 200 || ry < -200 || ry > 200)
+            {
+                float dx = (float)rx;
+                float dy = (float)ry;
+                float dirLen = std::sqrt(dx * dx + dy * dy);
+                if (dirLen > 0.0001f)
+                {
+                    facingDir.x = dx / dirLen;
+                    facingDir.y = dy / dirLen;
+                }
+            }
+            
+            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            static int prevPadState = 0;
+            
+            if ((padState & PAD_INPUT_3) && !(prevPadState & PAD_INPUT_3)) // Button X
+            {
+                currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+            }
+            if ((padState & PAD_INPUT_4) && !(prevPadState & PAD_INPUT_4)) // Button Y
+            {
+                ToggleLight();
+            }
+            
+            if (padState & PAD_INPUT_1) // Button A (or R1)
+            {
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir);
+            }
+            
+            prevPadState = padState;
         }
     }
 
-    // Spaceキーでナイフ暗殺 (敵が未発覚時のみ実行可能)
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE))
+    bool isKnifePressed = false;
+    if (!isRemote)
+    {
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE) isKnifePressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE);
+        else if (m_inputType == PlayerInputType::GAMEPAD_1) isKnifePressed = (GetJoypadInputState(DX_INPUT_PAD1) & PAD_INPUT_2) != 0;
+    }
+    
+    // Spaceキー等でナイフ暗殺 (敵が未発覚時のみ実行可能)
+    if (isKnifePressed)
     {
         auto scene = SceneManager::GetInstance().GetCurrentScene();
         if (scene && scene->GetObjectManager())
