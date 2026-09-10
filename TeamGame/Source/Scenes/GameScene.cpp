@@ -9,7 +9,7 @@
 #include <cmath>
 #include <random>
 
-GameScene::GameScene() : player(nullptr), isDebugView(false)
+GameScene::GameScene() : player(nullptr)
 {
 }
 
@@ -88,7 +88,7 @@ void GameScene::Init()
     
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
-    isDebugView = false; // 最初から暗闇モード
+    DebugManager::GetInstance().SetDebugMode(false); // 最初から暗闇モード
     
     const Stage& stage = stageManager.GetCurrentStage();
     
@@ -112,18 +112,11 @@ void GameScene::Init()
 void GameScene::Update()
 {
     Scene::Update(); // 自身の持つobjectManagerやcolliderManagerが実行される
+    DebugManager::GetInstance().Update(); // デバッグショートカットキー処理
 
-    // Tabキー または F1キーで暗闇モード / デバッグ表示切り替え
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
-        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
-    {
-        isDebugView = !isDebugView;
-    }
-
-    // Rキーでステージバリエーション切替
+    // Rキーで位置のリセット (ステージを変更せずにプレイヤーと敵の位置を初期化)
     if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
     {
-        stageManager.NextVariation();
         if (player)
         {
             const Stage& stage = stageManager.GetCurrentStage();
@@ -132,32 +125,8 @@ void GameScene::Update()
             float cellSize = (cellW < cellH) ? cellW : cellH;
             Point2D startGrid = stage.GetPlayerStartPos();
             player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-            player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
             SpawnEnemiesRandomly(5);
         }
-    }
-
-    // Tキーでテーマ切替
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
-    {
-        stageManager.NextTheme();
-        if (player)
-        {
-            const Stage& stage = stageManager.GetCurrentStage();
-            float cellW = 1920.0f / stage.GetWidth();
-            float cellH = 1080.0f / stage.GetHeight();
-            float cellSize = (cellW < cellH) ? cellW : cellH;
-            Point2D startGrid = stage.GetPlayerStartPos();
-            player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-            player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-            SpawnEnemiesRandomly(5);
-        }
-    }
-
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE))
-    {
-        SceneManager::GetInstance().ChangeScene(
-            std::make_shared<ResultScene>());
     }
 }
 
@@ -178,15 +147,25 @@ void GameScene::Draw()
         playerWorldY = pos.y;
     }
 
+    bool isDebug = DebugManager::GetInstance().IsDebugMode();
+
     // 1. プレイヤーの位置(playerWorldX, playerWorldY)を 1920x1080 画面中央 (960, 540) に配置するズームカメラ描画
-    stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+    stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebug, stageName.c_str(), -1);
 
     // 2. オブジェクト類 (プレイヤー・敵・弾丸) のカメラ相対描画
     Scene::Draw();
 
     // 3. プレイヤーを中心とするホラー暗闇スポットライトマスクの描画 (非デバッグ表示時)
-    if (!isDebugView && player && player->IsActive())
+    if (!isDebug && player && player->IsActive())
     {
         player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
     }
+
+    // 4. 専用デバッグオーバーレイの描画
+    int activeEnemyCount = 0;
+    for (auto e : enemies)
+    {
+        if (e && e->IsActive()) activeEnemyCount++;
+    }
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }

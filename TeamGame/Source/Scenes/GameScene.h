@@ -1,6 +1,7 @@
 #pragma once
 #include "Scene.h"
 #include "StageManager.h"
+#include "DebugManager.h"
 #include <vector>
 
 class Enemy;
@@ -11,7 +12,6 @@ class GameScene : public Scene
     class Player *player;
     std::vector<Enemy*> enemies;
     StageManager stageManager;
-    bool isDebugView;
 
   public:
     GameScene();

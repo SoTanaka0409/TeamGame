@@ -385,14 +385,36 @@ void Enemy::Draw()
     DrawLine(x1, y1, x2, y2, lineCol, 2);
 }
 
+#include "SceneManager.h"
+#include "Scene.h"
+
 void Enemy::Damage()
 {
     hp--;
     damageColorTimer = 15;
     aiState = EnemyAIState::ALERT; // 被弾したら即警戒状態
+
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetEffectManager())
+    {
+        scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 14);
+    }
+
     if (hp <= 0)
     {
         SetActive(false);
+    }
+}
+
+void Enemy::StealthKill()
+{
+    hp = 0;
+    SetActive(false);
+
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetEffectManager())
+    {
+        scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 35);
     }
 }
 

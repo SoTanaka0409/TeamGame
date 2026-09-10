@@ -46,6 +46,9 @@ class Enemy : public Character
     void Draw() override;
 
     void Damage();
+    void StealthKill();
+    bool IsAlerted() const { return aiState == EnemyAIState::ALERT; }
+    EnemyAIState GetAIState() const { return aiState; }
     bool CheckLineOfSightToPlayer() const;
 
     void MoveSmart(const Vector2 &desiredDir);

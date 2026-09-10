@@ -82,7 +82,9 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
     const unsigned int colorWallBorder  = GetColor(132, 72, 38);
     const unsigned int colorOuterWall   = GetColor(65, 70, 85);
     const unsigned int colorOuterBorder = GetColor(130, 140, 160);
-    const unsigned int colorCactus      = GetColor(40, 160, 80);
+    const unsigned int colorRock        = GetColor(140, 145, 155);
+    const unsigned int colorRockBorder  = GetColor(70, 75, 85);
+    const unsigned int colorRockDetail  = GetColor(185, 190, 200);
 
     // 1. 各タイルのフルカラー標準描画
     for (int y = 0; y < m_height; ++y)
@@ -141,8 +143,9 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
             case CellType::CACTUS:
                 {
                     int r = static_cast<int>(cellSize * 0.45f);
-                    DrawCircle(cx, cy, r, colorCactus, TRUE);
-                    DrawCircle(cx, cy, r, GetColor(20, 100, 40), FALSE);
+                    DrawCircle(cx, cy, r, colorRock, TRUE);
+                    DrawCircle(cx, cy, r, colorRockBorder, FALSE);
+                    DrawCircle(cx - 2, cy - 2, static_cast<int>(r * 0.45f), colorRockDetail, TRUE);
                 }
                 break;
             }
@@ -186,7 +189,9 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
     const unsigned int colorWallBorder  = GetColor(132, 72, 38);
     const unsigned int colorOuterWall   = GetColor(65, 70, 85);
     const unsigned int colorOuterBorder = GetColor(130, 140, 160);
-    const unsigned int colorCactus      = GetColor(40, 160, 80);
+    const unsigned int colorRock        = GetColor(140, 145, 155);
+    const unsigned int colorRockBorder  = GetColor(70, 75, 85);
+    const unsigned int colorRockDetail  = GetColor(185, 190, 200);
 
     for (int y = 0; y < m_height; ++y)
     {
@@ -255,8 +260,9 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
             case CellType::CACTUS:
                 {
                     int r = static_cast<int>(zoomCellSize * 0.45f);
-                    DrawCircle(cx, cy, r, colorCactus, TRUE);
-                    DrawCircle(cx, cy, r, GetColor(20, 100, 40), FALSE);
+                    DrawCircle(cx, cy, r, colorRock, TRUE);
+                    DrawCircle(cx, cy, r, colorRockBorder, FALSE);
+                    DrawCircle(cx - 2, cy - 2, static_cast<int>(r * 0.45f), colorRockDetail, TRUE);
                 }
                 break;
             }

@@ -1,12 +1,14 @@
 #pragma once
 #include "ColliderManager.h"
 #include "ObjectManager.h"
+#include "EffectManager.h"
 
 class Scene
 {
   protected:
     ObjectManager *objectManager;
     ColliderManager *colliderManager;
+    EffectManager *effectManager;
 
   public:
     Scene();
@@ -28,6 +30,10 @@ class Scene
     ColliderManager *GetColliderManager() const
     {
         return colliderManager;
+    }
+    EffectManager *GetEffectManager() const
+    {
+        return effectManager;
     }
 
     virtual const class Stage* GetStage() const

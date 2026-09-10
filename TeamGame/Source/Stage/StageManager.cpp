@@ -36,11 +36,9 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
     m_currentSeed = m_rd() ^ static_cast<unsigned int>(std::time(nullptr));
     std::mt19937 initRng(m_currentSeed);
 
-    int rawTheme = std::abs(static_cast<int>(initRng())) % 4;
-    int rawVar   = std::abs(static_cast<int>(initRng())) % 4;
-
-    m_currentTheme = static_cast<ThemePattern>(rawTheme);
-    m_currentVariation = rawVar;
+    // 起動時の初期テーマ・バリエーション (ユーザー作成のカスタムマップをデフォルトに設定)
+    m_currentTheme = ThemePattern::CENTER_LAKE;
+    m_currentVariation = 0;
 
     m_config.theme = m_currentTheme;
     m_config.variation = m_currentVariation;
@@ -50,20 +48,19 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
 
 void StageManager::NextVariation()
 {
-    m_currentVariation = (m_currentVariation + 1) % 4;
+    m_currentTheme = ThemePattern::CENTER_LAKE;
+    m_currentVariation = 0;
+    m_config.theme = m_currentTheme;
     m_config.variation = m_currentVariation;
     Regenerate();
 }
 
 void StageManager::NextTheme()
 {
-    int nextThemeIdx = (static_cast<int>(m_currentTheme) + 1) % 4;
-    m_currentTheme = static_cast<ThemePattern>(nextThemeIdx);
+    m_currentTheme = ThemePattern::CENTER_LAKE;
     m_currentVariation = 0;
-
     m_config.theme = m_currentTheme;
     m_config.variation = m_currentVariation;
-
     Regenerate();
 }
 

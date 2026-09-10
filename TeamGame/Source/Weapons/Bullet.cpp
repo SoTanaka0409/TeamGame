@@ -101,6 +101,11 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
         if (enemy)
         {
             enemy->Damage();
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetEffectManager())
+            {
+                scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 10);
+            }
         }
         SetActive(false);
     }
