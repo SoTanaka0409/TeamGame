@@ -131,12 +131,16 @@ void TitleScene::Update()
             NetWorkSendUDP(udpHandle, ip, 9877, "HOST", 4);
             
             // Subnet broadcast fallback
-            IPDATA myip;
+            IPDATA myip[10];
             int num = 0;
-            if (GetMyIPAddress(&myip, 1, &num) == 0 && num > 0)
+            if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
             {
-                myip.d4 = 255;
-                NetWorkSendUDP(udpHandle, myip, 9877, "HOST", 4);
+                for (int i = 0; i < num; i++)
+                {
+                    IPDATA bcast = myip[i];
+                    bcast.d4 = 255;
+                    NetWorkSendUDP(udpHandle, bcast, 9877, "HOST", 4);
+                }
             }
         }
     }
@@ -212,20 +216,23 @@ void TitleScene::Draw()
     {
         DrawString(menuStartX - 100, menuStartY, "他のプレイヤーを待っています...", GetColor(150, 255, 150));
         
-        IPDATA myip;
+        IPDATA myip[10];
         int num = 0;
-        if (GetMyIPAddress(&myip, 1, &num) == 0 && num > 0)
+        if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
         {
-            char ipStr[64];
-            sprintf_s(ipStr, sizeof(ipStr), "あなたのIPアドレス: %d.%d.%d.%d", myip.d1, myip.d2, myip.d3, myip.d4);
-            DrawString(menuStartX - 100, menuStartY + 30, ipStr, GetColor(255, 255, 0));
+            for (int i = 0; i < num && i < 5; i++)
+            {
+                char ipStr[64];
+                sprintf_s(ipStr, sizeof(ipStr), "あなたのIPアドレス%d: %d.%d.%d.%d", i + 1, myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
+                DrawString(menuStartX - 100, menuStartY + 30 + i * 20, ipStr, GetColor(255, 255, 0));
+            }
         }
 
         if (waitTimer % 60 < 30) {
-            DrawString(menuStartX, menuStartY + 60, "...", GetColor(150, 255, 150));
+            DrawString(menuStartX, menuStartY + 140, "...", GetColor(150, 255, 150));
         }
         
-        DrawString(menuStartX - 50, menuStartY + 120, "[ESC]キーでキャンセル", GetColor(200, 200, 200));
+        DrawString(menuStartX - 50, menuStartY + 170, "[ESC]キーでキャンセル", GetColor(200, 200, 200));
     }
     else if (state == TitleState::JOINING_LAN)
     {
