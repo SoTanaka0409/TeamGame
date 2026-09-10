@@ -37,8 +37,8 @@ void TitleScene::Update()
     {
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 4;
-        if (cursor > 4) cursor = 0;
+        if (cursor < 0) cursor = 5;
+        if (cursor > 5) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -55,18 +55,31 @@ void TitleScene::Update()
                     state = TitleState::WAITING;
                 }
             }
-            else if (cursor == 2) // Join LAN
+            else if (cursor == 2) // Join LAN Auto
             {
                 udpHandle = MakeUDPSocket(9877);
                 state = TitleState::JOINING_LAN;
                 waitTimer = 0;
             }
-            else if (cursor == 3) // Settings
+            else if (cursor == 3) // Join LAN Manual
+            {
+                DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
+                DrawString(1920 / 2 - 200, 1080 / 2 - 30, "ホストのIPアドレスを入力:", GetColor(255, 255, 255));
+                ScreenFlip();
+                
+                KeyInputString(1920 / 2 - 200, 1080 / 2 + 10, 15, ipBuffer, FALSE);
+
+                if (NetworkManager::GetInstance().Connect(ipBuffer, 9876))
+                {
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+                }
+            }
+            else if (cursor == 4) // Settings
             {
                 state = TitleState::SETTINGS;
                 cursor = 0;
             }
-            else if (cursor == 4) // Exit
+            else if (cursor == 5) // Exit
             {
                 PostQuitMessage(0);
             }
@@ -113,8 +126,18 @@ void TitleScene::Update()
         // Broadcast presence
         if (udpHandle != -1 && waitTimer % 60 == 0)
         {
+            // Global broadcast
             IPDATA ip = {255, 255, 255, 255};
             NetWorkSendUDP(udpHandle, ip, 9877, "HOST", 4);
+            
+            // Subnet broadcast fallback
+            IPDATA myip;
+            int num = 0;
+            if (GetMyIPAddress(&myip, 1, &num) == 0 && num > 0)
+            {
+                myip.d4 = 255;
+                NetWorkSendUDP(udpHandle, myip, 9877, "HOST", 4);
+            }
         }
     }
     else if (state == TitleState::JOINING_LAN)
@@ -162,8 +185,8 @@ void TitleScene::Draw()
 
     if (state == TitleState::MAIN)
     {
-        const char* items[] = { "シングルプレイ (1人で遊ぶ)", "ホストになる (部屋を作る)", "LAN参加 (自動検索)", "設定", "ゲーム終了" };
-        for (int i = 0; i < 5; i++)
+        const char* items[] = { "シングルプレイ (1人で遊ぶ)", "ホストになる (部屋を作る)", "LAN参加 (自動検索)", "LAN参加 (IP手動入力)", "設定", "ゲーム終了" };
+        for (int i = 0; i < 6; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
             if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);

@@ -13,6 +13,7 @@ class TitleScene : public Scene
     int waitTimer = 0; 
     
     int udpHandle = -1;
+    char ipBuffer[64] = "192.168.1.";
     
     bool prevUp = false;
     bool prevDown = false;
