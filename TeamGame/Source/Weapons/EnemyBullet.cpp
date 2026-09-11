@@ -68,25 +68,8 @@ void EnemyBullet::Update()
 
 void EnemyBullet::Draw()
 {
-    float screenX = position.x;
-    float screenY = position.y;
-
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
-    {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
-        {
-            Player *player = dynamic_cast<Player *>(obj);
-            if (player && player->IsActive())
-            {
-                float zoomScale = 75.0f / 40.0f;
-                Vector2 pPos = player->GetPosition();
-                screenX = 960.0f + (position.x - pPos.x) * zoomScale;
-                screenY = 540.0f + (position.y - pPos.y) * zoomScale;
-                break;
-            }
-        }
-    }
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
 
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(radius), GetColor(255, 60, 60), TRUE);

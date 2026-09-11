@@ -63,4 +63,6 @@ void ObjectManager::Clear()
         delete obj;
     }
     objects.clear();
+   
+    
 }

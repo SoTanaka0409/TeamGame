@@ -35,6 +35,7 @@ class Player : public Character
     void TakeDamage();
     void Update() override;
     void Draw() override;
+    void DrawUI(int screenX, int screenY);
 
     // 引数が Collider* に変更
     void OnCollisionEnter(Collider *otherCollider) override;

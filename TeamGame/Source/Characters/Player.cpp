@@ -214,10 +214,23 @@ void Player::Update()
     }
 
     bool isKnifePressed = false;
+    bool isReloadPressed = false;
     if (!isRemote)
     {
-        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE) isKnifePressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE);
-        else if (m_inputType == PlayerInputType::GAMEPAD_1) isKnifePressed = (GetJoypadInputState(DX_INPUT_PAD1) & PAD_INPUT_2) != 0;
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE) {
+            isKnifePressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE);
+            isReloadPressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R);
+        }
+        else if (m_inputType == PlayerInputType::GAMEPAD_1) {
+            int pad = GetJoypadInputState(DX_INPUT_PAD1);
+            isKnifePressed = (pad & PAD_INPUT_2) != 0;
+            isReloadPressed = (pad & PAD_INPUT_5) != 0; // L1 or similar
+        }
+    }
+    
+    if (isReloadPressed && !weapons.empty())
+    {
+        weapons[currentWeaponIndex]->Reload();
     }
     
     // Spaceキー等でナイフ暗殺 (敵が未発覚時のみ実行可能)
@@ -526,4 +539,34 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     }
 
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
+void Player::DrawUI(int screenX, int screenY)
+{
+    if (weapons.empty()) return;
+    
+    Weapon* currentWeapon = weapons[currentWeaponIndex];
+    if (currentWeapon)
+    {
+        const WeaponData* data = currentWeapon->GetData();
+        if (data && data->uiImageHandle != -1)
+        {
+            DrawGraph(screenX, screenY, data->uiImageHandle, TRUE);
+        }
+        else
+        {
+            DrawBox(screenX, screenY, screenX + 100, screenY + 50, GetColor(50, 50, 50), TRUE);
+            DrawString(screenX + 10, screenY + 10, currentWeapon->GetName().c_str(), GetColor(255, 255, 255));
+        }
+
+        int currentAmmo = currentWeapon->GetCurrentAmmo();
+        int maxAmmo = currentWeapon->GetMaxAmmo();
+        char ammoText[64];
+        if (currentWeapon->IsReloading()) {
+            sprintf_s(ammoText, sizeof(ammoText), "Reloading...");
+        } else {
+            sprintf_s(ammoText, sizeof(ammoText), "Ammo: %d / %d", currentAmmo, maxAmmo);
+        }
+        DrawString(screenX + 10, screenY + 60, ammoText, GetColor(255, 255, 0));
+    }
 }

@@ -309,6 +309,13 @@ void GameScene::Draw()
     DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(150, 150, 150));
     DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(150, 150, 150));
 
+    if (player && player->IsActive()) {
+        player->DrawUI(10, 100);
+    }
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
+        remotePlayer->DrawUI(1920 / 2 + 10, 100);
+    }
+
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
     {
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
