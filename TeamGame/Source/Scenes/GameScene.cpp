@@ -110,21 +110,18 @@ void GameScene::Init()
     player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     player->SetStage(stagePtr, cellSize);
-    objectManager->AddObject(player);
 
     if (currentPlayMode == PlayMode::LOCAL_COOP)
     {
         remotePlayer = new Player(startX + 50.0f, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
-        objectManager->AddObject(remotePlayer);
     }
     else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
     {
         remotePlayer = new Player(startX, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetRemote(true);
-        objectManager->AddObject(remotePlayer);
     }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
