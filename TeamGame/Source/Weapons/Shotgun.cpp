@@ -5,6 +5,25 @@
 #include "SceneManager.h"
 #include <cmath>
 
+
+#include "Enemy.h"
+
+static void NotifyEnemiesOfGunshot(const Vector2 &pos)
+{
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        for (auto obj : scene->GetObjectManager()->GetObjects())
+        {
+            Enemy *enemy = dynamic_cast<Enemy *>(obj);
+            if (enemy && enemy->IsActive())
+            {
+                enemy->OnHearGunshot(pos);
+            }
+        }
+    }
+}
+
 Shotgun::Shotgun() : Weapon("Shotgun") {}
 
 void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
@@ -25,9 +44,9 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
                 float finalAngle = baseAngle + angleOffset;
                 Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 
-                Bullet *bullet = new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius);
-                scene->GetObjectManager()->AddObject(bullet);
+                new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius);
             }
+            NotifyEnemiesOfGunshot(pos);
             ResetCoolTime();
             UseAmmo(1);
         }

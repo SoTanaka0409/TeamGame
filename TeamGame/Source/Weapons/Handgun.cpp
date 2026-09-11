@@ -4,6 +4,25 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
+
+#include "Enemy.h"
+
+static void NotifyEnemiesOfGunshot(const Vector2 &pos)
+{
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        for (auto obj : scene->GetObjectManager()->GetObjects())
+        {
+            Enemy *enemy = dynamic_cast<Enemy *>(obj);
+            if (enemy && enemy->IsActive())
+            {
+                enemy->OnHearGunshot(pos);
+            }
+        }
+    }
+}
+
 Handgun::Handgun() : Weapon("Handgun") {}
 
 void Handgun::Fire(const Vector2 &pos, const Vector2 &dir)
@@ -14,8 +33,8 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir)
         if (scene)
         {
             // Create bullet using CSV data
-            Bullet *bullet = new Bullet(pos.x, pos.y, dir, data->bulletSpeed, data->range, data->bulletRadius);
-            scene->GetObjectManager()->AddObject(bullet);
+            new Bullet(pos.x, pos.y, dir, data->bulletSpeed, data->range, data->bulletRadius);
+            NotifyEnemiesOfGunshot(pos);
             ResetCoolTime();
             UseAmmo(1);
         }
