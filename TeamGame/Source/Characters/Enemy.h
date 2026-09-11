@@ -25,6 +25,8 @@ class Enemy : public Character
     int patrolChangeTimer;
     int investigateTimer;
     int shootCooldown;
+    int strafeDirection;
+    int strafeTimer;
 
   public:
     Enemy(float startX, float startY);

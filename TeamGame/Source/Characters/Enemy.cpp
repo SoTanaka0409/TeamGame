@@ -13,7 +13,8 @@ Enemy::Enemy(float startX, float startY)
     : Character(ObjectTag::Enemy, startX, startY, 25.0f), hp(3), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetPlayer(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
-      lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0)
+      lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0),
+      strafeDirection(1), strafeTimer(0)
 {
     // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
     speed = 0.75f;
@@ -227,10 +228,40 @@ void Enemy::Update()
             facingDir = Vector2(dx / dist, dy / dist);
         }
 
-        // ゆっくり障害物を避けつつ前進
-        MoveSmart(facingDir);
+        // カニ歩き（ストレイフ）の方向転換タイマー
+        strafeTimer--;
+        if (strafeTimer <= 0)
+        {
+            strafeDirection = (rand() % 2 == 0) ? 1 : -1;
+            strafeTimer = 60 + (rand() % 60); // 1〜2秒ごとに方向転換
+        }
 
-        // 【射撃頻度の緩和】 約2.7秒(160フレーム)ごとにゆっくり発射、弾速も遅い 3.0f
+        // 攻撃モーション（射撃直前）に入ったら近づくのをやめる
+        if (shootCooldown < 30)
+        {
+            // 撃つ直前は左右にだけ動く（カニ歩き）
+            Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+            MoveSmart(strafeDir);
+        }
+        else
+        {
+            // クールダウン中は、遠ければ近づきつつ左右に動き、近ければ左右のみに動く
+            if (dist > cellSize * 2.5f)
+            {
+                // 前進 ＋ 左右移動（ジグザグ移動）
+                Vector2 approachAndStrafe(facingDir.x + (-facingDir.y * strafeDirection * 0.5f),
+                                          facingDir.y + (facingDir.x * strafeDirection * 0.5f));
+                MoveSmart(approachAndStrafe);
+            }
+            else
+            {
+                // 十分近ければ左右移動のみ
+                Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+                MoveSmart(strafeDir);
+            }
+        }
+
+        // 【発砲頻度の緩和】 約2.7秒(160フレーム)ごとにゆっくり発砲、弾速も遅い 3.0f
         if (shootCooldown <= 0 && dist < cellSize * 3.5f)
         {
             new EnemyBullet(position.x + facingDir.x * (radius + 5.0f),
