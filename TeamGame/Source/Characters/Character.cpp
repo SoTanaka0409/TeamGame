@@ -4,7 +4,7 @@
 #include "SceneManager.h"
 
 Character::Character(ObjectTag tag, float startX, float startY, float rad)
-    : Object2D(tag), speed(0.0f), radius(rad), myColliderManager(nullptr)
+    : Object2D(tag), radius(rad), myColliderManager(nullptr)
 {
     position = Vector2(startX, startY);
     width = rad * 2.0f;

@@ -10,14 +10,14 @@
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY)
-    : Character(ObjectTag::Enemy, startX, startY, 25.0f), hp(3), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 25.0f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetPlayer(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0),
       strafeDirection(1), strafeTimer(0)
 {
     // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
-    speed = 0.75f;
+    status.Init(3, 0.75f, 1);
 
 
 
@@ -131,8 +131,8 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
     if (len < 0.0001f) return;
 
     Vector2 normDir(desiredDir.x / len, desiredDir.y / len);
-    float velX = normDir.x * speed;
-    float velY = normDir.y * speed;
+    float velX = normDir.x * status.GetSpeed();
+    float velY = normDir.y * status.GetSpeed();
 
     if (!currentStage || cellSize <= 0.0f)
     {
@@ -169,21 +169,21 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
         Vector2 slideDir1(normDir.y, -normDir.x);
         Vector2 slideDir2(-normDir.y, normDir.x);
 
-        int slide1X = static_cast<int>((position.x + slideDir1.x * speed) / cellSize);
-        int slide1Y = static_cast<int>((position.y + slideDir1.y * speed) / cellSize);
+        int slide1X = static_cast<int>((position.x + slideDir1.x * status.GetSpeed()) / cellSize);
+        int slide1Y = static_cast<int>((position.y + slideDir1.y * status.GetSpeed()) / cellSize);
         if (!currentStage->IsSolidWall(slide1X, slide1Y))
         {
-            position.x += slideDir1.x * (speed * 0.7f);
-            position.y += slideDir1.y * (speed * 0.7f);
+            position.x += slideDir1.x * (status.GetSpeed() * 0.7f);
+            position.y += slideDir1.y * (status.GetSpeed() * 0.7f);
         }
         else
         {
-            int slide2X = static_cast<int>((position.x + slideDir2.x * speed) / cellSize);
-            int slide2Y = static_cast<int>((position.y + slideDir2.y * speed) / cellSize);
+            int slide2X = static_cast<int>((position.x + slideDir2.x * status.GetSpeed()) / cellSize);
+            int slide2Y = static_cast<int>((position.y + slideDir2.y * status.GetSpeed()) / cellSize);
             if (!currentStage->IsSolidWall(slide2X, slide2Y))
             {
-                position.x += slideDir2.x * (speed * 0.7f);
-                position.y += slideDir2.y * (speed * 0.7f);
+                position.x += slideDir2.x * (status.GetSpeed() * 0.7f);
+                position.y += slideDir2.y * (status.GetSpeed() * 0.7f);
             }
         }
     }
@@ -421,7 +421,7 @@ void Enemy::Draw()
 
 void Enemy::Damage()
 {
-    hp--;
+    status.TakeDamage(1);
     damageColorTimer = 15;
     aiState = EnemyAIState::ALERT; // 被弾したら即警戒状態
 
@@ -431,7 +431,7 @@ void Enemy::Damage()
         scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 14);
     }
 
-    if (hp <= 0)
+    if (status.IsDead())
     {
         SetActive(false);
     }
@@ -439,7 +439,7 @@ void Enemy::Damage()
 
 void Enemy::StealthKill()
 {
-    hp = 0;
+    status.TakeDamage(status.GetCurrentHp());
     SetActive(false);
 
     auto scene = SceneManager::GetInstance().GetCurrentScene();

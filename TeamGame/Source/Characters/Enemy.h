@@ -12,7 +12,6 @@ enum class EnemyAIState
 class Enemy : public Character
 {
   private:
-    int hp;
     int damageColorTimer;
     class Stage *currentStage;
     float cellSize;

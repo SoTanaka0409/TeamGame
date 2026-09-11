@@ -17,7 +17,7 @@ Player::Player(float startX, float startY)
     : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
-    speed = 5.0f;
+    status.Init(10, 5.0f, 1);
     collider->SetTag("Player");
     weapons.push_back(new Handgun());
     weapons.push_back(new Shotgun());
@@ -110,8 +110,8 @@ void Player::Update()
         float length = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
         if (length > 0.0001f)
         {
-            float velX = (moveDir.x / length) * speed;
-            float velY = (moveDir.y / length) * speed;
+            float velX = (moveDir.x / length) * status.GetSpeed();
+            float velY = (moveDir.y / length) * status.GetSpeed();
             
             // X軸の移動と衝突判定
             if (currentStage)
@@ -420,6 +420,7 @@ void Player::Draw()
 
 void Player::TakeDamage()
 {
+    status.TakeDamage(1);
     damageColorTimer = 30;
 }
 
@@ -568,5 +569,10 @@ void Player::DrawUI(int screenX, int screenY)
             sprintf_s(ammoText, sizeof(ammoText), "Ammo: %d / %d", currentAmmo, maxAmmo);
         }
         DrawString(screenX + 10, screenY + 60, ammoText, GetColor(255, 255, 0));
+
+        // Draw Player HP
+        char hpText[64];
+        snprintf(hpText, sizeof(hpText), "HP: %d / %d", status.GetCurrentHp(), status.GetMaxHp());
+        DrawString(screenX + 10, screenY + 80, hpText, GetColor(100, 255, 100));
     }
 }
