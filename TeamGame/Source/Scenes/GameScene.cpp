@@ -144,6 +144,22 @@ void GameScene::Update()
         }
         else
         {
+            // Clean up dangling pointers in GameScene's enemies vector before ObjectManager deletes them,
+            // or if they've been deleted, we shouldn't access them.
+            // Actually, ObjectManager::RemoveDestroyedObjects() is called inside Scene::Update(),
+            // which deletes the inactive objects. So the pointers in 'enemies' become dangling!
+            // We should remove inactive enemies BEFORE Scene::Update(), or just change GameScene to not need them.
+            // But for a quick fix, let's remove inactive enemies from our vector before calling Scene::Update().
+            
+            auto it = enemies.begin();
+            while (it != enemies.end()) {
+                if (!(*it)->IsActive()) {
+                    it = enemies.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+
             Scene::Update(); 
 
             DebugManager::GetInstance().Update();
@@ -375,6 +391,12 @@ void GameScene::Draw()
     {
         if (e && e->IsActive()) activeEnemyCount++;
     }
+    
+    // Draw an obvious Enemy counter in the top right corner
+    char enemyText[64];
+    snprintf(enemyText, sizeof(enemyText), "Enemies: %d", activeEnemyCount);
+    DrawString(1920 - 200, 20, enemyText, GetColor(255, 100, 100));
+
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }
 
