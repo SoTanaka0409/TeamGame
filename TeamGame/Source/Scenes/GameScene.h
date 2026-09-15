@@ -39,6 +39,11 @@ class GameScene : public Scene
     bool prevDown = false;
     bool prevEnter = false;
 
+    float gameTimer = 0.0f;
+    int totalEnemiesSpawned = 0;
+    int defeatedEnemiesCount = 0;
+    bool isCleared = false;
+
     void ProcessNetworkPackets();
 
   public:
@@ -51,6 +56,7 @@ class GameScene : public Scene
 
     void SpawnEnemiesRandomly(int count);
     void ClearEnemies();
+    int GetActiveEnemyCount() const;
 
     const class Stage* GetStage() const override
     {
