@@ -1,25 +1,20 @@
 #pragma once
-#include <string>
-
-class Character;
+#include "SkillData.h"
+#include "../Characters/Character.h"
+#include "../Managers/ObjectManager.h"
+#include <cmath>
 
 class Skill
 {
-protected:
-    std::string skillName;
-    int coolTimeMax;
+private:
+    const SkillData* data;
     int coolTimeTimer;
-    int mpCost; // MPなどの消費リソースを想定
 
 public:
-    Skill(const std::string& name, int coolTime, int cost)
-        : skillName(name), coolTimeMax(coolTime), coolTimeTimer(0), mpCost(cost)
-    {
-    }
-
+    Skill(const SkillData* skillData) : data(skillData), coolTimeTimer(0) {}
     virtual ~Skill() {}
 
-    virtual void Update()
+    void Update()
     {
         if (coolTimeTimer > 0)
         {
@@ -27,29 +22,81 @@ public:
         }
     }
 
-    virtual bool CanUse(Character* user) const
+    bool CanUse(Character* user) const
     {
-        // 必要に応じてステータスのMPやスタミナが足りているかの判定を追加します
-        return coolTimeTimer <= 0;
+        return coolTimeTimer <= 0; // MPのチェック等もここに追加可能
     }
 
-    // スキルの発動処理
-    virtual void Use(Character* user)
+    void Use(Character* user)
     {
-        if (CanUse(user))
+        if (!CanUse(user) || !data) return;
+
+        switch (data->majorTag)
         {
-            Execute(user);
-            coolTimeTimer = coolTimeMax;
+        case SkillMajorTag::StatusBuff:
+            ApplyStatusBuff(user);
+            break;
+        case SkillMajorTag::Debuff:
+            ApplyDebuff(user);
+            break;
+        case SkillMajorTag::Trap:
+            // トラップの処理をここに追加
+            break;
+        }
+
+        coolTimeTimer = data->coolTime;
+    }
+
+private:
+    void ApplyStatusBuff(Character* user)
+    {
+        if (data->minorTag == SkillMinorTag::Heal)
+        {
+            user->status.Heal(static_cast<int>(data->effectValue));
+        }
+        else if (data->minorTag == SkillMinorTag::AttackUp)
+        {
+            // 注: 実際のプロジェクトでは、Character側でタイマーリスト(ActiveEffects)を作り、
+            // duration(効果時間)が過ぎたら戻す処理が必要です。
+            user->status.SetSkillAttackBonus(static_cast<int>(data->effectValue));
+            user->AddActiveEffect(data->minorTag, data->duration, data->effectValue);
+        }
+        else if (data->minorTag == SkillMinorTag::SpeedUp)
+        {
+            user->status.SetSkillSpeedBonus(data->effectValue);
+            user->AddActiveEffect(data->minorTag, data->duration, data->effectValue);
         }
     }
 
-protected:
-    // 継承先の各スキルで具体的な効果を実装する
-    virtual void Execute(Character* user) = 0;
+    void ApplyDebuff(Character* user)
+    {
+        // 円形状の範囲でオブジェクトを検索し、敵にデバフを付与
+        const auto& objects = ObjectManager::GetInstance().GetObjects();
+        float effectRadius = data->effectValue; // effectValueを効果半径として使用
+        float radiusSq = effectRadius * effectRadius;
+
+        for (auto* obj : objects)
+        {
+            // 自分自身やプレイヤーの攻撃などを除外するため、タグで敵か判定
+            if (obj->GetObjectTag() == ObjectTag::Enemy)
+            {
+                Character* enemy = static_cast<Character*>(obj);
+                
+                // 距離の二乗で判定
+                float dx = enemy->GetPosition().x - user->GetPosition().x;
+                float dy = enemy->GetPosition().y - user->GetPosition().y;
+                float distanceSq = (dx * dx) + (dy * dy);
+
+                if (distanceSq <= radiusSq)
+                {
+                    // 範囲内の敵に効果(スタンや目くらまし)を付与
+                    enemy->AddActiveEffect(data->minorTag, data->duration, 0.0f);
+                }
+            }
+        }
+    }
 
 public:
-    std::string GetName() const { return skillName; }
+    const SkillData* GetData() const { return data; }
     int GetCoolTimeTimer() const { return coolTimeTimer; }
-    int GetCoolTimeMax() const { return coolTimeMax; }
-    int GetMpCost() const { return mpCost; }
 };
