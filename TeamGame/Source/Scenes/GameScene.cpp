@@ -7,6 +7,7 @@
 #include "InputManager.h"
 #include "Player.h"
 #include "ResultScene.h"
+#include "ClearScene.h"
 #include "TitleScene.h"
 #include "SceneManager.h"
 #include "NetworkManager.h"
@@ -24,13 +25,30 @@ GameScene::~GameScene()
 {
 }
 
+int GameScene::GetActiveEnemyCount() const
+{
+    if (!objectManager) return 0;
+    int count = 0;
+    for (auto obj : objectManager->GetObjects())
+    {
+        if (obj && obj->GetObjectTag() == ObjectTag::Enemy && obj->IsActive())
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 void GameScene::ClearEnemies()
 {
-    for (auto e : enemies)
+    if (objectManager)
     {
-        if (e)
+        for (auto obj : objectManager->GetObjects())
         {
-            e->SetActive(false);
+            if (obj && obj->GetObjectTag() == ObjectTag::Enemy)
+            {
+                obj->SetActive(false);
+            }
         }
     }
     enemies.clear();
@@ -52,12 +70,10 @@ void GameScene::SpawnEnemiesRandomly(int count)
         for (int x = 1; x < stage.GetWidth() - 1; ++x)
         {
             CellType cell = stage.GetCell(x, y);
-            // 水(WATER)、障害物壁(WALL_BLOCK, CACTUS)、外枠(OUTER_WALL)を除外し、床と草むらのみ対象
             if (cell == CellType::EMPTY_FLOOR || cell == CellType::BUSH)
             {
                 if (!stage.IsSolidWall(x, y) && cell != CellType::WATER)
                 {
-                    // プレイヤー初期位置から一定距離(5マス以上)を離してスポーン
                     int dx = x - pStart.x;
                     int dy = y - pStart.y;
                     if ((dx * dx + dy * dy) >= 25)
@@ -77,6 +93,8 @@ void GameScene::SpawnEnemiesRandomly(int count)
 
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     int numToSpawn = (std::min)(count, static_cast<int>(validCells.size()));
+    totalEnemiesSpawned = numToSpawn;
+    defeatedEnemiesCount = 0;
 
     for (int i = 0; i < numToSpawn; ++i)
     {
@@ -92,6 +110,8 @@ void GameScene::SpawnEnemiesRandomly(int count)
 void GameScene::Init()
 {
     Scene::Init();
+    gameTimer = 0.0f;
+    isCleared = false;
     
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
@@ -144,23 +164,38 @@ void GameScene::Update()
         }
         else
         {
-            // Clean up dangling pointers in GameScene's enemies vector before ObjectManager deletes them,
-            // or if they've been deleted, we shouldn't access them.
-            // Actually, ObjectManager::RemoveDestroyedObjects() is called inside Scene::Update(),
-            // which deletes the inactive objects. So the pointers in 'enemies' become dangling!
-            // We should remove inactive enemies BEFORE Scene::Update(), or just change GameScene to not need them.
-            // But for a quick fix, let's remove inactive enemies from our vector before calling Scene::Update().
-            
-            auto it = enemies.begin();
-            while (it != enemies.end()) {
-                if (!(*it)->IsActive()) {
-                    it = enemies.erase(it);
-                } else {
-                    ++it;
-                }
-            }
+            gameTimer += 0.016f;
 
+            // オブジェクトの更新と当たり判定
             Scene::Update(); 
+
+            // 生存している敵の数を安全に取得
+            int activeEnemyCount = GetActiveEnemyCount();
+            defeatedEnemiesCount = totalEnemiesSpawned - activeEnemyCount;
+            if (defeatedEnemiesCount < 0) defeatedEnemiesCount = 0;
+
+            // クリア判定 (敵全滅 または Cキーでのデバッグクリア)
+            bool debugClearKey = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_C);
+            if (!isCleared && totalEnemiesSpawned > 0 && (activeEnemyCount == 0 || debugClearKey))
+            {
+                isCleared = true;
+
+                ClearStats stats;
+                stats.clearTimeSec = gameTimer;
+                stats.defeatedEnemies = debugClearKey ? totalEnemiesSpawned : defeatedEnemiesCount;
+                stats.totalEnemies = totalEnemiesSpawned;
+                
+                int timeBonus = (std::max)(0, 10000 - static_cast<int>(gameTimer * 50.0f));
+                stats.rankScore = timeBonus + stats.defeatedEnemies * 500;
+
+                if (stats.clearTimeSec < 45.0f) stats.rankName = "S";
+                else if (stats.clearTimeSec < 90.0f) stats.rankName = "A";
+                else if (stats.clearTimeSec < 150.0f) stats.rankName = "B";
+                else stats.rankName = "C";
+
+                SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                return;
+            }
 
             DebugManager::GetInstance().Update();
 
@@ -386,11 +421,7 @@ void GameScene::Draw()
         DrawString(ruleX, ruleY + 420, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
     }
 
-    int activeEnemyCount = 0;
-    for (auto e : enemies)
-    {
-        if (e && e->IsActive()) activeEnemyCount++;
-    }
+    int activeEnemyCount = GetActiveEnemyCount();
     
     // Draw an obvious Enemy counter in the top right corner
     char enemyText[64];
