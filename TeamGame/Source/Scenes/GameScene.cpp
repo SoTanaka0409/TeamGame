@@ -54,6 +54,7 @@ void GameScene::ClearEnemies()
     enemies.clear();
 }
 
+
 void GameScene::SpawnEnemiesRandomly(int count)
 {
     ClearEnemies();
@@ -62,51 +63,39 @@ void GameScene::SpawnEnemiesRandomly(int count)
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
-    Point2D pStart = stage.GetPlayerStartPos();
 
     std::vector<Point2D> validCells;
     for (int y = 1; y < stage.GetHeight() - 1; ++y)
     {
         for (int x = 1; x < stage.GetWidth() - 1; ++x)
         {
-            CellType cell = stage.GetCell(x, y);
-            if (cell == CellType::EMPTY_FLOOR || cell == CellType::BUSH)
+            if (!stage.IsSolidWall(x, y) && stage.GetCell(x, y) != CellType::WATER)
             {
-                if (!stage.IsSolidWall(x, y) && cell != CellType::WATER)
-                {
-                    int dx = x - pStart.x;
-                    int dy = y - pStart.y;
-                    if ((dx * dx + dy * dy) >= 25)
-                    {
-                        validCells.push_back({ x, y });
-                    }
-                }
+                validCells.push_back({x, y});
             }
         }
     }
 
-    if (validCells.empty()) return;
-
     std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(validCells.begin(), validCells.end(), rng);
+    std::mt19937 g(rd());
+    std::shuffle(validCells.begin(), validCells.end(), g);
 
-    Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
-    int numToSpawn = (std::min)(count, static_cast<int>(validCells.size()));
-    totalEnemiesSpawned = numToSpawn;
-    defeatedEnemiesCount = 0;
-
-    for (int i = 0; i < numToSpawn; ++i)
+    // Spawn 2 Ally Bots (Team 0)
+    for (int i = 0; i < 2 && i < validCells.size(); ++i)
     {
-        float ex = (validCells[i].x + 0.5f) * cellSize;
-        float ey = (validCells[i].y + 0.5f) * cellSize;
-        Enemy* enemy = new Enemy(ex, ey);
-        enemy->SetStage(stagePtr, cellSize);
-        enemy->SetTargetPlayer(player);
-        enemies.push_back(enemy);
+        Enemy* allyBot = new Enemy((validCells[i].x + 0.5f) * cellSize, (validCells[i].y + 0.5f) * cellSize, 0);
+        allyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+        objectManager->AddObject(allyBot);
+    }
+    
+    // Spawn 3 Enemy Bots (Team 1)
+    for (int i = 2; i < 5 && i < validCells.size(); ++i)
+    {
+        Enemy* enemyBot = new Enemy((validCells[i].x + 0.5f) * cellSize, (validCells[i].y + 0.5f) * cellSize, 1);
+        enemyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+        objectManager->AddObject(enemyBot);
     }
 }
-
 void GameScene::Init()
 {
     Scene::Init();
@@ -166,34 +155,57 @@ void GameScene::Update()
         {
             gameTimer += 0.016f;
 
-            // オブジェクトの更新と当たり判定
-            Scene::Update(); 
 
-            // 生存している敵の数を安全に取得
-            int activeEnemyCount = GetActiveEnemyCount();
-            defeatedEnemiesCount = totalEnemiesSpawned - activeEnemyCount;
-            if (defeatedEnemiesCount < 0) defeatedEnemiesCount = 0;
+            Scene::Update();
 
-            // クリア判定 (敵全滅 または Cキーでのデバッグクリア)
-            bool debugClearKey = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_C);
-            if (!isCleared && totalEnemiesSpawned > 0 && (activeEnemyCount == 0 || debugClearKey))
+            // Respawn and kill count logic
+            if (objectManager)
+            {
+                for (auto obj : objectManager->GetObjects())
+                {
+                    Character* ch = dynamic_cast<Character*>(obj);
+                    if (ch && !ch->IsActive())
+                    {
+                        // 死亡しているキャラクターのキルカウント
+                        if (ch->teamId == 0) team1Kills++; // 味方が死んだら敵にポイント
+                        else if (ch->teamId == 1) team0Kills++; // 敵が死んだら味方にポイント
+                        
+                        // リスポーン（ランダムな位置に復活）
+                        const Stage& stage = stageManager.GetCurrentStage();
+                        float cellW = 1920.0f / stage.GetWidth();
+                        float cellH = 1080.0f / stage.GetHeight();
+                        float cellSize = (cellW < cellH) ? cellW : cellH;
+                        
+                        int rx = 1 + std::rand() % (stage.GetWidth() - 2);
+                        int ry = 1 + std::rand() % (stage.GetHeight() - 2);
+                        while (stage.IsSolidWall(rx, ry)) {
+                            rx = 1 + std::rand() % (stage.GetWidth() - 2);
+                            ry = 1 + std::rand() % (stage.GetHeight() - 2);
+                        }
+                        
+                        ch->SetPosition(Vector2((rx + 0.5f) * cellSize, (ry + 0.5f) * cellSize));
+                        ch->status.Heal(ch->status.GetMaxHp());
+                        ch->SetActive(true);
+                    }
+                }
+            }
+
+            // 勝敗判定 (10キル先取)
+            if (!isCleared && (team0Kills >= 10 || team1Kills >= 10))
             {
                 isCleared = true;
-
-                ClearStats stats;
-                stats.clearTimeSec = gameTimer;
-                stats.defeatedEnemies = debugClearKey ? totalEnemiesSpawned : defeatedEnemiesCount;
-                stats.totalEnemies = totalEnemiesSpawned;
                 
-                int timeBonus = (std::max)(0, 10000 - static_cast<int>(gameTimer * 50.0f));
-                stats.rankScore = timeBonus + stats.defeatedEnemies * 500;
-
-                if (stats.clearTimeSec < 45.0f) stats.rankName = "S";
-                else if (stats.clearTimeSec < 90.0f) stats.rankName = "A";
-                else if (stats.clearTimeSec < 150.0f) stats.rankName = "B";
-                else stats.rankName = "C";
-
-                SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                if (team0Kills >= 10) {
+                    ClearStats stats;
+                    stats.clearTimeSec = gameTimer;
+                    stats.defeatedEnemies = team0Kills;
+                    stats.totalEnemies = 10;
+                    stats.rankScore = 5000;
+                    stats.rankName = "S";
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                } else {
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<ResultScene>());
+                }
                 return;
             }
 
@@ -376,7 +388,14 @@ void GameScene::Draw()
         const int menuStartY = 400;
         const int menuSpacing = 60;
         
-        if (state == GameState::PAUSED)
+    
+    // Draw scores
+    char scoreText[128];
+    sprintf_s(scoreText, sizeof(scoreText), "BLUE(YOU): %d  vs  RED: %d", team0Kills, team1Kills);
+    DrawString(800, 20, scoreText, GetColor(255, 255, 255));
+    
+    if (state == GameState::PAUSED)
+
         {
             const char* items[] = { "ゲームに戻る", "設定", "タイトルへ戻る", "ゲーム終了" };
             for (int i = 0; i < 4; i++)

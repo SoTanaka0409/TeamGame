@@ -1,13 +1,14 @@
 #include "Camera.h"
 #include "Bullet.h"
+#include "Character.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "Scene.h"
 #include "SceneManager.h"
 
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius)
-    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY)
+Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -86,19 +87,25 @@ void Bullet::Draw()
 
 void Bullet::OnCollisionEnter(Collider *otherCollider)
 {
-    // 敵に当たったらダメージを与えて自身も消滅
-    if (otherCollider->GetOwner() && otherCollider->GetOwner()->GetObjectTag() == ObjectTag::Enemy)
+    if (otherCollider->GetOwner())
     {
-        Enemy *enemy = dynamic_cast<Enemy *>(otherCollider->GetOwner());
-        if (enemy)
+        Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
+        if (target && target->teamId != this->teamId && target->teamId != -1)
         {
-            enemy->Damage();
+            if (target->GetObjectTag() == ObjectTag::Enemy) {
+                Enemy *enemy = dynamic_cast<Enemy *>(target);
+                if (enemy) enemy->Damage();
+            } else if (target->GetObjectTag() == ObjectTag::Player) {
+                Player *player = dynamic_cast<Player *>(target);
+                if (player) player->TakeDamage();
+            }
+            
             auto scene = SceneManager::GetInstance().GetCurrentScene();
             if (scene && scene->GetEffectManager())
             {
                 scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 10);
             }
+            SetActive(false);
         }
-        SetActive(false);
     }
 }

@@ -9,15 +9,16 @@
 #include <cmath>
 #include <cstdlib>
 
-Enemy::Enemy(float startX, float startY)
+Enemy::Enemy(float startX, float startY, int tId)
     : Character(ObjectTag::Enemy, startX, startY, 25.0f), damageColorTimer(0),
-      currentStage(nullptr), cellSize(1.0f), targetPlayer(nullptr),
+      currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0),
       strafeDirection(1), strafeTimer(0)
 {
     // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
     status.Init(3, 0.75f, 1);
+    teamId = tId;
 
 
 
@@ -27,6 +28,34 @@ Enemy::Enemy(float startX, float startY)
 Enemy::~Enemy()
 {
 }
+
+#include "ObjectManager.h"
+
+void Enemy::UpdateTarget()
+{
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (!scene || !scene->GetObjectManager()) return;
+
+    float minDist = 999999.0f;
+    targetCharacter = nullptr;
+
+    for (auto obj : scene->GetObjectManager()->GetObjects())
+    {
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c != this && c->IsActive() && c->teamId != this->teamId && c->teamId != -1)
+        {
+            float dx = c->GetPosition().x - position.x;
+            float dy = c->GetPosition().y - position.y;
+            float dist = dx * dx + dy * dy;
+            if (dist < minDist)
+            {
+                minDist = dist;
+                targetCharacter = c;
+            }
+        }
+    }
+}
+
 
 void Enemy::OnHearGunshot(const Vector2 &soundPos)
 {
@@ -49,14 +78,14 @@ void Enemy::OnHearGunshot(const Vector2 &soundPos)
     }
 }
 
-bool Enemy::CheckLineOfSightToPlayer() const
+bool Enemy::CheckLineOfSightToTarget() const
 {
-    if (!targetPlayer || !targetPlayer->IsActive() || !currentStage || cellSize <= 0.0f)
+    if (!targetCharacter || !targetCharacter->IsActive() || !currentStage || cellSize <= 0.0f)
     {
         return false;
     }
 
-    Vector2 pPos = targetPlayer->GetPosition();
+    Vector2 pPos = targetCharacter->GetPosition();
     float dx = pPos.x - position.x;
     float dy = pPos.y - position.y;
     float dist = std::sqrt(dx * dx + dy * dy);
@@ -69,7 +98,11 @@ bool Enemy::CheckLineOfSightToPlayer() const
     }
 
     // 草むら潜伏判定: 草むらの中に居るプレイヤーは超至近距離(1.0セル以内)でしか視認できない
-    if (targetPlayer->IsInBush())
+    
+    // 草むら潜伏判定 草むらの中の相手は超至近距離(1.0セル以内)でしか視認できない
+    Player* pTarget = dynamic_cast<Player*>(targetCharacter);
+    if (pTarget && pTarget->IsInBush())
+
     {
         if (dist > cellSize * 1.0f)
         {
@@ -191,6 +224,8 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
 void Enemy::Update()
 {
+    UpdateTarget();
+
     if (damageColorTimer > 0)
     {
         damageColorTimer--;
@@ -202,12 +237,12 @@ void Enemy::Update()
     }
 
     // 視界チェック
-    bool canSeePlayer = CheckLineOfSightToPlayer();
+    bool canSeePlayer = CheckLineOfSightToTarget();
 
     if (canSeePlayer)
     {
         aiState = EnemyAIState::ALERT;
-        lastKnownPos = targetPlayer->GetPosition();
+        lastKnownPos = targetCharacter->GetPosition();
     }
     else if (aiState == EnemyAIState::ALERT)
     {
@@ -216,9 +251,9 @@ void Enemy::Update()
         investigateTimer = 60; // 1秒間探索してすぐ巡回へ
     }
 
-    if (aiState == EnemyAIState::ALERT && targetPlayer && targetPlayer->IsActive())
+    if (aiState == EnemyAIState::ALERT && targetCharacter && targetCharacter->IsActive())
     {
-        Vector2 pPos = targetPlayer->GetPosition();
+        Vector2 pPos = targetCharacter->GetPosition();
         float dx = pPos.x - position.x;
         float dy = pPos.y - position.y;
         float dist = std::sqrt(dx * dx + dy * dy);
@@ -264,9 +299,15 @@ void Enemy::Update()
         // 【発砲頻度の緩和】 約2.7秒(160フレーム)ごとにゆっくり発砲、弾速も遅い 3.0f
         if (shootCooldown <= 0 && dist < cellSize * 3.5f)
         {
-            new EnemyBullet(position.x + facingDir.x * (radius + 5.0f),
-                            position.y + facingDir.y * (radius + 5.0f),
-                            facingDir, 3.0f);
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetObjectManager())
+            {
+                EnemyBullet* eBullet = new EnemyBullet(position.x + facingDir.x * (radius + 5.0f),
+                                position.y + facingDir.y * (radius + 5.0f),
+                                facingDir, 3.0f, this->teamId);
+                scene->GetObjectManager()->AddObject(eBullet);
+                SoundManager::GetInstance().Play3D("enemy_gunshot", position, 1000.0f);
+            }
             shootCooldown = 160;
         }
     }
@@ -324,7 +365,7 @@ void Enemy::Draw()
     float screenY = position.y;
     float renderRadius = radius;
 
-    if (targetPlayer && targetPlayer->IsActive() && cellSize > 0.0f)
+    if (targetCharacter && targetCharacter->IsActive() && cellSize > 0.0f)
     {
                 screenX = Camera::WorldToScreenX(position.x);
         screenY = Camera::WorldToScreenY(position.y);
@@ -337,18 +378,20 @@ void Enemy::Draw()
     }
 
     // 本体描画 (被弾時は黄色、警戒時は鮮やかな赤、調査時はオレンジ、通常は暗めの赤)
-    unsigned int bodyColor = GetColor(180, 30, 30);
+    // チームに応じたベース色
+    unsigned int bodyColor = (teamId == 0) ? GetColor(30, 80, 180) : GetColor(180, 30, 30);
+    
     if (damageColorTimer > 0)
     {
         bodyColor = GetColor(255, 255, 0);
     }
     else if (aiState == EnemyAIState::ALERT)
     {
-        bodyColor = GetColor(240, 40, 40);
+        bodyColor = (teamId == 0) ? GetColor(40, 100, 240) : GetColor(240, 40, 40);
     }
     else if (aiState == EnemyAIState::INVESTIGATE)
     {
-        bodyColor = GetColor(230, 140, 30);
+        bodyColor = (teamId == 0) ? GetColor(30, 140, 230) : GetColor(230, 140, 30);
     }
 
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),

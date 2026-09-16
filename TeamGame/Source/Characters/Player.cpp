@@ -17,6 +17,7 @@ Player::Player(float startX, float startY)
     : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
+    teamId = 0; // プレイヤーはTeam 0
     status.Init(10, 5.0f, 1);
     collider->SetTag("Player");
     weapons.push_back(new Handgun());
@@ -173,7 +174,7 @@ void Player::Update()
 
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
             {
-                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir);
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId);
             }
         }
         else if (m_inputType == PlayerInputType::GAMEPAD_1)
@@ -206,7 +207,7 @@ void Player::Update()
             
             if (padState & PAD_INPUT_1) // Button A (or R1)
             {
-                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir);
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId);
             }
             
             prevPadState = padState;

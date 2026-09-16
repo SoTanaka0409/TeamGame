@@ -14,9 +14,10 @@ class Bullet : public Object2D
     float radius;
     float maxRange;
     Vector2 startPos;
+    int teamId;
 
   public:
-    Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius);
+    Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius, int tId = 0);
     virtual ~Bullet();
 
     void Update() override;

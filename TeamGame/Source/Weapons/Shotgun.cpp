@@ -26,7 +26,7 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos)
 
 Shotgun::Shotgun() : Weapon("Shotgun") {}
 
-void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
+void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId)
 {
     if (CanFire() && data)
     {

@@ -15,7 +15,7 @@ class Enemy : public Character
     int damageColorTimer;
     class Stage *currentStage;
     float cellSize;
-    class Player *targetPlayer;
+    class Character *targetCharacter;
 
     EnemyAIState aiState;
     Vector2 facingDir;
@@ -28,33 +28,31 @@ class Enemy : public Character
     int strafeTimer;
 
   public:
-    Enemy(float startX, float startY);
-    virtual ~Enemy();
+    Enemy(float startX, float startY, int tId = 1);
+    ~Enemy();
+
+    void Update() override;
+    void Draw() override;
+    void OnCollisionEnter(Collider *otherCollider) override;
+    void OnCollisionStay(Collider *otherCollider) override;
+    void OnCollisionExit(Collider *otherCollider) override;
 
     void SetStage(class Stage *s, float cSize)
     {
         currentStage = s;
         cellSize = cSize;
     }
-    void SetTargetPlayer(class Player *p)
-    {
-        targetPlayer = p;
-    }
+    
+    // Nearest enemy logic
+    void UpdateTarget();
 
     void OnHearGunshot(const Vector2 &soundPos);
-
-    void Update() override;
-    void Draw() override;
-
     void Damage();
+
     void StealthKill();
     bool IsAlerted() const { return aiState == EnemyAIState::ALERT; }
     EnemyAIState GetAIState() const { return aiState; }
-    bool CheckLineOfSightToPlayer() const;
+    bool CheckLineOfSightToTarget() const;
 
     void MoveSmart(const Vector2 &desiredDir);
-
-    void OnCollisionEnter(Collider *otherCollider) override;
-    void OnCollisionStay(Collider *otherCollider) override;
-    void OnCollisionExit(Collider *otherCollider) override;
 };
