@@ -19,6 +19,9 @@ class Player : public Character
     Vector2 facingDir;
     std::vector<Weapon *> weapons;
     int currentWeaponIndex;
+    
+    // ガジェット（スキル）の保持
+    class Skill* currentSkill = nullptr;
 
   public:
     Vector2 GetFacingDir() const
@@ -33,6 +36,15 @@ class Player : public Character
 
     void SetStage(class Stage* s, float cSize) { currentStage = s; cellSize = cSize; }
     void TakeDamage();
+    
+    // 弾薬の回復（現在持っている武器の弾を回復する）
+    void AddAmmo(int amount) {
+        if (!weapons.empty() && weapons[currentWeaponIndex]) {
+            // 現在の弾薬に直接足すか、UseAmmoの逆を行う。ここではシンプルに。
+            weapons[currentWeaponIndex]->UseAmmo(-amount);
+        }
+    }
+    
     void Update() override;
     void Draw() override;
     void DrawUI(int screenX, int screenY);
@@ -51,6 +63,10 @@ class Player : public Character
     void SetInBush(bool val) { m_isInBush = val; }
     void SetFacingDir(const Vector2& dir) { facingDir = dir; }
     void SetRemote(bool val) { isRemote = val; }
+    
+    // スキルのセット
+    void SetSkill(class Skill* skill) { currentSkill = skill; }
+    
     void SetInputType(PlayerInputType type) { m_inputType = type; }
     PlayerInputType GetInputType() const { return m_inputType; }
     bool IsRemote() const { return isRemote; }

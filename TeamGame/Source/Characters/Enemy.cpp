@@ -3,7 +3,12 @@
 #include "Enemy.h"
 #include "DxLib.h"
 #include "EnemyBullet.h"
+#include "ObjectManager.h"
 #include "Player.h"
+#include "Scene.h"
+#include "SceneManager.h"
+#include "SoundManager.h"
+#include "../Objects/Item.h"
 #include "Stage.h"
 #include <algorithm>
 #include <cmath>
@@ -261,12 +266,19 @@ void Enemy::Update()
             }
         }
 
-        // 【発砲頻度の緩和】 約2.7秒(160フレーム)ごとにゆっくり発砲、弾速も遅い 3.0f
+        // 発砲頻度の緩和
         if (shootCooldown <= 0 && dist < cellSize * 3.5f)
         {
-            new EnemyBullet(position.x + facingDir.x * (radius + 5.0f),
-                            position.y + facingDir.y * (radius + 5.0f),
-                            facingDir, 3.0f);
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetObjectManager())
+            {
+                EnemyBullet* eBullet = new EnemyBullet(position.x + facingDir.x * (radius + 5.0f),
+                                position.y + facingDir.y * (radius + 5.0f),
+                                facingDir, 3.0f);
+                scene->GetObjectManager()->AddObject(eBullet);
+                
+                SoundManager::GetInstance().Play3D("enemy_gunshot", position, 1000.0f);
+            }
             shootCooldown = 160;
         }
     }
@@ -434,6 +446,15 @@ void Enemy::Damage()
     if (status.IsDead())
     {
         SetActive(false);
+
+        // 死亡時にアイテムをドロップ
+        if (scene && scene->GetObjectManager())
+        {
+            // 50%の確率で回復アイテム、50%で弾薬アイテム
+            ItemType type = (std::rand() % 2 == 0) ? ItemType::Health : ItemType::Ammo;
+            int amount = (type == ItemType::Health) ? 2 : 10;
+            scene->GetObjectManager()->AddObject(new Item(position.x, position.y, type, amount));
+        }
     }
 }
 

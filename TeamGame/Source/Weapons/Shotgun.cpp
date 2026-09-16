@@ -3,8 +3,8 @@
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 #include <cmath>
-
 
 #include "Enemy.h"
 
@@ -31,7 +31,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
     if (CanFire() && data)
     {
         auto scene = SceneManager::GetInstance().GetCurrentScene();
-        if (scene)
+        if (scene && scene->GetObjectManager())
         {
             int pelletCount = 5;
             float spreadRad = data->spreadAngle * (3.14159f / 180.0f);
@@ -44,8 +44,12 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
                 float finalAngle = baseAngle + angleOffset;
                 Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 
-                new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius);
+                Bullet* bullet = new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius);
+                scene->GetObjectManager()->AddObject(bullet);
             }
+            
+            SoundManager::GetInstance().Play3D("shotgun_fire", pos, 1200.0f);
+
             NotifyEnemiesOfGunshot(pos);
             ResetCoolTime();
             UseAmmo(1);

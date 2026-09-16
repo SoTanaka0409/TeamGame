@@ -10,6 +10,8 @@
 #include "Shotgun.h"
 #include "SceneManager.h"
 #include "Scene.h"
+#include "../Skills/Skill.h"
+#include "../Skills/SkillData.h"
 #include <cmath>
 #include <algorithm>
 
@@ -22,6 +24,7 @@ Player::Player(float startX, float startY)
     weapons.push_back(new Handgun());
     weapons.push_back(new Shotgun());
     currentWeaponIndex = 0;
+    currentSkill = nullptr;
 }
 
 Player::~Player()
@@ -29,13 +32,25 @@ Player::~Player()
     for (auto w : weapons)
         delete w;
     weapons.clear();
+    
+    if (currentSkill) {
+        delete currentSkill;
+    }
 }
 
 void Player::Update()
 {
+    // 追加: バフ・デバフのタイマー更新
+    UpdateActiveEffects();
+
+    // 追加: スキルのクールダウンタイマー更新
+    if (currentSkill) {
+        currentSkill->Update();
+    }
+
     if (!isRemote)
     {
-        // 右クリックで懐中電灯 ON / OFF トグル切り替え
+        // 懐中電灯スイッチ
         bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
         if (currMouseRight && !m_prevMouseRight)
         {
@@ -175,6 +190,15 @@ void Player::Update()
             {
                 if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir);
             }
+            
+            // スキル（ガジェット）の発動 (Eキー)
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_E))
+            {
+                if (currentSkill && currentSkill->CanUse(this)) {
+                    currentSkill->Use(this);
+                    // 必要ならSoundManager::GetInstance().Play3D("skill_use", position, 500.0f); など
+                }
+            }
         }
         else if (m_inputType == PlayerInputType::GAMEPAD_1)
         {
@@ -207,6 +231,13 @@ void Player::Update()
             if (padState & PAD_INPUT_1) // Button A (or R1)
             {
                 if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir);
+            }
+            
+            if (padState & PAD_INPUT_3) // Button X
+            {
+                if (currentSkill && currentSkill->CanUse(this)) {
+                    currentSkill->Use(this);
+                }
             }
             
             prevPadState = padState;
@@ -422,6 +453,12 @@ void Player::TakeDamage()
 {
     status.TakeDamage(1);
     damageColorTimer = 30;
+    
+    if (status.IsDead())
+    {
+        SetActive(false);
+        // ここに将来的にゲームオーバー画面（ResultScene）への遷移を追加します
+    }
 }
 
 void Player::OnCollisionEnter(Collider *otherCollider)
@@ -574,5 +611,19 @@ void Player::DrawUI(int screenX, int screenY)
         char hpText[64];
         snprintf(hpText, sizeof(hpText), "HP: %d / %d", status.GetCurrentHp(), status.GetMaxHp());
         DrawString(screenX + 10, screenY + 80, hpText, GetColor(100, 255, 100));
+
+        // Draw Skill UI
+        if (currentSkill)
+        {
+            char skillText[64];
+            int ct = currentSkill->GetCoolTimeTimer();
+            if (ct > 0) {
+                snprintf(skillText, sizeof(skillText), "Skill [%s]: CD %d", currentSkill->GetData()->name.c_str(), ct);
+                DrawString(screenX + 10, screenY + 100, skillText, GetColor(150, 150, 150));
+            } else {
+                snprintf(skillText, sizeof(skillText), "Skill [%s]: Ready! (E)", currentSkill->GetData()->name.c_str());
+                DrawString(screenX + 10, screenY + 100, skillText, GetColor(0, 255, 255));
+            }
+        }
     }
 }

@@ -13,6 +13,9 @@
 #include "NetworkManager.h"
 #include "PacketTypes.h"
 #include "GameSettings.h"
+#include "SoundManager.h"
+#include "../Skills/Skill.h"
+#include "../Skills/SkillData.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -113,6 +116,13 @@ void GameScene::Init()
     gameTimer = 0.0f;
     isCleared = false;
     
+    // サウンドのロード
+    SoundManager::GetInstance().Load("gunshot", "Assets/Sounds/gunshot.wav");
+    SoundManager::GetInstance().Load("enemy_gunshot", "Assets/Sounds/enemy_gun.wav");
+    SoundManager::GetInstance().Load("shotgun_fire", "Assets/Sounds/shotgun.wav");
+    SoundManager::GetInstance().Load("item_get", "Assets/Sounds/item_get.wav");
+    // (将来的に追加のサウンドがあればここに追記)
+    
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
     
@@ -127,9 +137,19 @@ void GameScene::Init()
     float startX = (startGrid.x + 0.5f) * cellSize;
     float startY = (startGrid.y + 0.5f) * cellSize;
     
+    // ステージ生成等のあとにスキルの初期化
+    // スキルデータのロード
+    SkillDataManager::GetInstance().LoadFromCSV("Source/Skills/skills.csv");
+    
     player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     player->SetStage(stagePtr, cellSize);
+
+    // テストとしてプレイヤーにスキル(ID:1 ヒール)を持たせる
+    const SkillData* testSkill = SkillDataManager::GetInstance().GetSkillData(1);
+    if (testSkill) {
+        player->SetSkill(new Skill(testSkill));
+    }
 
     if (currentPlayMode == PlayMode::LOCAL_COOP)
     {
@@ -166,6 +186,12 @@ void GameScene::Update()
         {
             gameTimer += 0.016f;
 
+            if (player && player->IsActive())
+            {
+                SoundManager::GetInstance().SetListener(player->GetPosition(), player->GetFacingDir());
+            }
+            SoundManager::GetInstance().Update();
+
             // オブジェクトの更新と当たり判定
             Scene::Update(); 
 
@@ -194,6 +220,13 @@ void GameScene::Update()
                 else stats.rankName = "C";
 
                 SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                return;
+            }
+
+            // ゲームオーバー判定 (プレイヤーが死んで IsActive が false になった場合)
+            if (player && !player->IsActive())
+            {
+                SceneManager::GetInstance().ChangeScene(std::make_shared<ResultScene>());
                 return;
             }
 
