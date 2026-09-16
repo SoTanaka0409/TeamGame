@@ -21,6 +21,7 @@ class Character : public Object2D
 
   public:
     Status status;
+    int teamId; // 追加: 0=味方(青), 1=敵(赤)
 
     Character(ObjectTag tag, float startX, float startY, float radius);
     virtual ~Character();

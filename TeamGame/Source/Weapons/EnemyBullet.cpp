@@ -1,3 +1,5 @@
+#include "Character.h"
+#include "Enemy.h"
 #include "Camera.h"
 #include "EnemyBullet.h"
 #include "ColliderManager.h"
@@ -6,8 +8,8 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
-EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed)
-    : myColliderManager(nullptr), radius(6.0f)
+EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, int tId)
+    : Object2D(ObjectTag::EnemyWeapon), myColliderManager(nullptr), radius(6.0f), teamId(tId)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -77,16 +79,22 @@ void EnemyBullet::Draw()
                static_cast<int>(radius + 2.0f), GetColor(255, 200, 200), FALSE);
 }
 
+
 void EnemyBullet::OnCollisionEnter(Collider *otherCollider)
 {
-    if (otherCollider->GetTag() == "Player")
+    if (otherCollider->GetOwner())
     {
-        Player *player = dynamic_cast<Player *>(otherCollider->GetOwner());
-        if (player)
+        Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
+        if (target && target->teamId != this->teamId && target->teamId != -1)
         {
-            player->TakeDamage();
+            if (target->GetObjectTag() == ObjectTag::Player) {
+                Player *player = dynamic_cast<Player *>(target);
+                if (player) player->TakeDamage();
+            } else if (target->GetObjectTag() == ObjectTag::Enemy) {
+                Enemy *enemy = dynamic_cast<Enemy *>(target);
+                if (enemy) enemy->Damage();
+            }
+            SetActive(false);
         }
-        SetActive(false);
     }
 }
-

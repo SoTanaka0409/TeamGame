@@ -41,7 +41,7 @@ class Weapon
         }
     }
 
-    virtual void Fire(const Vector2 &pos, const Vector2 &dir) = 0;
+    virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0) = 0;
     
     virtual void Reload()
     {
