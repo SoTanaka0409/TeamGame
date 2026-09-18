@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "Vector2.h"
 
 struct Point2D {
     int x;
@@ -59,6 +60,9 @@ public:
     bool IsLightBlockingWall(int gridX, int gridY) const;
 
     bool IsOutOfBounds(int gridX, int gridY) const;
+
+    // キャラクターの壁めり込み防止・押し出し補正
+    void ResolveCollision(Vector2& pos, float margin, float cellSize) const;
 
     void SetGrassGraph(int handle) { m_hGrassGraph = handle; }
 

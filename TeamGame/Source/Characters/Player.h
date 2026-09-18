@@ -54,6 +54,7 @@ class Player : public Character
 
     // 懐中電灯・スポットライト
     void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY) const;
+    void RenderBloodSplatterOverlay(int screenWidth = 1920, int screenHeight = 1080) const;
 
     bool IsLightOn() const { return m_isLightOn; }
     void ToggleLight() { m_isLightOn = !m_isLightOn; }
@@ -77,8 +78,12 @@ class Player : public Character
     bool isRemote = false;
     PlayerInputType m_inputType = PlayerInputType::KEYBOARD_MOUSE;
 
-    // 懐中電灯パラメーター
+    // 懐中電灯・環境光パラメーター
     float m_maxSpotDistCells = 14.0f;
     float m_closeRadiusCells = 2.0f;
     float m_fanAngleHalf = 0.5236f;
+
+    // 月明かり・チラつきランダム環境光タイマー
+    mutable int m_flickerTimer = 0;
+    mutable bool m_isMoonlightFlicker = false;
 };

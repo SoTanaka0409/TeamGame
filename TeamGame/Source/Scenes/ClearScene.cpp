@@ -1,6 +1,7 @@
 #include "ClearScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
+#include "DebugManager.h"
 #include "SceneManager.h"
 #include "GameScene.h"
 #include "TitleScene.h"
@@ -20,6 +21,7 @@ void ClearScene::Init()
 {
     Scene::Init();
     animTimer = 0.0f;
+    prevEnter = true; // 前のシーンの押しっぱなし事故防止
 }
 
 void ClearScene::Update()
@@ -41,7 +43,9 @@ void ClearScene::Update()
         menuCursor = (menuCursor + 1) % 2;
     }
 
-    if (currEnter && !prevEnter)
+    // シーン遷移後2秒間は決定操作をロック（連打・押しっぱなしによる意図しない即時選択を防止）
+    bool canConfirm = (animTimer >= 2.0f);
+    if (canConfirm && currEnter && !prevEnter)
     {
         if (menuCursor == 0)
         {
@@ -148,5 +152,17 @@ void ClearScene::Draw()
         DrawString(centerX - 130, itemY, options[i], color);
     }
 
-    DrawString(centerX - 160, 920, "[ W / S ] 選択   [ Enter ] 決定", GetColor(120, 150, 180));
+    if (animTimer < 2.0f)
+    {
+        if (DebugManager::GetInstance().IsDebugMode())
+        {
+            char waitMsg[64];
+            snprintf(waitMsg, sizeof(waitMsg), "[ DEBUG: 決定操作ロック中... (あと %.1f 秒) ]", 2.0f - animTimer);
+            DrawString(centerX - 210, 920, waitMsg, GetColor(255, 120, 120));
+        }
+    }
+    else
+    {
+        DrawString(centerX - 160, 920, "[ W / S ] 選択   [ Enter ] 決定", GetColor(120, 150, 180));
+    }
 }
