@@ -56,10 +56,43 @@ class KnifeSlashEffect : public Effect
     void Draw() override;
 };
 
+class MuzzleFlashEffect : public Effect
+{
+  public:
+    float angle;
+    float flashRadius;
+
+    MuzzleFlashEffect(float startX, float startY, float dirAngle, float radius = 18.0f)
+        : Effect(startX, startY, 6), angle(dirAngle), flashRadius(radius)
+    {
+    }
+
+    void Draw() override;
+};
+
+class SparkParticle : public Effect
+{
+  public:
+    float vx, vy;
+    float size;
+    unsigned int color;
+
+    SparkParticle(float startX, float startY, float velX, float velY, float pSize, int life, unsigned int col)
+        : Effect(startX, startY, life), vx(velX), vy(velY), size(pSize), color(col)
+    {
+    }
+
+    void Update() override;
+    void Draw() override;
+};
+
 class EffectManager
 {
   private:
     std::vector<Effect *> effects;
+    int gunFlashTimer = 0;
+    float lastFlashWorldX = 0.0f;
+    float lastFlashWorldY = 0.0f;
 
   public:
     EffectManager();
@@ -68,6 +101,16 @@ class EffectManager
     void AddEffect(Effect *effect);
     void AddBloodEffect(float worldX, float worldY, int count = 10);
     void AddKnifeSlashEffect(float worldX, float worldY, float dirAngle);
+    void AddMuzzleFlashEffect(float worldX, float worldY, float dirAngle, float radius = 18.0f);
+    void TriggerGunFlash(float worldX, float worldY, int duration = 5)
+    {
+        gunFlashTimer = duration;
+        lastFlashWorldX = worldX;
+        lastFlashWorldY = worldY;
+    }
+    int GetGunFlashTimer() const { return gunFlashTimer; }
+    float GetLastFlashWorldX() const { return lastFlashWorldX; }
+    float GetLastFlashWorldY() const { return lastFlashWorldY; }
     void Update();
     void Draw();
     void Clear();

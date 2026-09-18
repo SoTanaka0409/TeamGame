@@ -1,5 +1,3 @@
-#include "Character.h"
-#include "Enemy.h"
 #include "Camera.h"
 #include "EnemyBullet.h"
 #include "ColliderManager.h"
@@ -8,8 +6,8 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
-EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, int tId)
-    : Object2D(ObjectTag::EnemyWeapon), myColliderManager(nullptr), radius(6.0f), teamId(tId)
+EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, float range)
+    : myColliderManager(nullptr), radius(6.0f), maxRange(range), startPos(startX, startY)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -41,6 +39,15 @@ void EnemyBullet::Update()
 {
     position.x += velocity.x;
     position.y += velocity.y;
+
+    // 射程距離制限チェック (最大射程を超えたら消滅)
+    float dx = position.x - startPos.x;
+    float dy = position.y - startPos.y;
+    if (dx * dx + dy * dy > maxRange * maxRange)
+    {
+        SetActive(false);
+        return;
+    }
 
     // 画面外に出たら消滅
     if (position.x < -200 || position.x > 2100 || position.y < -200 ||
@@ -79,22 +86,16 @@ void EnemyBullet::Draw()
                static_cast<int>(radius + 2.0f), GetColor(255, 200, 200), FALSE);
 }
 
-
 void EnemyBullet::OnCollisionEnter(Collider *otherCollider)
 {
-    if (otherCollider->GetOwner())
+    if (otherCollider->GetTag() == "Player")
     {
-        Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
-        if (target && target->teamId != this->teamId && target->teamId != -1)
+        Player *player = dynamic_cast<Player *>(otherCollider->GetOwner());
+        if (player)
         {
-            if (target->GetObjectTag() == ObjectTag::Player) {
-                Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage();
-            } else if (target->GetObjectTag() == ObjectTag::Enemy) {
-                Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage();
-            }
-            SetActive(false);
+            player->TakeDamage();
         }
+        SetActive(false);
     }
 }
+

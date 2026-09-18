@@ -10,6 +10,7 @@
 #include "Shotgun.h"
 #include "SceneManager.h"
 #include "Scene.h"
+#include "GameSettings.h"
 #include <cmath>
 #include <algorithm>
 
@@ -20,6 +21,7 @@ Player::Player(float startX, float startY)
     teamId = 0; // プレイヤーはTeam 0
     status.Init(10, 5.0f, 1);
     collider->SetTag("Player");
+    collider->SetRadius(20.0f); // 重なった時のみ判定されるタイトなコライダー半径
     weapons.push_back(new Handgun());
     weapons.push_back(new Shotgun());
     currentWeaponIndex = 0;
@@ -111,28 +113,22 @@ void Player::Update()
         float length = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
         if (length > 0.0001f)
         {
-            float velX = (moveDir.x / length) * status.GetSpeed();
-            float velY = (moveDir.y / length) * status.GetSpeed();
+            // HPが3以下の負傷状態では移動速度が低下(60%に低下)
+            float moveSpeed = status.GetSpeed();
+            if (status.GetCurrentHp() <= 3)
+            {
+                moveSpeed *= 0.60f;
+            }
+
+            float velX = (moveDir.x / length) * moveSpeed;
+            float velY = (moveDir.y / length) * moveSpeed;
             
             // X軸の移動と衝突判定
             if (currentStage)
             {
-                float nextX = position.x + velX;
-                int gridX = static_cast<int>(nextX / cellSize);
-                int gridY = static_cast<int>(position.y / cellSize);
-                if (!currentStage->IsSolidWall(gridX, gridY))
-                {
-                    position.x = nextX;
-                }
-                
-                // Y軸の移動と衝突判定
-                float nextY = position.y + velY;
-                gridX = static_cast<int>(position.x / cellSize);
-                gridY = static_cast<int>(nextY / cellSize);
-                if (!currentStage->IsSolidWall(gridX, gridY))
-                {
-                    position.y = nextY;
-                }
+                position.x += velX;
+                position.y += velY;
+                currentStage->ResolveCollision(position, 20.0f, cellSize);
             }
             else
             {
@@ -330,8 +326,14 @@ void Player::Draw()
     // 【赤色でやや透明な弾道予測線】
     if (currentStage && cellSize > 0.0f)
     {
-        float zoomCellSize = 75.0f;
-        float maxRange = cellSize * 12.0f;
+        // 装備中武器の射程距離を取得（デフォルトは敵と同じ 4.0セル = 160px）
+        float weaponRange = 160.0f;
+        if (!weapons.empty() && weapons[currentWeaponIndex] && weapons[currentWeaponIndex]->GetData())
+        {
+            weaponRange = weapons[currentWeaponIndex]->GetData()->range;
+        }
+
+        float maxRange = weaponRange;
         float stepDist = cellSize * 0.4f;
         float currDist = radius + 5.0f;
         Vector2 hitPos = Vector2(position.x + nx * maxRange, position.y + ny * maxRange);
@@ -351,7 +353,6 @@ void Player::Draw()
             currDist += stepDist;
         }
 
-        float zoomScale = zoomCellSize / cellSize;
         float hitScreenX = Camera::WorldToScreenX(hitPos.x);
         float hitScreenY = Camera::WorldToScreenY(hitPos.y);
 
@@ -427,11 +428,54 @@ void Player::TakeDamage()
 
 void Player::OnCollisionEnter(Collider *otherCollider)
 {
-    // 接触によるダメージは0
+    OnCollisionStay(otherCollider);
 }
 
 void Player::OnCollisionStay(Collider *otherCollider)
 {
+    if (!otherCollider || !otherCollider->GetOwner() || !otherCollider->GetOwner()->IsActive()) return;
+
+    Object2D *otherObj = otherCollider->GetOwner();
+    if (otherObj->GetObjectTag() == ObjectTag::Enemy)
+    {
+        // 敵と接触した際、無敵時間外であれば接触ダメージを受ける
+        if (damageColorTimer <= 0)
+        {
+            TakeDamage();
+        }
+
+        // 敵との押し出し判定（しっかりと重なった時のみ判定）
+        Vector2 enemyPos = otherObj->GetPosition();
+        float dx = position.x - enemyPos.x;
+        float dy = position.y - enemyPos.y;
+        float dist = std::sqrt(dx * dx + dy * dy);
+        
+        float enemyRadius = 15.0f;
+        if (CircleCollider *c = dynamic_cast<CircleCollider *>(otherCollider))
+        {
+            enemyRadius = c->GetRadius();
+        }
+        float minDist = collider->GetRadius() + enemyRadius; // 20.0f + 15.0f = 35.0px (しっかり重なった時のみ)
+
+        if (dist < minDist && dist > 0.0001f)
+        {
+            float overlap = minDist - dist;
+            Vector2 pushDir(dx / dist, dy / dist);
+            position.x += pushDir.x * (overlap * 0.5f);
+            position.y += pushDir.y * (overlap * 0.5f);
+
+            Vector2 newEnemyPos(enemyPos.x - pushDir.x * (overlap * 0.5f),
+                               enemyPos.y - pushDir.y * (overlap * 0.5f));
+
+            if (currentStage)
+            {
+                currentStage->ResolveCollision(position, 20.0f, cellSize);
+                currentStage->ResolveCollision(newEnemyPos, enemyRadius, cellSize);
+            }
+
+            otherObj->SetPosition(newEnemyPos);
+        }
+    }
 }
 
 void Player::OnCollisionExit(Collider *otherCollider)
@@ -459,6 +503,47 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
 
+    float flashPixelX = 0.0f;
+    float flashPixelY = 0.0f;
+    bool hasFlash = false;
+    float flashProgress = 0.0f;
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetEffectManager())
+    {
+        int flashTimer = scene->GetEffectManager()->GetGunFlashTimer();
+        if (flashTimer > 0)
+        {
+            hasFlash = true;
+            flashProgress = (flashTimer / 5.0f);
+            flashPixelX = Camera::WorldToScreenX(scene->GetEffectManager()->GetLastFlashWorldX());
+            flashPixelY = Camera::WorldToScreenY(scene->GetEffectManager()->GetLastFlashWorldY());
+        }
+    }
+
+    // 明るい時間(月明かり: 15秒 = 900フレーム)と暗い時間(黒暗闇: 25秒 = 1500フレーム)の切り替え管理
+    m_flickerTimer--;
+    if (m_flickerTimer <= 0)
+    {
+        // 状態を反転
+        m_isMoonlightFlicker = !m_isMoonlightFlicker;
+
+        // 明るい時間（月明かり状態）になったら15秒間（900フレーム）維持
+        // 暗い時間（デフォルトの黒暗闇状態）になったら25秒間（1500フレーム）維持
+        if (m_isMoonlightFlicker)
+        {
+            m_flickerTimer = 900;  // 60fps x 15秒 = 900フレーム
+        }
+        else
+        {
+            m_flickerTimer = 1500; // 60fps x 25秒 = 1500フレーム
+        }
+    }
+
+    // デフォルト: 真っ暗な黒 (alpha=245, RGB=4,5,10)
+    // チラつき時: 前より少し暗めの月明かり (alpha=215, RGB=8,12,25)
+    int maxAlpha = m_isMoonlightFlicker ? 215 : 245;
+    unsigned int ambientColor = m_isMoonlightFlicker ? GetColor(8, 12, 25) : GetColor(4, 5, 10);
+
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
     {
         for (int px = rectX; px < rectX + rectW; px += resolutionStep)
@@ -469,6 +554,20 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             float lightVal = 0.0f;
 
+            // 撃った人の位置の周りのみの局所的フラッシュ照射
+            if (hasFlash)
+            {
+                float fdx = px - flashPixelX;
+                float fdy = py - flashPixelY;
+                float fDist = std::sqrt(fdx * fdx + fdy * fdy);
+                float flashRadius = zoomCellSize * 4.5f;
+                if (fDist < flashRadius)
+                {
+                    float fLight = (1.0f - (fDist / flashRadius)) * flashProgress * 0.70f;
+                    lightVal = (std::max)(lightVal, fLight);
+                }
+            }
+
             // A. プレイヤー周囲の足元明かり
             if (dist < closeRadius)
             {
@@ -476,7 +575,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 lightVal = (std::max)(lightVal, ambientLight);
             }
 
-            // B. 前方60°扇形スポットライト
+            // B. 前方60°スポットライト
             if (m_isLightOn && dist < maxSpotDist)
             {
                 float cellAngle = std::atan2(dy, dx);
@@ -530,14 +629,76 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             if (lightVal < 0.98f)
             {
-                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, lightVal)) * 248);
+                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, lightVal)) * maxAlpha);
                 if (alpha > 8)
                 {
                     SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-                    DrawBox(px, py, px + resolutionStep, py + resolutionStep, GetColor(4, 5, 10), TRUE);
+                    DrawBox(px, py, px + resolutionStep, py + resolutionStep, ambientColor, TRUE);
                 }
             }
         }
+    }
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
+void Player::RenderBloodSplatterOverlay(int screenWidth, int screenHeight) const
+{
+    if (!GameSettings::GetInstance().isBloodSplatterEnabled) return;
+
+    int currentHp = status.GetCurrentHp();
+    if (currentHp > 3) return;
+
+    // HP残量に応じた血の濃さ・透過度の決定 (HP3:やや薄め, HP2:濃いめ, HP1:非常に濃い)
+    int alpha = (currentHp == 3) ? 90 : (currentHp == 2) ? 140 : 190;
+    
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+    // 1. 画面四隅・フチの血溜まりビネット（段階的レイヤーグラデーション）
+    int edgeWidth = (currentHp == 1) ? 160 : 110;
+    for (int i = 0; i < 4; ++i)
+    {
+        int inset = i * (edgeWidth / 4);
+        int stepAlpha = alpha / (i + 1);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, stepAlpha);
+
+        // 上・下・左・右の画面端の血溜まりボックス
+        DrawBox(0, 0 + inset, screenWidth, 30 + inset, GetColor(120, 10, 10), TRUE);
+        DrawBox(0, screenHeight - 30 - inset, screenWidth, screenHeight, GetColor(120, 10, 10), TRUE);
+        DrawBox(0 + inset, 0, 30 + inset, screenHeight, GetColor(120, 10, 10), TRUE);
+        DrawBox(screenWidth - 30 - inset, 0, screenWidth, screenHeight, GetColor(120, 10, 10), TRUE);
+    }
+
+    // 2. 画面四隅の大きめな血の滲み・雫
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+    DrawOval(60, 60, 140, 100, GetColor(140, 5, 5), TRUE);
+    DrawOval(screenWidth - 60, 60, 150, 110, GetColor(130, 0, 0), TRUE);
+    DrawOval(60, screenHeight - 60, 160, 120, GetColor(150, 10, 10), TRUE);
+    DrawOval(screenWidth - 60, screenHeight - 60, 170, 130, GetColor(120, 0, 0), TRUE);
+
+    // 3. 画面上に散らばる不規則な血飛沫（ドット・大小の円・雫）
+    // 固定シード値で生成することで毎フレームランダムに動いてチラつくのを防ぎ、画面上に固着したリアルな血飛沫を表現
+    struct BloodDrop { int x, y, r; };
+    static const BloodDrop drops[] = {
+        // 画面上部〜左上
+        { 120, 80, 18 }, { 210, 45, 12 }, { 340, 95, 24 }, { 90, 180, 15 }, { 180, 240, 8 },
+        // 画面右上〜右部
+        { 1780, 90, 22 }, { 1650, 50, 14 }, { 1850, 210, 28 }, { 1720, 310, 10 }, { 1890, 420, 16 },
+        // 画面左下〜下部
+        { 80, 980, 26 }, { 190, 1020, 15 }, { 310, 940, 20 }, { 450, 1010, 12 }, { 150, 850, 9 },
+        // 画面右下
+        { 1820, 990, 30 }, { 1700, 1030, 18 }, { 1860, 880, 22 }, { 1620, 950, 11 }, { 1750, 800, 14 },
+        // 中央寄りの飛び散り雫
+        { 420, 220, 7 }, { 1500, 260, 9 }, { 380, 820, 11 }, { 1540, 810, 8 },
+        { 260, 510, 6 }, { 1680, 580, 7 }, { 520, 90, 13 }, { 1400, 100, 11 }
+    };
+
+    for (const auto& drop : drops)
+    {
+        // 円本体
+        DrawCircle(drop.x, drop.y, drop.r, GetColor(140, 10, 10), TRUE);
+        // 血の滴り垂れ（下方向に伸びる小さな楕円/ライン）
+        DrawOval(drop.x, drop.y + drop.r / 2, drop.r / 2, drop.r, GetColor(110, 0, 0), TRUE);
     }
 
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);

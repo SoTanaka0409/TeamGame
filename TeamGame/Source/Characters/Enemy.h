@@ -26,6 +26,7 @@ class Enemy : public Character
     int shootCooldown;
     int strafeDirection;
     int strafeTimer;
+    float effectiveRangeCells = 4.0f; // 有効射程 (セル単位、デフォルト4.0セル)
 
   public:
     Enemy(float startX, float startY, int tId = 1);
@@ -45,6 +46,10 @@ class Enemy : public Character
     
     // Nearest enemy logic
     void UpdateTarget();
+
+    float GetEffectiveRange() const { return effectiveRangeCells * cellSize; }
+    float GetEffectiveRangeCells() const { return effectiveRangeCells; }
+    void SetEffectiveRangeCells(float cells) { effectiveRangeCells = cells; }
 
     void OnHearGunshot(const Vector2 &soundPos);
     void Damage();

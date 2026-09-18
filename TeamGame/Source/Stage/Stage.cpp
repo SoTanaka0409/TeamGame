@@ -56,6 +56,48 @@ bool Stage::IsOutOfBounds(int gridX, int gridY) const
     return (gridX < 0 || gridX >= m_width || gridY < 0 || gridY >= m_height);
 }
 
+void Stage::ResolveCollision(Vector2& pos, float margin, float cellSize) const
+{
+    if (cellSize <= 0.0f || m_width <= 0 || m_height <= 0) return;
+
+    for (int iter = 0; iter < 2; ++iter)
+    {
+        // 1. 左方向
+        int leftGridX = static_cast<int>((pos.x - margin) / cellSize);
+        int centerGridY = static_cast<int>(pos.y / cellSize);
+        if (IsOutOfBounds(leftGridX, centerGridY) || IsSolidWall(leftGridX, centerGridY))
+        {
+            float wallRightX = (leftGridX + 1) * cellSize;
+            pos.x = wallRightX + margin;
+        }
+
+        // 2. 右方向
+        int rightGridX = static_cast<int>((pos.x + margin) / cellSize);
+        if (IsOutOfBounds(rightGridX, centerGridY) || IsSolidWall(rightGridX, centerGridY))
+        {
+            float wallLeftX = rightGridX * cellSize;
+            pos.x = wallLeftX - margin;
+        }
+
+        // 3. 上方向
+        int centerGridX = static_cast<int>(pos.x / cellSize);
+        int topGridY = static_cast<int>((pos.y - margin) / cellSize);
+        if (IsOutOfBounds(centerGridX, topGridY) || IsSolidWall(centerGridX, topGridY))
+        {
+            float wallBottomY = (topGridY + 1) * cellSize;
+            pos.y = wallBottomY + margin;
+        }
+
+        // 4. 下方向
+        int bottomGridY = static_cast<int>((pos.y + margin) / cellSize);
+        if (IsOutOfBounds(centerGridX, bottomGridY) || IsSolidWall(centerGridX, bottomGridY))
+        {
+            float wallTopY = bottomGridY * cellSize;
+            pos.y = wallTopY - margin;
+        }
+    }
+}
+
 void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDebugMode, float playerWorldX, float playerWorldY, float lightAngle, const char* patternName, int hGrass) const
 {
     if (m_width <= 0 || m_height <= 0) return;
