@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Character.h"
 #include <vector>
 #include <cmath>
@@ -8,6 +8,7 @@ enum class PlayerInputType
     GAMEPAD_1
 };
 
+#include "../Weapons/Weapon.h"
 class Weapon;
 
 class Player : public Character
@@ -28,6 +29,7 @@ class Player : public Character
     {
         return facingDir;
     }
+
     float GetX() const { return position.x; }
     float GetY() const { return position.y; }
     float GetLightAngle() const { return std::atan2(facingDir.y, facingDir.x); }
@@ -38,12 +40,8 @@ class Player : public Character
     void TakeDamage();
     
     // 弾薬の回復（現在持っている武器の弾を回復する）
-    void AddAmmo(int amount) {
-        if (!weapons.empty() && weapons[currentWeaponIndex]) {
-            // 現在の弾薬に直接足すか、UseAmmoの逆を行う。ここではシンプルに。
-            weapons[currentWeaponIndex]->UseAmmo(-amount);
-        }
-    }
+    void AddAmmo(int amount);
+
     
     void Update() override;
     void Draw() override;

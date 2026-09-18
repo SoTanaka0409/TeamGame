@@ -23,6 +23,7 @@ class Enemy : public Character
     Vector2 lastKnownPos;
     int patrolChangeTimer;
     int investigateTimer;
+    float currentInvestigateVolume;
     int shootCooldown;
     int strafeDirection;
     int strafeTimer;
@@ -46,7 +47,7 @@ class Enemy : public Character
     // Nearest enemy logic
     void UpdateTarget();
 
-    void OnHearGunshot(const Vector2 &soundPos);
+    void OnHearGunshot(const Vector2 &soundPos, float maxDistance);
     void Damage();
 
     void StealthKill();

@@ -1,3 +1,5 @@
+#include "SceneManager.h"
+#include "Scene.h"
 #pragma once
 #include "SkillData.h"
 #include "../Characters/Character.h"
@@ -71,7 +73,9 @@ private:
     void ApplyDebuff(Character* user)
     {
         // 円形状の範囲でオブジェクトを検索し、敵にデバフを付与
-        const auto& objects = ObjectManager::GetInstance().GetObjects();
+        auto scene = SceneManager::GetInstance().GetCurrentScene();
+        if (!scene || !scene->GetObjectManager()) return;
+        const auto& objects = scene->GetObjectManager()->GetObjects();
         float effectRadius = data->effectValue; // effectValueを効果半径として使用
         float radiusSq = effectRadius * effectRadius;
 

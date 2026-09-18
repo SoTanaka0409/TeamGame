@@ -46,6 +46,11 @@ void ObjectManager::RemoveDestroyedObjects()
     {
         if (!(*it)->IsActive())
         {
+            if ((*it)->GetObjectTag() == ObjectTag::Player || (*it)->GetObjectTag() == ObjectTag::Enemy)
+            {
+                ++it;
+                continue;
+            }
             delete *it;
             it = objects.erase(it);
         }

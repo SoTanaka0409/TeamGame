@@ -36,7 +36,7 @@ class SoundManager
     void Play(const std::string &key, bool loop = false);
     
     // 空間オーディオとして再生（VALORANT風）
-    void Play3D(const std::string &key, const Vector2 &sourcePos, float maxDistance, float baseVolume = 1.0f);
+    bool Play3D(const std::string &key, const Vector2 &sourcePos, float maxDistance, float baseVolume = 1.0f, int sourceTeamId = -1);
 
     void Stop(const std::string &key);
     void StopAll();

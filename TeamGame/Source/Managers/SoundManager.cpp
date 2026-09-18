@@ -1,4 +1,9 @@
+#define NOMINMAX
 #include "SoundManager.h"
+#include "SceneManager.h"
+#include "Scene.h"
+#include "ObjectManager.h"
+#include "../Characters/Enemy.h"
 #include <cmath>
 #include <algorithm>
 
@@ -7,7 +12,7 @@ SoundManager::SoundManager() : listenerPos(0, 0), listenerDir(0, -1)
 }
 SoundManager::~SoundManager()
 {
-    Clear();
+    // Clear();
 }
 
 void SoundManager::Update()
@@ -38,49 +43,58 @@ void SoundManager::SetListener(const Vector2& pos, const Vector2& dir)
     }
 }
 
-void SoundManager::Play3D(const std::string &key, const Vector2 &sourcePos, float maxDistance, float baseVolume)
+bool SoundManager::Play3D(const std::string &key, const Vector2 &sourcePos, float maxDistance, float baseVolume, int sourceTeamId)
 {
     auto it = sounds.find(key);
-    if (it == sounds.end()) return;
+    if (it == sounds.end()) return false;
 
-    // 1. 距離の計算
     float dx = sourcePos.x - listenerPos.x;
     float dy = sourcePos.y - listenerPos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
 
-    // 最大距離を超えていたら鳴らさない
-    if (distance > maxDistance) return;
+    bool playForPlayer = (distance <= maxDistance);
+    if (playForPlayer) {
+        float volumeRatio = 1.0f - (distance / maxDistance);
+        int volume = static_cast<int>(255.0f * volumeRatio * baseVolume);
+        volume = std::max(0, std::min(255, volume));
 
-    // 2. 音量の計算 (距離が近いほど大きく、遠いほど小さく)
-    float volumeRatio = 1.0f - (distance / maxDistance);
-    int volume = static_cast<int>(255.0f * volumeRatio * baseVolume);
-    volume = std::max(0, std::min(255, volume));
+        float pan = 0;
+        if (distance > 0.0001f) {
+            float dirToSourceX = dx / distance;
+            float dirToSourceY = dy / distance;
+            float crossProduct = (listenerDir.x * dirToSourceY) - (listenerDir.y * dirToSourceX);
+            pan = crossProduct * 255.0f; 
+        }
 
-    // 3. パン（左右）の計算
-    // 音源へのベクトルを正規化
-    float pan = 0;
-    if (distance > 0.0001f) {
-        float dirToSourceX = dx / distance;
-        float dirToSourceY = dy / distance;
-        
-        // プレイヤーの向きベクトルとの外積計算で左右を判定
-        // Z上向きの2D座標系として： (listenerDir.x * dirToSourceY) - (listenerDir.y * dirToSourceX)
-        float crossProduct = (listenerDir.x * dirToSourceY) - (listenerDir.y * dirToSourceX);
-        
-        // crossProductは -1.0(左) ～ 1.0(右) の値になるため、DxLibの -255 ～ 255 に変換
-        pan = crossProduct * 255.0f; 
+        int dupHandle = DuplicateSoundMem(it->second);
+        if (dupHandle != -1) {
+            ChangeVolumeSoundMem(volume, dupHandle);
+            ChangePanSoundMem(static_cast<int>(pan), dupHandle);
+            PlaySoundMem(dupHandle, DX_PLAYTYPE_BACK);
+            playing3DSounds.push_back(dupHandle);
+        }
     }
 
-    // 4. 音データの複製と再生
-    int dupHandle = DuplicateSoundMem(it->second);
-    if (dupHandle != -1) {
-        ChangeVolumeSoundMem(volume, dupHandle);
-        ChangePanSoundMem(static_cast<int>(pan), dupHandle);
-        PlaySoundMem(dupHandle, DX_PLAYTYPE_BACK);
-        
-        // 終了後に削除するためリストに追加
-        playing3DSounds.push_back(dupHandle);
+    bool heardByAnyone = false;
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        for (auto obj : scene->GetObjectManager()->GetObjects())
+        {
+            Enemy *enemy = dynamic_cast<Enemy *>(obj);
+            if (enemy && enemy->IsActive() && enemy->teamId != sourceTeamId)
+            {
+                float dx2 = enemy->GetPosition().x - sourcePos.x;
+                float dy2 = enemy->GetPosition().y - sourcePos.y;
+                float dist2 = std::sqrt(dx2 * dx2 + dy2 * dy2);
+                if (dist2 < maxDistance) {
+                    enemy->OnHearGunshot(sourcePos, maxDistance);
+                    heardByAnyone = true;
+                }
+            }
+        }
     }
+    return heardByAnyone;
 }
 
 void SoundManager::Load(const std::string &key, const std::string &path)

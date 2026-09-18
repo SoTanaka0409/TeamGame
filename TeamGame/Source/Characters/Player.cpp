@@ -41,6 +41,7 @@ Player::~Player()
 
 void Player::Update()
 {
+    if (invincibleTimer > 0) invincibleTimer--;
     // 追加: バフ・デバフのタイマー更新
     UpdateActiveEffects();
 
@@ -189,7 +190,7 @@ void Player::Update()
 
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
             {
-                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId);
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, isMoving ? 15.0f : 0.0f);
             }
             
             // スキル（ガジェット）の発動 (Eキー)
@@ -231,7 +232,7 @@ void Player::Update()
             
             if (padState & PAD_INPUT_1) // Button A (or R1)
             {
-                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId);
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, isMoving ? 15.0f : 0.0f);
             }
             
             if (padState & PAD_INPUT_3) // Button X
@@ -452,6 +453,7 @@ void Player::Draw()
 
 void Player::TakeDamage()
 {
+    if (invincibleTimer > 0) return;
     status.TakeDamage(1);
     damageColorTimer = 30;
     
@@ -626,5 +628,11 @@ void Player::DrawUI(int screenX, int screenY)
                 DrawString(screenX + 10, screenY + 100, skillText, GetColor(0, 255, 255));
             }
         }
+    }
+}
+
+void Player::AddAmmo(int amount) {
+    if (!weapons.empty() && weapons[currentWeaponIndex]) {
+        weapons[currentWeaponIndex]->UseAmmo(-amount);
     }
 }

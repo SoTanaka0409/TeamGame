@@ -11,7 +11,7 @@ class Character : public Object2D
     CircleCollider *collider; // 今回は標準でCircleを持つように
     float radius;
 
-    // --- スキル効果（バフ・デバフ）の管理 ---
+    // --- スキル効果（バフ�EチE��フ）�E管琁E---
     struct ActiveEffect {
         SkillMinorTag tag;
         int remainingFrames;
@@ -21,7 +21,10 @@ class Character : public Object2D
 
   public:
     Status status;
-    int teamId; // 追加: 0=味方(青), 1=敵(赤)
+    int teamId;
+    bool isDeadProcessed = false;
+    int respawnTimer = 0;
+    int invincibleTimer = 0;
 
     Character(ObjectTag tag, float startX, float startY, float radius);
     virtual ~Character();
@@ -36,7 +39,7 @@ class Character : public Object2D
         activeEffects.push_back({tag, duration, value});
     }
 
-    // 毎フレーム呼び出す想定
+    // 毎フレーム呼び出す想宁E
     void UpdateActiveEffects()
     {
         for (auto it = activeEffects.begin(); it != activeEffects.end(); )
@@ -44,7 +47,7 @@ class Character : public Object2D
             it->remainingFrames--;
             if (it->remainingFrames <= 0)
             {
-                // 効果が切れたときの元に戻す処理
+                // 効果が刁E��たとき�E允E��戻す�E琁E
                 if (it->tag == SkillMinorTag::AttackUp) {
                     status.SetSkillAttackBonus(0); 
                 } else if (it->tag == SkillMinorTag::SpeedUp) {

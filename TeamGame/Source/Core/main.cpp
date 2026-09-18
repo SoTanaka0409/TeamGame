@@ -3,6 +3,7 @@
 #include "SceneManager.h"
 #include "TitleScene.h"
 #include "WeaponManager.h"
+#include "SoundManager.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow)
@@ -55,6 +56,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
     WeaponManager::GetInstance().Cleanup();
+    SoundManager::GetInstance().Clear();
 
     // DXライブラリの使用終了処理
     DxLib_End();

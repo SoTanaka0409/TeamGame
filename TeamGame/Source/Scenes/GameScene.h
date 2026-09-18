@@ -40,6 +40,7 @@ class GameScene : public Scene
     bool prevEnter = false;
 
     float gameTimer = 0.0f;
+    float introTimer = 0.0f; // カメラ演出タイマー
     int totalEnemiesSpawned = 0;
     int team0Kills = 0;
     int team1Kills = 0;
