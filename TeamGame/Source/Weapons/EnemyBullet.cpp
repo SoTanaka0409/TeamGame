@@ -6,8 +6,8 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
-EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed)
-    : myColliderManager(nullptr), radius(6.0f)
+EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, float range)
+    : myColliderManager(nullptr), radius(6.0f), maxRange(range), startPos(startX, startY)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -39,6 +39,15 @@ void EnemyBullet::Update()
 {
     position.x += velocity.x;
     position.y += velocity.y;
+
+    // 射程距離制限チェック (最大射程を超えたら消滅)
+    float dx = position.x - startPos.x;
+    float dy = position.y - startPos.y;
+    if (dx * dx + dy * dy > maxRange * maxRange)
+    {
+        SetActive(false);
+        return;
+    }
 
     // 画面外に出たら消滅
     if (position.x < -200 || position.x > 2100 || position.y < -200 ||

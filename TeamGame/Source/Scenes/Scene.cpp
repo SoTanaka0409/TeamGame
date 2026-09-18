@@ -9,6 +9,10 @@ Scene::Scene()
 
 Scene::~Scene()
 {
+    if (colliderManager)
+    {
+        colliderManager->Clear();
+    }
     delete objectManager;
     delete colliderManager;
     delete effectManager;

@@ -34,6 +34,11 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir)
         {
             // Create bullet using CSV data
             new Bullet(pos.x, pos.y, dir, data->bulletSpeed, data->range, data->bulletRadius);
+            if (scene->GetEffectManager())
+            {
+                float angle = std::atan2(dir.y, dir.x);
+                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, angle, 16.0f);
+            }
             NotifyEnemiesOfGunshot(pos);
             ResetCoolTime();
             UseAmmo(1);

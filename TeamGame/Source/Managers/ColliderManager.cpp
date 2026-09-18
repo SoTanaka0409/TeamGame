@@ -36,17 +36,6 @@ void ColliderManager::RemoveCollider(Collider *collider)
     {
         if (itPrev->first == collider || itPrev->second == collider)
         {
-            Collider *otherCollider =
-                (itPrev->first == collider) ? itPrev->second : itPrev->first;
-            Object2D *otherOwner = otherCollider->GetOwner();
-            Object2D *thisOwner = collider->GetOwner();
-
-            if (otherOwner && otherOwner->IsActive())
-                otherOwner->OnCollisionExit(collider);
-
-            if (thisOwner && thisOwner->IsActive())
-                thisOwner->OnCollisionExit(otherCollider);
-
             itPrev = previousCollisions.erase(itPrev);
         }
         else

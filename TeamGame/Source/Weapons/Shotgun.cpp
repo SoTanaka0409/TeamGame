@@ -46,6 +46,10 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
 
                 new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius);
             }
+            if (scene->GetEffectManager())
+            {
+                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, baseAngle, 24.0f);
+            }
             NotifyEnemiesOfGunshot(pos);
             ResetCoolTime();
             UseAmmo(1);

@@ -8,6 +8,7 @@
 #include "Player.h"
 #include "ResultScene.h"
 #include "ClearScene.h"
+#include "GameOverScene.h"
 #include "TitleScene.h"
 #include "SceneManager.h"
 #include "NetworkManager.h"
@@ -169,6 +170,13 @@ void GameScene::Update()
             // オブジェクトの更新と当たり判定
             Scene::Update(); 
 
+            // ゲームオーバー判定 (ソロモードのみ、プレイヤーのHPが0以下になった場合)
+            if (currentPlayMode == PlayMode::SOLO && player && player->status.GetCurrentHp() <= 0)
+            {
+                SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
+                return;
+            }
+
             // 生存している敵の数を安全に取得
             int activeEnemyCount = GetActiveEnemyCount();
             defeatedEnemiesCount = totalEnemiesSpawned - activeEnemyCount;
@@ -270,16 +278,17 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PAUSED;
         if (currUp && !prevUp) settingsMenuCursor--;
         if (currDown && !prevDown) settingsMenuCursor++;
-        if (settingsMenuCursor < 0) settingsMenuCursor = 4;
-        if (settingsMenuCursor > 4) settingsMenuCursor = 0;
+        if (settingsMenuCursor < 0) settingsMenuCursor = 5;
+        if (settingsMenuCursor > 5) settingsMenuCursor = 0;
 
         if (currEnter && !prevEnter)
         {
             if (settingsMenuCursor == 0) GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
-            else if (settingsMenuCursor == 1) DebugManager::GetInstance().ToggleDebugMode();
-            else if (settingsMenuCursor == 2) { stageManager.NextTheme(); }
-            else if (settingsMenuCursor == 3) { stageManager.NextVariation(); }
-            else if (settingsMenuCursor == 4) state = GameState::PAUSED;
+            else if (settingsMenuCursor == 1) GameSettings::GetInstance().isBloodSplatterEnabled = !GameSettings::GetInstance().isBloodSplatterEnabled;
+            else if (settingsMenuCursor == 2) DebugManager::GetInstance().ToggleDebugMode();
+            else if (settingsMenuCursor == 3) { stageManager.NextTheme(); }
+            else if (settingsMenuCursor == 4) { stageManager.NextVariation(); }
+            else if (settingsMenuCursor == 5) state = GameState::PAUSED;
         }
     }
 
@@ -351,6 +360,11 @@ void GameScene::Draw()
     if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
     {
         player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
+        player->RenderBloodSplatterOverlay(1920, 1080);
+    }
+    else if (player && player->IsActive())
+    {
+        player->RenderBloodSplatterOverlay(1920, 1080);
     }
     
     DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
@@ -390,12 +404,13 @@ void GameScene::Draw()
         {
             std::string items[] = { 
                 std::string("視点固定モード (Eキー) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (ON)" : "切り替え (OFF)"),
+                std::string("負傷血飛沫演出 : ") + (GameSettings::GetInstance().isBloodSplatterEnabled ? "ON" : "OFF"),
                 std::string("デバッグ表示 : ") + (isDebugView ? "ON" : "OFF"), 
                 "テーマ変更", 
                 "マップ変更", 
                 "戻る" 
             };
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 unsigned int color = (i == settingsMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
                 if (i == settingsMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);

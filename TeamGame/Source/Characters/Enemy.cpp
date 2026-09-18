@@ -5,6 +5,8 @@
 #include "EnemyBullet.h"
 #include "Player.h"
 #include "Stage.h"
+#include "SceneManager.h"
+#include "Scene.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -18,10 +20,8 @@ Enemy::Enemy(float startX, float startY)
 {
     // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
     status.Init(3, 0.75f, 1);
-
-
-
     collider->SetTag("Enemy");
+    collider->SetRadius(15.0f); // 重なった時のみ判定されるタイトなコライダー半径 (15.0px)
 }
 
 Enemy::~Enemy()
@@ -61,8 +61,8 @@ bool Enemy::CheckLineOfSightToPlayer() const
     float dy = pPos.y - position.y;
     float dist = std::sqrt(dx * dx + dy * dy);
 
-    // 【察知能力の低下】 最大視界距離を大幅短縮 (3.5セル分)
-    float maxSightDist = cellSize * 3.5f;
+    // 【察知能力】 最大視界距離を有効射程（デフォルト4セル分）に設定
+    float maxSightDist = GetEffectiveRange();
     if (dist > maxSightDist)
     {
         return false;
@@ -187,6 +187,11 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
             }
         }
     }
+
+    if (currentStage)
+    {
+        currentStage->ResolveCollision(position, 15.0f, cellSize);
+    }
 }
 
 void Enemy::Update()
@@ -261,12 +266,21 @@ void Enemy::Update()
             }
         }
 
-        // 【発砲頻度の緩和】 約2.7秒(160フレーム)ごとにゆっくり発砲、弾速も遅い 3.0f
-        if (shootCooldown <= 0 && dist < cellSize * 3.5f)
+        // 【射撃判定】 有効射程（GetEffectiveRange）以内の場合に発砲
+        if (shootCooldown <= 0 && dist <= GetEffectiveRange())
         {
-            new EnemyBullet(position.x + facingDir.x * (radius + 5.0f),
-                            position.y + facingDir.y * (radius + 5.0f),
-                            facingDir, 3.0f);
+            Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f),
+                            position.y + facingDir.y * (radius + 5.0f));
+            // 弾速をプレイヤーと同じ速さ(20.0f)、弾の最大射程を敵の有効射程(GetEffectiveRange())に設定
+            new EnemyBullet(muzzlePos.x, muzzlePos.y, facingDir, 20.0f, GetEffectiveRange());
+
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetEffectManager())
+            {
+                float angle = std::atan2(facingDir.y, facingDir.x);
+                scene->GetEffectManager()->AddMuzzleFlashEffect(muzzlePos.x, muzzlePos.y, angle, 16.0f);
+            }
+
             shootCooldown = 160;
         }
     }
@@ -356,17 +370,24 @@ void Enemy::Draw()
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
 
-    // 警戒（ALERT）状態のリング強調および【赤色でやや透明な弾道予測線】の描画
+    // 警戒（ALERT）状態のリング強調および有効射程ガイド円、【赤色でやや透明な弾道予測線】の描画
     if (aiState == EnemyAIState::ALERT)
     {
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius + 4.0f), GetColor(255, 80, 80), FALSE);
 
+        // 有効射程を示す円（ガイドライン）描画
+        float rangeScreenRadius = GetEffectiveRange() * Camera::ZoomScale;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 50);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(rangeScreenRadius), GetColor(255, 60, 60), FALSE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
         // 赤色半透明の弾道予測線 (障害物まで伸ばす)
         if (currentStage && cellSize > 0.0f)
         {
             
-            float maxRange = cellSize * 8.0f;
+            float maxRange = GetEffectiveRange();
             float stepDist = cellSize * 0.4f;
             float currDist = radius + 5.0f;
             Vector2 hitPos = Vector2(position.x + facingDir.x * maxRange, position.y + facingDir.y * maxRange);
@@ -405,14 +426,43 @@ void Enemy::Draw()
                    static_cast<int>(renderRadius + 3.0f), GetColor(255, 180, 50), FALSE);
     }
 
-    // 向いている方向を示す赤線を描画 (キョロキョロ視線)
+    // 敵の視界扇形 (Vision Cone) の透明描画
+    if (cellSize > 0.0f)
+    {
+        float coneDist = GetEffectiveRange() * Camera::ZoomScale;
+        float facingAngle = std::atan2(facingDir.y, facingDir.x);
+        float halfAngle = 0.3000f; // 17° (左右合計34°)
+
+        // AI状態に応じた視界コーンの色（通常：薄い黄色、警戒：赤橙色）
+        unsigned int visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(255, 80, 80) :
+                                   (aiState == EnemyAIState::INVESTIGATE) ? GetColor(255, 180, 60) :
+                                   GetColor(255, 230, 100);
+        int coneAlpha = (aiState == EnemyAIState::ALERT) ? 65 : 40;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, coneAlpha);
+        
+        // 扇形の端点計算
+        int leftX = static_cast<int>(screenX + std::cos(facingAngle - halfAngle) * coneDist);
+        int leftY = static_cast<int>(screenY + std::sin(facingAngle - halfAngle) * coneDist);
+        int rightX = static_cast<int>(screenX + std::cos(facingAngle + halfAngle) * coneDist);
+        int rightY = static_cast<int>(screenY + std::sin(facingAngle + halfAngle) * coneDist);
+
+        // 視界の境界線と先端アーチを描画
+        DrawLine(static_cast<int>(screenX), static_cast<int>(screenY), leftX, leftY, visionColor, 2);
+        DrawLine(static_cast<int>(screenX), static_cast<int>(screenY), rightX, rightY, visionColor, 2);
+        DrawLine(leftX, leftY, rightX, rightY, visionColor, 1);
+
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+
+    // 向いている方向を示す線を描画 (キョロキョロ視線)
     float lineLen = 30.0f;
     int x1 = static_cast<int>(screenX);
     int y1 = static_cast<int>(screenY);
     int x2 = static_cast<int>(screenX + facingDir.x * lineLen);
     int y2 = static_cast<int>(screenY + facingDir.y * lineLen);
 
-    unsigned int lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(255, 50, 50) : GetColor(200, 100, 100);
+    unsigned int lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(255, 50, 50) : GetColor(230, 160, 100);
     DrawLine(x1, y1, x2, y2, lineCol, 2);
 }
 
@@ -451,10 +501,40 @@ void Enemy::StealthKill()
 
 void Enemy::OnCollisionEnter(Collider *otherCollider)
 {
+    OnCollisionStay(otherCollider);
 }
 
 void Enemy::OnCollisionStay(Collider *otherCollider)
 {
+    if (!otherCollider || !otherCollider->GetOwner() || !otherCollider->GetOwner()->IsActive()) return;
+
+    Object2D *otherObj = otherCollider->GetOwner();
+    if (otherObj->GetObjectTag() == ObjectTag::Player || otherObj->GetObjectTag() == ObjectTag::Enemy)
+    {
+        Vector2 otherPos = otherObj->GetPosition();
+        float dx = position.x - otherPos.x;
+        float dy = position.y - otherPos.y;
+        float dist = std::sqrt(dx * dx + dy * dy);
+        float otherRadius = 15.0f;
+        if (CircleCollider *c = dynamic_cast<CircleCollider *>(otherCollider))
+        {
+            otherRadius = c->GetRadius();
+        }
+        float minDist = collider->GetRadius() + otherRadius; // しっかり重なった時のみ判定
+
+        if (dist < minDist && dist > 0.0001f)
+        {
+            float overlap = minDist - dist;
+            Vector2 pushDir(dx / dist, dy / dist);
+            position.x += pushDir.x * (overlap * 0.5f);
+            position.y += pushDir.y * (overlap * 0.5f);
+
+            if (currentStage)
+            {
+                currentStage->ResolveCollision(position, 15.0f, cellSize);
+            }
+        }
+    }
 }
 
 void Enemy::OnCollisionExit(Collider *otherCollider)
