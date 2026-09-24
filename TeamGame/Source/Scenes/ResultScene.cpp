@@ -25,6 +25,5 @@ void ResultScene::Draw()
 {
     Scene::Draw();
     DrawString(100, 100, "=== リザルト画面 ===", GetColor(255, 255, 255));
-    DrawString(100, 150, "Enterキーを押してタイトルに戻る",
-               GetColor(200, 200, 200));
+    DrawString(100, 150, "Enterキーを押してタイトルに戻る", GetColor(200, 200, 200));
 }

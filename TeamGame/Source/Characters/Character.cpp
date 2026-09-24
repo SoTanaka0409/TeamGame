@@ -3,8 +3,8 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
-Character::Character(float startX, float startY, float rad)
-    : speed(0.0f), radius(rad), myColliderManager(nullptr)
+Character::Character(ObjectTag tag, float startX, float startY, float rad)
+    : Object2D(tag), speed(0.0f), radius(rad), myColliderManager(nullptr)
 {
     position = Vector2(startX, startY);
     width = rad * 2.0f;

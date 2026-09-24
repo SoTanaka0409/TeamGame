@@ -36,8 +36,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     SceneManager::GetInstance().ChangeScene(std::make_shared<TitleScene>());
 
     // メインループ
-    while (ProcessMessage() == 0 && ClearDrawScreen() == 0 &&
-           CheckHitKey(KEY_INPUT_ESCAPE) == 0)
+    // ESCによる強制終了を削除し、ポーズ画面から終了させる
+    while (ProcessMessage() == 0 && ClearDrawScreen() == 0)
     {
         // 入力の更新
         InputManager::GetInstance().Update();

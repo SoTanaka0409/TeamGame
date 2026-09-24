@@ -17,4 +17,5 @@ class ObjectManager
     void Draw();
     void RemoveDestroyedObjects();
     void Clear();
+    const std::vector<Object2D *>& GetObjects() const { return objects; }
 };
