@@ -1,3 +1,4 @@
+#include "Camera.h"
 #include "EnemyBullet.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
@@ -5,8 +6,8 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
-EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed)
-    : myColliderManager(nullptr), radius(6.0f)
+EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, float range)
+    : myColliderManager(nullptr), radius(6.0f), maxRange(range), startPos(startX, startY)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -39,6 +40,15 @@ void EnemyBullet::Update()
     position.x += velocity.x;
     position.y += velocity.y;
 
+    // 射程距離制限チェック (最大射程を超えたら消滅)
+    float dx = position.x - startPos.x;
+    float dy = position.y - startPos.y;
+    if (dx * dx + dy * dy > maxRange * maxRange)
+    {
+        SetActive(false);
+        return;
+    }
+
     // 画面外に出たら消滅
     if (position.x < -200 || position.x > 2100 || position.y < -200 ||
         position.y > 1300)
@@ -67,25 +77,8 @@ void EnemyBullet::Update()
 
 void EnemyBullet::Draw()
 {
-    float screenX = position.x;
-    float screenY = position.y;
-
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
-    {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
-        {
-            Player *player = dynamic_cast<Player *>(obj);
-            if (player && player->IsActive())
-            {
-                float zoomScale = 75.0f / 40.0f;
-                Vector2 pPos = player->GetPosition();
-                screenX = 960.0f + (position.x - pPos.x) * zoomScale;
-                screenY = 540.0f + (position.y - pPos.y) * zoomScale;
-                break;
-            }
-        }
-    }
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
 
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(radius), GetColor(255, 60, 60), TRUE);
@@ -105,3 +98,4 @@ void EnemyBullet::OnCollisionEnter(Collider *otherCollider)
         SetActive(false);
     }
 }
+

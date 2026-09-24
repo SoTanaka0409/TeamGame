@@ -1,3 +1,4 @@
+#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -7,6 +8,10 @@
 #include "Handgun.h"
 #include "InputManager.h"
 #include "Shotgun.h"
+#include "SceneManager.h"
+#include "Scene.h"
+#include "../Skills/Skill.h"
+#include "../Skills/SkillData.h"
 #include <cmath>
 #include <algorithm>
 
@@ -14,11 +19,13 @@ Player::Player(float startX, float startY)
     : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
-    speed = 5.0f;
+    teamId = 0; // プレイヤーはTeam 0
+    status.Init(10, 5.0f, 1);
     collider->SetTag("Player");
     weapons.push_back(new Handgun());
     weapons.push_back(new Shotgun());
     currentWeaponIndex = 0;
+    currentSkill = nullptr;
 }
 
 Player::~Player()
@@ -26,13 +33,26 @@ Player::~Player()
     for (auto w : weapons)
         delete w;
     weapons.clear();
+    
+    if (currentSkill) {
+        delete currentSkill;
+    }
 }
 
 void Player::Update()
 {
+    if (invincibleTimer > 0) invincibleTimer--;
+    // 追加: バフ・デバフのタイマー更新
+    UpdateActiveEffects();
+
+    // 追加: スキルのクールダウンタイマー更新
+    if (currentSkill) {
+        currentSkill->Update();
+    }
+
     if (!isRemote)
     {
-        // 右クリックで懐中電灯 ON / OFF トグル切り替え
+        // 懐中電灯スイッチ
         bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
         if (currMouseRight && !m_prevMouseRight)
         {
@@ -60,25 +80,45 @@ void Player::Update()
 
     if (!isRemote)
     {
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            moveDir.x -= 1.0f;
-            isMoving = true;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+            {
+                moveDir.x -= 1.0f;
+                isMoving = true;
+            }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
+            {
+                moveDir.x += 1.0f;
+                isMoving = true;
+            }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
+            {
+                moveDir.y -= 1.0f;
+                isMoving = true;
+            }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
+            {
+                moveDir.y += 1.0f;
+                isMoving = true;
+            }
         }
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
+        else if (m_inputType == PlayerInputType::GAMEPAD_1)
         {
-            moveDir.x += 1.0f;
-            isMoving = true;
-        }
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
-        {
-            moveDir.y -= 1.0f;
-            isMoving = true;
-        }
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
-        {
-            moveDir.y += 1.0f;
-            isMoving = true;
+            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            int ax = 0, ay = 0;
+            GetJoypadAnalogInput(&ax, &ay, DX_INPUT_PAD1);
+            if (ax < -200) moveDir.x -= 1.0f;
+            if (ax > 200) moveDir.x += 1.0f;
+            if (ay < -200) moveDir.y -= 1.0f;
+            if (ay > 200) moveDir.y += 1.0f;
+            
+            if (padState & PAD_INPUT_LEFT) moveDir.x -= 1.0f;
+            if (padState & PAD_INPUT_RIGHT) moveDir.x += 1.0f;
+            if (padState & PAD_INPUT_UP) moveDir.y -= 1.0f;
+            if (padState & PAD_INPUT_DOWN) moveDir.y += 1.0f;
+            
+            if (moveDir.x != 0.0f || moveDir.y != 0.0f) isMoving = true;
         }
     }
 
@@ -87,8 +127,8 @@ void Player::Update()
         float length = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
         if (length > 0.0001f)
         {
-            float velX = (moveDir.x / length) * speed;
-            float velY = (moveDir.y / length) * speed;
+            float velX = (moveDir.x / length) * status.GetSpeed();
+            float velY = (moveDir.y / length) * status.GetSpeed();
             
             // X軸の移動と衝突判定
             if (currentStage)
@@ -130,29 +170,153 @@ void Player::Update()
 
     if (!isRemote)
     {
-        int mouseX, mouseY;
-        GetMousePoint(&mouseX, &mouseY);
-        float dx = mouseX - 960.0f;
-        float dy = mouseY - 540.0f;
-        float dirLen = std::sqrt(dx * dx + dy * dy);
-        if (dirLen > 0.0001f)
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            facingDir.x = dx / dirLen;
-            facingDir.y = dy / dirLen;
-        }
-
-        // Qキーで武器チェンジ
-        if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
-        {
-            currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
-        }
-
-        // 左クリックまたはZキーで発砲
-        if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
-        {
-            if (!weapons.empty())
+            int mouseX, mouseY;
+            GetMousePoint(&mouseX, &mouseY);
+            float dx = mouseX - Camera::WorldToScreenX(position.x);
+            float dy = mouseY - Camera::WorldToScreenY(position.y);
+            float dirLen = std::sqrt(dx * dx + dy * dy);
+            if (dirLen > 0.0001f)
             {
-                weapons[currentWeaponIndex]->Fire(position, facingDir);
+                facingDir.x = dx / dirLen;
+                facingDir.y = dy / dirLen;
+            }
+
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
+            {
+                currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+            }
+
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
+            {
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, isMoving ? 15.0f : 0.0f);
+            }
+            
+            // スキル（ガジェット）の発動 (Eキー)
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_E))
+            {
+                if (currentSkill && currentSkill->CanUse(this)) {
+                    currentSkill->Use(this);
+                    // 必要ならSoundManager::GetInstance().Play3D("skill_use", position, 500.0f); など
+                }
+            }
+        }
+        else if (m_inputType == PlayerInputType::GAMEPAD_1)
+        {
+            int rx = 0, ry = 0;
+            GetJoypadAnalogInputRight(&rx, &ry, DX_INPUT_PAD1);
+            if (rx < -200 || rx > 200 || ry < -200 || ry > 200)
+            {
+                float dx = (float)rx;
+                float dy = (float)ry;
+                float dirLen = std::sqrt(dx * dx + dy * dy);
+                if (dirLen > 0.0001f)
+                {
+                    facingDir.x = dx / dirLen;
+                    facingDir.y = dy / dirLen;
+                }
+            }
+            
+            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            static int prevPadState = 0;
+            
+            if ((padState & PAD_INPUT_3) && !(prevPadState & PAD_INPUT_3)) // Button X
+            {
+                currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+            }
+            if ((padState & PAD_INPUT_4) && !(prevPadState & PAD_INPUT_4)) // Button Y
+            {
+                ToggleLight();
+            }
+            
+            if (padState & PAD_INPUT_1) // Button A (or R1)
+            {
+                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, isMoving ? 15.0f : 0.0f);
+            }
+            
+            if (padState & PAD_INPUT_3) // Button X
+            {
+                if (currentSkill && currentSkill->CanUse(this)) {
+                    currentSkill->Use(this);
+                }
+            }
+            
+            prevPadState = padState;
+        }
+    }
+
+    bool isKnifePressed = false;
+    bool isReloadPressed = false;
+    if (!isRemote)
+    {
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE) {
+            isKnifePressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE);
+            isReloadPressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R);
+        }
+        else if (m_inputType == PlayerInputType::GAMEPAD_1) {
+            int pad = GetJoypadInputState(DX_INPUT_PAD1);
+            isKnifePressed = (pad & PAD_INPUT_2) != 0;
+            isReloadPressed = (pad & PAD_INPUT_5) != 0; // L1 or similar
+        }
+    }
+    
+    if (isReloadPressed && !weapons.empty())
+    {
+        weapons[currentWeaponIndex]->Reload();
+    }
+    
+    // Spaceキー等でナイフ暗殺 (敵が未発覚時のみ実行可能)
+    if (isKnifePressed)
+    {
+        auto scene = SceneManager::GetInstance().GetCurrentScene();
+        if (scene && scene->GetObjectManager())
+        {
+            Enemy* targetEnemy = nullptr;
+            float minDistSq = 95.0f * 95.0f; // 暗殺可能距離
+
+            for (auto obj : scene->GetObjectManager()->GetObjects())
+            {
+                Enemy *enemy = dynamic_cast<Enemy *>(obj);
+                if (enemy && enemy->IsActive())
+                {
+                    // 敵がこちらに気づいていない(非ALERT状態)場合のみ暗殺可能
+                    if (!enemy->IsAlerted())
+                    {
+                        Vector2 ePos = enemy->GetPosition();
+                        float dx = ePos.x - position.x;
+                        float dy = ePos.y - position.y;
+                        float distSq = dx * dx + dy * dy;
+                        if (distSq < minDistSq)
+                        {
+                            minDistSq = distSq;
+                            targetEnemy = enemy;
+                        }
+                    }
+                }
+            }
+
+            if (targetEnemy)
+            {
+                Vector2 ePos = targetEnemy->GetPosition();
+                float dx = ePos.x - position.x;
+                float dy = ePos.y - position.y;
+                float dirAngle = std::atan2(dy, dx);
+
+                facingDir = Vector2(dx, dy);
+                float len = std::sqrt(dx * dx + dy * dy);
+                if (len > 0.0001f)
+                {
+                    facingDir.x /= len;
+                    facingDir.y /= len;
+                }
+
+                if (scene->GetEffectManager())
+                {
+                    scene->GetEffectManager()->AddKnifeSlashEffect(ePos.x, ePos.y, dirAngle);
+                }
+
+                targetEnemy->StealthKill();
             }
         }
     }
@@ -161,8 +325,8 @@ void Player::Update()
 void Player::Draw()
 {
     // 画面中央 (960, 540) に固定描画
-    float screenX = 960.0f;
-    float screenY = 540.0f;
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
 
     if (m_isInBush)
     {
@@ -220,8 +384,8 @@ void Player::Draw()
         }
 
         float zoomScale = zoomCellSize / cellSize;
-        float hitScreenX = 960.0f + (hitPos.x - position.x) * zoomScale;
-        float hitScreenY = 540.0f + (hitPos.y - position.y) * zoomScale;
+        float hitScreenX = Camera::WorldToScreenX(hitPos.x);
+        float hitScreenY = Camera::WorldToScreenY(hitPos.y);
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
         DrawLine(static_cast<int>(screenX), static_cast<int>(screenY),
@@ -239,6 +403,48 @@ void Player::Draw()
                    GetColor(255, 255, 255));
     }
 
+    // 未発覚敵の近接ナイフ暗殺案内UI表示
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        Enemy* canKillEnemy = nullptr;
+        float minDistSq = 95.0f * 95.0f;
+
+        for (auto obj : scene->GetObjectManager()->GetObjects())
+        {
+            Enemy *enemy = dynamic_cast<Enemy *>(obj);
+            if (enemy && enemy->IsActive() && !enemy->IsAlerted())
+            {
+                Vector2 ePos = enemy->GetPosition();
+                float dx = ePos.x - position.x;
+                float dy = ePos.y - position.y;
+                float distSq = dx * dx + dy * dy;
+                if (distSq < minDistSq)
+                {
+                    minDistSq = distSq;
+                    canKillEnemy = enemy;
+                }
+            }
+        }
+
+        if (canKillEnemy)
+        {
+            float zoomScale = 75.0f / (cellSize > 0.0f ? cellSize : 40.0f);
+            Vector2 ePos = canKillEnemy->GetPosition();
+            float eScreenX = Camera::WorldToScreenX(ePos.x);
+            float eScreenY = Camera::WorldToScreenY(ePos.y);
+
+            int boxX1 = static_cast<int>(eScreenX - 75);
+            int boxY1 = static_cast<int>(eScreenY - 55);
+            int boxX2 = static_cast<int>(eScreenX + 75);
+            int boxY2 = static_cast<int>(eScreenY - 30);
+
+            DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(20, 20, 20), TRUE);
+            DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(255, 200, 0), FALSE);
+            DrawStringF(eScreenX - 65.0f, eScreenY - 50.0f, "[SPACE] KNIFE KILL", GetColor(255, 230, 0));
+        }
+    }
+
     if (m_isInBush)
     {
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -247,7 +453,15 @@ void Player::Draw()
 
 void Player::TakeDamage()
 {
+    if (invincibleTimer > 0) return;
+    status.TakeDamage(1);
     damageColorTimer = 30;
+    
+    if (status.IsDead())
+    {
+        SetActive(false);
+        // ここに将来的にゲームオーバー画面（ResultScene）への遷移を追加します
+    }
 }
 
 void Player::OnCollisionEnter(Collider *otherCollider)
@@ -268,8 +482,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     if (!currentStage || cellSize <= 0.0f) return;
 
     // プレイヤーの画面上での中心位置 (960, 540)
-    float playerPixelX = 960.0f;
-    float playerPixelY = 540.0f;
+    float playerPixelX = Camera::WorldToScreenX(position.x);
+    float playerPixelY = Camera::WorldToScreenY(position.y);
 
     float zoomCellSize = 75.0f;
     float zoomScale = zoomCellSize / cellSize;
@@ -325,8 +539,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
                         for (int s = 1; s < raySteps; ++s)
                         {
-                            float worldX = position.x + (currPx - 960.0f) / zoomScale;
-                            float worldY = position.y + (currPy - 540.0f) / zoomScale;
+                            float worldX = Camera::ScreenToWorldX(currPx);
+                            float worldY = Camera::ScreenToWorldY(currPy);
 
                             int gX = static_cast<int>(worldX / cellSize);
                             int gY = static_cast<int>(worldY / cellSize);
@@ -366,4 +580,59 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     }
 
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
+void Player::DrawUI(int screenX, int screenY)
+{
+    if (weapons.empty()) return;
+    
+    Weapon* currentWeapon = weapons[currentWeaponIndex];
+    if (currentWeapon)
+    {
+        const WeaponData* data = currentWeapon->GetData();
+        if (data && data->uiImageHandle != -1)
+        {
+            DrawGraph(screenX, screenY, data->uiImageHandle, TRUE);
+        }
+        else
+        {
+            DrawBox(screenX, screenY, screenX + 100, screenY + 50, GetColor(50, 50, 50), TRUE);
+            DrawString(screenX + 10, screenY + 10, currentWeapon->GetName().c_str(), GetColor(255, 255, 255));
+        }
+
+        int currentAmmo = currentWeapon->GetCurrentAmmo();
+        int maxAmmo = currentWeapon->GetMaxAmmo();
+        char ammoText[64];
+        if (currentWeapon->IsReloading()) {
+            sprintf_s(ammoText, sizeof(ammoText), "Reloading...");
+        } else {
+            sprintf_s(ammoText, sizeof(ammoText), "Ammo: %d / %d", currentAmmo, maxAmmo);
+        }
+        DrawString(screenX + 10, screenY + 60, ammoText, GetColor(255, 255, 0));
+
+        // Draw Player HP
+        char hpText[64];
+        snprintf(hpText, sizeof(hpText), "HP: %d / %d", status.GetCurrentHp(), status.GetMaxHp());
+        DrawString(screenX + 10, screenY + 80, hpText, GetColor(100, 255, 100));
+
+        // Draw Skill UI
+        if (currentSkill)
+        {
+            char skillText[64];
+            int ct = currentSkill->GetCoolTimeTimer();
+            if (ct > 0) {
+                snprintf(skillText, sizeof(skillText), "Skill [%s]: CD %d", currentSkill->GetData()->name.c_str(), ct);
+                DrawString(screenX + 10, screenY + 100, skillText, GetColor(150, 150, 150));
+            } else {
+                snprintf(skillText, sizeof(skillText), "Skill [%s]: Ready! (E)", currentSkill->GetData()->name.c_str());
+                DrawString(screenX + 10, screenY + 100, skillText, GetColor(0, 255, 255));
+            }
+        }
+    }
+}
+
+void Player::AddAmmo(int amount) {
+    if (!weapons.empty() && weapons[currentWeaponIndex]) {
+        weapons[currentWeaponIndex]->UseAmmo(-amount);
+    }
 }

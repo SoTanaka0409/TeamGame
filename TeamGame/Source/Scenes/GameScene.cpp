@@ -1,9 +1,13 @@
 #include "GameScene.h"
+#include "Camera.h"
+#include "DebugManager.h"
+#include "EffectManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "InputManager.h"
 #include "Player.h"
 #include "ResultScene.h"
+#include "ClearScene.h"
 #include "TitleScene.h"
 #include "SceneManager.h"
 #include "NetworkManager.h"
@@ -13,7 +17,7 @@
 #include <cmath>
 #include <random>
 
-GameScene::GameScene() : player(nullptr), isDebugView(false)
+GameScene::GameScene(PlayMode mode) : player(nullptr), currentPlayMode(mode)
 {
 }
 
@@ -21,78 +25,82 @@ GameScene::~GameScene()
 {
 }
 
+int GameScene::GetActiveEnemyCount() const
+{
+    if (!objectManager) return 0;
+    int count = 0;
+    for (auto obj : objectManager->GetObjects())
+    {
+        if (obj && obj->GetObjectTag() == ObjectTag::Enemy && obj->IsActive())
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 void GameScene::ClearEnemies()
 {
-    for (auto e : enemies)
+    if (objectManager)
     {
-        if (e)
+        for (auto obj : objectManager->GetObjects())
         {
-            e->SetActive(false);
+            if (obj && obj->GetObjectTag() == ObjectTag::Enemy)
+            {
+                obj->SetActive(false);
+            }
         }
     }
     enemies.clear();
 }
 
+
+
 void GameScene::SpawnEnemiesRandomly(int count)
 {
     ClearEnemies();
+    totalEnemiesSpawned = count;
 
     const Stage& stage = stageManager.GetCurrentStage();
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
-    Point2D pStart = stage.GetPlayerStartPos();
 
-    std::vector<Point2D> validCells;
-    for (int y = 1; y < stage.GetHeight() - 1; ++y)
-    {
-        for (int x = 1; x < stage.GetWidth() - 1; ++x)
-        {
-            CellType cell = stage.GetCell(x, y);
-            // 水(WATER)、障害物壁(WALL_BLOCK, CACTUS)、外枠(OUTER_WALL)を除外し、床と草むらのみ対象
-            if (cell == CellType::EMPTY_FLOOR || cell == CellType::BUSH)
-            {
-                if (!stage.IsSolidWall(x, y) && cell != CellType::WATER)
-                {
-                    // プレイヤー初期位置から一定距離(5マス以上)を離してスポーン
-                    int dx = x - pStart.x;
-                    int dy = y - pStart.y;
-                    if ((dx * dx + dy * dy) >= 25)
-                    {
-                        validCells.push_back({ x, y });
-                    }
-                }
-            }
-        }
+    int midX = stage.GetWidth() / 2;
+    int team0Y = stage.GetHeight() - 4;
+    int team1Y = 3;
+
+    // Player position
+    if (player) {
+        player->SetPosition(Vector2((midX + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize));
     }
 
-    if (validCells.empty()) return;
-
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(validCells.begin(), validCells.end(), rng);
-
-    Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
-    int numToSpawn = (std::min)(count, static_cast<int>(validCells.size()));
-
-    for (int i = 0; i < numToSpawn; ++i)
+    // Ally bots (Team 0)
+    int allyOffsets[] = {-3, 3};
+    for (int i = 0; i < 2; ++i)
     {
-        float ex = (validCells[i].x + 0.5f) * cellSize;
-        float ey = (validCells[i].y + 0.5f) * cellSize;
-        Enemy* enemy = new Enemy(ex, ey);
-        enemy->SetStage(stagePtr, cellSize);
-        enemy->SetTargetPlayer(player);
-        enemies.push_back(enemy);
+        Enemy* allyBot = new Enemy((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0);
+        allyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+        // objectManager->AddObject(allyBot);
+    }
+    
+    // Enemy bots (Team 1)
+    int enemyOffsets[] = {-3, 0, 3};
+    for (int i = 0; i < 3; ++i)
+    {
+        Enemy* enemyBot = new Enemy((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1);
+        enemyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+        // objectManager->AddObject(enemyBot);
     }
 }
-
 void GameScene::Init()
 {
     Scene::Init();
+    gameTimer = 0.0f;
+    isCleared = false;
     
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
-    isDebugView = false; // 最初から暗闇モード
     
     const Stage& stage = stageManager.GetCurrentStage();
     
@@ -108,8 +116,22 @@ void GameScene::Init()
     player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     player->SetStage(stagePtr, cellSize);
+
+    if (currentPlayMode == PlayMode::LOCAL_COOP)
+    {
+        remotePlayer = new Player(startX + 50.0f, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+    }
+    else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
+    {
+        remotePlayer = new Player(startX, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetRemote(true);
+    }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
+    introTimer = 300.0f; // 5 seconds at 60 FPS
     SpawnEnemiesRandomly(5);
 }
 
@@ -129,13 +151,87 @@ void GameScene::Update()
         }
         else
         {
-            Scene::Update(); 
+            gameTimer += 0.016f;
 
-            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
-                InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
+            if (introTimer > 0.0f)
             {
-                isDebugView = !isDebugView;
+                introTimer -= 1.0f;
+                // Skip Scene::Update to pause the game during intro
             }
+            else
+            {
+                Scene::Update();
+            }
+
+            // Respawn and kill count logic
+            if (objectManager)
+            {
+                for (auto obj : objectManager->GetObjects())
+                {
+                    Character* ch = dynamic_cast<Character*>(obj);
+                    if (ch && !ch->IsActive())
+                    {
+                        if (!ch->isDeadProcessed)
+                        {
+                            if (ch->teamId == 0) team1Kills++;
+                            else if (ch->teamId == 1) team0Kills++;
+                            
+                            ch->isDeadProcessed = true;
+                            ch->respawnTimer = 180; // 3 seconds at 60 FPS
+                        }
+                        
+                        if (ch->respawnTimer > 0)
+                        {
+                            ch->respawnTimer--;
+                        }
+                        
+                        if (ch->respawnTimer <= 0)
+                        {
+                            ch->isDeadProcessed = false;
+                            
+                            // リスポーン（固定の自陣付近に復活）
+                            const Stage& stage = stageManager.GetCurrentStage();
+                            float cellW = 1920.0f / stage.GetWidth();
+                            float cellH = 1080.0f / stage.GetHeight();
+                            float cellSize = (cellW < cellH) ? cellW : cellH;
+                            
+                            int midX = stage.GetWidth() / 2;
+                            int spawnY = (ch->teamId == 0) ? (stage.GetHeight() - 4) : 3;
+                            int spawnX = midX + (std::rand() % 7 - 3); // -3 to +3
+                            
+                            while (stage.IsSolidWall(spawnX, spawnY)) {
+                                spawnX = midX + (std::rand() % 7 - 3);
+                            }
+
+                            ch->SetPosition(Vector2((spawnX + 0.5f) * cellSize, (spawnY + 0.5f) * cellSize));
+                            ch->status.Heal(ch->status.GetMaxHp());
+                            ch->SetActive(true);
+                            ch->invincibleTimer = 180;
+                        }
+                    }
+                }
+            }
+
+            // 勝敗判定 (10キル先取)
+            if (!isCleared && (team0Kills >= 10 || team1Kills >= 10))
+            {
+                isCleared = true;
+                
+                if (team0Kills >= 10) {
+                    ClearStats stats;
+                    stats.clearTimeSec = gameTimer;
+                    stats.defeatedEnemies = team0Kills;
+                    stats.totalEnemies = 10;
+                    stats.rankScore = 5000;
+                    stats.rankName = "S";
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                } else {
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<ResultScene>());
+                }
+                return;
+            }
+
+            DebugManager::GetInstance().Update();
 
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
             {
@@ -214,7 +310,7 @@ void GameScene::Update()
         if (currEnter && !prevEnter)
         {
             if (settingsMenuCursor == 0) GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
-            else if (settingsMenuCursor == 1) isDebugView = !isDebugView;
+            else if (settingsMenuCursor == 1) DebugManager::GetInstance().ToggleDebugMode();
             else if (settingsMenuCursor == 2) { stageManager.NextTheme(); }
             else if (settingsMenuCursor == 3) { stageManager.NextVariation(); }
             else if (settingsMenuCursor == 4) state = GameState::PAUSED;
@@ -229,6 +325,7 @@ void GameScene::Update()
 
 void GameScene::Draw()
 {
+    bool isDebugView = DebugManager::GetInstance().IsDebugMode();
     const Stage& stage = stageManager.GetCurrentStage();
     std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
@@ -244,17 +341,84 @@ void GameScene::Draw()
         playerWorldY = pos.y;
     }
 
-    stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
-    Scene::Draw();
-
-    if (!isDebugView && player && player->IsActive())
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive())
     {
-        player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
+        // 画面分割 (1P - 左半分)
+        SetDrawArea(0, 0, 1920 / 2, 1080);
+        Camera::TargetWorldX = playerWorldX;
+        Camera::TargetWorldY = playerWorldY;
+        Camera::ScreenCenterX = 1920.0f / 4.0f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
+
+        // 画面分割 (2P - 右半分)
+        SetDrawArea(1920 / 2, 0, 1920, 1080);
+        Vector2 p2Pos = remotePlayer->GetPosition();
+        Camera::TargetWorldX = p2Pos.x;
+        Camera::TargetWorldY = p2Pos.y;
+        Camera::ScreenCenterX = 1920.0f * 0.75f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
+        
+        // 描画エリアリセット
+        SetDrawArea(0, 0, 1920, 1080);
+        
+        // 分割線
+        DrawLine(1920 / 2, 0, 1920 / 2, 1080, GetColor(255, 255, 255), 3);
+    }
+    else
+    {
+        // 1画面
+
+        float enemySpawnY = 3 * worldCellSize;
+        float playerSpawnY = (stage.GetHeight() - 4) * worldCellSize;
+        
+        if (introTimer > 0.0f)
+        {
+            // Easing: start at enemySpawnY, move to playerSpawnY
+            float t = 1.0f - (introTimer / 300.0f);
+            // smoothstep easing
+            t = t * t * (3.0f - 2.0f * t);
+            
+            Camera::TargetWorldX = playerWorldX; // Keep X centered on player
+            Camera::TargetWorldY = enemySpawnY + (playerSpawnY - enemySpawnY) * t;
+        }
+        else
+        {
+            Camera::TargetWorldX = playerWorldX;
+            Camera::TargetWorldY = playerWorldY;
+        }
+        
+        Camera::ScreenCenterX = 1920.0f / 2.0f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+
+        Scene::Draw();
+    }
+
+    if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
+    {
+        if (introTimer <= 0.0f) 
+        {
+            player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
+        }
     }
     
     DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
     DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(150, 150, 150));
     DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(150, 150, 150));
+
+    if (player && player->IsActive()) {
+        player->DrawUI(10, 100);
+    }
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
+        remotePlayer->DrawUI(1920 / 2 + 10, 100);
+    }
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
     {
@@ -268,7 +432,26 @@ void GameScene::Draw()
         const int menuStartY = 400;
         const int menuSpacing = 60;
         
-        if (state == GameState::PAUSED)
+    
+    // Draw scores
+    char scoreText[128];
+    sprintf_s(scoreText, sizeof(scoreText), "BLUE(YOU): %d  vs  RED: %d", team0Kills, team1Kills);
+    DrawString(800, 20, scoreText, GetColor(255, 255, 255));
+    
+
+    if (state == GameState::PLAYING && introTimer > 0.0f)
+    {
+        SetFontSize(80);
+        if (introTimer > 60.0f) {
+            DrawString(1920/2 - 150, 1080/2 - 100, "READY...", GetColor(255, 200, 50));
+        } else {
+            DrawString(1920/2 - 180, 1080/2 - 100, "BRAWL!", GetColor(255, 50, 50));
+        }
+        SetFontSize(32); // Reset to default (or whatever it was)
+    }
+
+    if (state == GameState::PAUSED)
+
         {
             const char* items[] = { "ゲームに戻る", "設定", "タイトルへ戻る", "ゲーム終了" };
             for (int i = 0; i < 4; i++)
@@ -312,6 +495,33 @@ void GameScene::Draw()
         DrawString(ruleX, ruleY + 380, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 420, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
     }
+
+    int activeEnemyCount = GetActiveEnemyCount();
+    
+    // Kill Count Bar UI (Top Right)
+    int maxKills = 10;
+    int barWidth = 300;
+    int barHeight = 25;
+    int startX = 1920 - 350;
+    int startY = 30;
+
+    // Background
+    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(50, 50, 50), TRUE);
+    DrawBox(startX, startY + 40, startX + barWidth, startY + 40 + barHeight, GetColor(50, 50, 50), TRUE);
+
+    // Ally Kills Bar (Blue)
+    int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
+    DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
+    SetFontSize(24);
+    DrawFormatString(startX - 180, startY + 2, GetColor(255, 255, 255), "ALLY KILLS: %d/%d", team0Kills, maxKills);
+
+    // Enemy Kills Bar (Red)
+    int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
+    DrawBox(startX, startY + 40, startX + enemyBarW, startY + 40 + barHeight, GetColor(255, 50, 50), TRUE);
+    DrawFormatString(startX - 190, startY + 42, GetColor(255, 255, 255), "ENEMY KILLS: %d/%d", team1Kills, maxKills);
+    SetFontSize(32); // Reset to default
+
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }
 
 void GameScene::ProcessNetworkPackets()

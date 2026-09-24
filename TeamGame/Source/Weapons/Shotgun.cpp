@@ -1,49 +1,49 @@
+#include <cstdlib>
 #include "Shotgun.h"
 #include "Bullet.h"
-#include "Enemy.h"
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 #include <cmath>
 
-Shotgun::Shotgun() : Weapon("Shotgun", 45)
-{
-}
+#include "Enemy.h"
 
-static void NotifyEnemiesOfGunshot(const Vector2 &pos)
+
+Shotgun::Shotgun() : Weapon("Shotgun") {}
+
+void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, float additionalSpread)
 {
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
+    if (CanFire() && data)
     {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
+        auto scene = SceneManager::GetInstance().GetCurrentScene();
+        if (scene && scene->GetObjectManager())
         {
-            Enemy *enemy = dynamic_cast<Enemy *>(obj);
-            if (enemy && enemy->IsActive())
+            int pelletCount = 5;
+            float totalSpread = data->spreadAngle + additionalSpread;
+            float spreadRad = totalSpread * (3.14159f / 180.0f);
+            float baseAngle = std::atan2(dir.y, dir.x);
+
+            for (int i = 0; i < pelletCount; i++)
             {
-                enemy->OnHearGunshot(pos);
+                float angleOffset = (pelletCount > 1) ? (-spreadRad / 2.0f + (spreadRad / (pelletCount - 1)) * i) : 0.0f;
+                float jitter = (((float)std::rand() / RAND_MAX) * 0.1f) - 0.05f; // Small random jitter
+                float finalAngle = baseAngle + angleOffset + jitter;
+                Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
+
+                Bullet* bullet = new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius, teamId);
+                // scene->GetObjectManager()->AddObject(bullet);
             }
+            
+            SoundManager::GetInstance().Play3D("shotgun_fire", pos, 1200.0f);
+
+            
+            ResetCoolTime();
+            UseAmmo(1);
         }
     }
-}
-
-void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir)
-{
-    if (!CanFire())
-        return;
-
-    float baseAngle = std::atan2(dir.y, dir.x);
-    int bulletCount = 15;
-    float spreadRange = 1.25f;
-
-    for (int i = 0; i < bulletCount; ++i)
+    else if (currentAmmo <= 0 && !isReloading)
     {
-        float angleOffset =
-            -spreadRange + (spreadRange * 2.0f / (bulletCount - 1)) * i;
-        float angle = baseAngle + angleOffset;
-        Vector2 spreadDir(std::cos(angle), std::sin(angle));
-        new Bullet(pos.x, pos.y, spreadDir, 12.0f);
+        Reload();
     }
-
-    NotifyEnemiesOfGunshot(pos);
-    ResetCoolTime();
 }

@@ -2,6 +2,8 @@
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "TitleScene.h"
+#include "WeaponManager.h"
+#include "SoundManager.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow)
@@ -29,6 +31,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         return -1; // エラーが起きたら直ちに終了
     }
 
+    // 武器データのロード
+    WeaponManager::GetInstance().LoadFromCSV("weapons.csv");
+
     // 描画先を裏画面に設定
     SetDrawScreen(DX_SCREEN_BACK);
 
@@ -49,6 +54,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // 裏画面の内容を表画面に反映
         ScreenFlip();
     }
+
+    WeaponManager::GetInstance().Cleanup();
+    SoundManager::GetInstance().Clear();
 
     // DXライブラリの使用終了処理
     DxLib_End();

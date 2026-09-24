@@ -12,9 +12,11 @@ class EnemyBullet : public Object2D
     ColliderManager *myColliderManager;
     Vector2 velocity;
     float radius;
+    float maxRange;
+    Vector2 startPos;
 
   public:
-    EnemyBullet(float startX, float startY, const Vector2 &dir, float speed);
+    EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, float range = 1500.0f);
     virtual ~EnemyBullet();
 
     void Update() override;
