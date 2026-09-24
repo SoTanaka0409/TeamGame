@@ -1,0 +1,5 @@
+Id,Name,Description,ImagePath,MajorTag,MinorTag,EffectValue,Duration,CoolTime
+1,HealGadget,体力を50回復する,Assets/UI/heal_icon.png,StatusBuff,Heal,50,0,600
+2,AttackBoost,一定時間攻撃力がアップする,Assets/UI/atk_icon.png,StatusBuff,AttackUp,10,300,1200
+3,Flashbang,周囲の敵の目をくらませる,Assets/UI/flash_icon.png,Debuff,Blind,200,180,900
+4,StunPulse,周囲の敵をスタンさせる,Assets/UI/stun_icon.png,Debuff,Stun,150,120,900

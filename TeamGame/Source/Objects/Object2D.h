@@ -8,7 +8,8 @@ enum class ObjectTag
     Enemy,
     PlayerWeapon,
     EnemyWeapon,
-    Object
+    Object,
+    Item // 追加: 拾えるアイテム用
 };
 
 class Collider;

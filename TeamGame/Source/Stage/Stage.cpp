@@ -1,3 +1,4 @@
+#include "Camera.h"
 #define NOMINMAX
 #include "Stage.h"
 #include "DxLib.h"
@@ -55,6 +56,48 @@ bool Stage::IsOutOfBounds(int gridX, int gridY) const
     return (gridX < 0 || gridX >= m_width || gridY < 0 || gridY >= m_height);
 }
 
+void Stage::ResolveCollision(Vector2& pos, float margin, float cellSize) const
+{
+    if (cellSize <= 0.0f || m_width <= 0 || m_height <= 0) return;
+
+    for (int iter = 0; iter < 2; ++iter)
+    {
+        // 1. 左方向
+        int leftGridX = static_cast<int>((pos.x - margin) / cellSize);
+        int centerGridY = static_cast<int>(pos.y / cellSize);
+        if (IsOutOfBounds(leftGridX, centerGridY) || IsSolidWall(leftGridX, centerGridY))
+        {
+            float wallRightX = (leftGridX + 1) * cellSize;
+            pos.x = wallRightX + margin;
+        }
+
+        // 2. 右方向
+        int rightGridX = static_cast<int>((pos.x + margin) / cellSize);
+        if (IsOutOfBounds(rightGridX, centerGridY) || IsSolidWall(rightGridX, centerGridY))
+        {
+            float wallLeftX = rightGridX * cellSize;
+            pos.x = wallLeftX - margin;
+        }
+
+        // 3. 上方向
+        int centerGridX = static_cast<int>(pos.x / cellSize);
+        int topGridY = static_cast<int>((pos.y - margin) / cellSize);
+        if (IsOutOfBounds(centerGridX, topGridY) || IsSolidWall(centerGridX, topGridY))
+        {
+            float wallBottomY = (topGridY + 1) * cellSize;
+            pos.y = wallBottomY + margin;
+        }
+
+        // 4. 下方向
+        int bottomGridY = static_cast<int>((pos.y + margin) / cellSize);
+        if (IsOutOfBounds(centerGridX, bottomGridY) || IsSolidWall(centerGridX, bottomGridY))
+        {
+            float wallTopY = bottomGridY * cellSize;
+            pos.y = wallTopY - margin;
+        }
+    }
+}
+
 void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDebugMode, float playerWorldX, float playerWorldY, float lightAngle, const char* patternName, int hGrass) const
 {
     if (m_width <= 0 || m_height <= 0) return;
@@ -82,7 +125,9 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
     const unsigned int colorWallBorder  = GetColor(132, 72, 38);
     const unsigned int colorOuterWall   = GetColor(65, 70, 85);
     const unsigned int colorOuterBorder = GetColor(130, 140, 160);
-    const unsigned int colorCactus      = GetColor(40, 160, 80);
+    const unsigned int colorRock        = GetColor(140, 145, 155);
+    const unsigned int colorRockBorder  = GetColor(70, 75, 85);
+    const unsigned int colorRockDetail  = GetColor(185, 190, 200);
 
     // 1. 各タイルのフルカラー標準描画
     for (int y = 0; y < m_height; ++y)
@@ -141,8 +186,9 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
             case CellType::CACTUS:
                 {
                     int r = static_cast<int>(cellSize * 0.45f);
-                    DrawCircle(cx, cy, r, colorCactus, TRUE);
-                    DrawCircle(cx, cy, r, GetColor(20, 100, 40), FALSE);
+                    DrawCircle(cx, cy, r, colorRock, TRUE);
+                    DrawCircle(cx, cy, r, colorRockBorder, FALSE);
+                    DrawCircle(cx - 2, cy - 2, static_cast<int>(r * 0.45f), colorRockDetail, TRUE);
                 }
                 break;
             }
@@ -172,8 +218,8 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
     int useGrass = (hGrass != -1) ? hGrass : m_hGrassGraph;
 
     // プレイヤーの位置(playerWorldX, playerWorldY)が画面中央 (960, 540) にくるような基準オフセット
-    float startDrawX = 960.0f - (playerWorldX / worldCellSize) * zoomCellSize;
-    float startDrawY = 540.0f - (playerWorldY / worldCellSize) * zoomCellSize;
+    float startDrawX = Camera::WorldToScreenX(0.0f);
+    float startDrawY = Camera::WorldToScreenY(0.0f);
 
     // カラーパレット
     const unsigned int colorFloor1      = GetColor(242, 162, 108);
@@ -186,7 +232,9 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
     const unsigned int colorWallBorder  = GetColor(132, 72, 38);
     const unsigned int colorOuterWall   = GetColor(65, 70, 85);
     const unsigned int colorOuterBorder = GetColor(130, 140, 160);
-    const unsigned int colorCactus      = GetColor(40, 160, 80);
+    const unsigned int colorRock        = GetColor(140, 145, 155);
+    const unsigned int colorRockBorder  = GetColor(70, 75, 85);
+    const unsigned int colorRockDetail  = GetColor(185, 190, 200);
 
     for (int y = 0; y < m_height; ++y)
     {
@@ -255,8 +303,9 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
             case CellType::CACTUS:
                 {
                     int r = static_cast<int>(zoomCellSize * 0.45f);
-                    DrawCircle(cx, cy, r, colorCactus, TRUE);
-                    DrawCircle(cx, cy, r, GetColor(20, 100, 40), FALSE);
+                    DrawCircle(cx, cy, r, colorRock, TRUE);
+                    DrawCircle(cx, cy, r, colorRockBorder, FALSE);
+                    DrawCircle(cx - 2, cy - 2, static_cast<int>(r * 0.45f), colorRockDetail, TRUE);
                 }
                 break;
             }

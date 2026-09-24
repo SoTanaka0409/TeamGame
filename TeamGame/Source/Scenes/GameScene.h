@@ -1,10 +1,19 @@
 #pragma once
 #include "Scene.h"
 #include "StageManager.h"
+#include "DebugManager.h"
 #include <vector>
 
 class Enemy;
 
+
+enum class PlayMode
+{
+    SOLO,
+    LOCAL_COOP,
+    NETWORK_HOST,
+    NETWORK_CLIENT
+};
 enum class GameState
 {
     PLAYING,
@@ -19,8 +28,8 @@ class GameScene : public Scene
     class Player *remotePlayer;
     std::vector<Enemy*> enemies;
     StageManager stageManager;
-    bool isDebugView;
 
+    PlayMode currentPlayMode = PlayMode::SOLO;
     GameState state = GameState::PLAYING;
     int pauseMenuCursor = 0;
     int settingsMenuCursor = 0;
@@ -30,10 +39,17 @@ class GameScene : public Scene
     bool prevDown = false;
     bool prevEnter = false;
 
+    float gameTimer = 0.0f;
+    float introTimer = 0.0f; // カメラ演出タイマー
+    int totalEnemiesSpawned = 0;
+    int team0Kills = 0;
+    int team1Kills = 0;
+    bool isCleared = false;
+
     void ProcessNetworkPackets();
 
   public:
-    GameScene();
+    GameScene(PlayMode mode = PlayMode::SOLO);
     ~GameScene() override;
 
     void Init() override;
@@ -42,6 +58,7 @@ class GameScene : public Scene
 
     void SpawnEnemiesRandomly(int count);
     void ClearEnemies();
+    int GetActiveEnemyCount() const;
 
     const class Stage* GetStage() const override
     {

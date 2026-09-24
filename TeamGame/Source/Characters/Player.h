@@ -1,7 +1,14 @@
-#pragma once
+﻿#pragma once
 #include "Character.h"
 #include <vector>
 #include <cmath>
+enum class PlayerInputType
+{
+    KEYBOARD_MOUSE,
+    GAMEPAD_1
+};
+
+#include "../Weapons/Weapon.h"
 class Weapon;
 
 class Player : public Character
@@ -13,12 +20,16 @@ class Player : public Character
     Vector2 facingDir;
     std::vector<Weapon *> weapons;
     int currentWeaponIndex;
+    
+    // ガジェット（スキル）の保持
+    class Skill* currentSkill = nullptr;
 
   public:
     Vector2 GetFacingDir() const
     {
         return facingDir;
     }
+
     float GetX() const { return position.x; }
     float GetY() const { return position.y; }
     float GetLightAngle() const { return std::atan2(facingDir.y, facingDir.x); }
@@ -27,8 +38,14 @@ class Player : public Character
 
     void SetStage(class Stage* s, float cSize) { currentStage = s; cellSize = cSize; }
     void TakeDamage();
+    
+    // 弾薬の回復（現在持っている武器の弾を回復する）
+    void AddAmmo(int amount);
+
+    
     void Update() override;
     void Draw() override;
+    void DrawUI(int screenX, int screenY);
 
     // 引数が Collider* に変更
     void OnCollisionEnter(Collider *otherCollider) override;
@@ -37,6 +54,7 @@ class Player : public Character
 
     // 懐中電灯・スポットライト
     void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY) const;
+    void RenderBloodSplatterOverlay(int screenWidth = 1920, int screenHeight = 1080) const;
 
     bool IsLightOn() const { return m_isLightOn; }
     void ToggleLight() { m_isLightOn = !m_isLightOn; }
@@ -44,6 +62,12 @@ class Player : public Character
     void SetInBush(bool val) { m_isInBush = val; }
     void SetFacingDir(const Vector2& dir) { facingDir = dir; }
     void SetRemote(bool val) { isRemote = val; }
+    
+    // スキルのセット
+    void SetSkill(class Skill* skill) { currentSkill = skill; }
+    
+    void SetInputType(PlayerInputType type) { m_inputType = type; }
+    PlayerInputType GetInputType() const { return m_inputType; }
     bool IsRemote() const { return isRemote; }
 
   private:
@@ -52,9 +76,14 @@ class Player : public Character
     bool m_isInBush = false;    // 草むらに隠れているか
     bool m_prevMouseRight = false; // 右クリック判定
     bool isRemote = false;
+    PlayerInputType m_inputType = PlayerInputType::KEYBOARD_MOUSE;
 
-    // 懐中電灯パラメーター
+    // 懐中電灯・環境光パラメーター
     float m_maxSpotDistCells = 14.0f;
     float m_closeRadiusCells = 2.0f;
     float m_fanAngleHalf = 0.5236f;
+
+    // 月明かり・チラつきランダム環境光タイマー
+    mutable int m_flickerTimer = 0;
+    mutable bool m_isMoonlightFlicker = false;
 };

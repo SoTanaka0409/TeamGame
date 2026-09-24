@@ -7,7 +7,7 @@ class TitleScene : public Scene
     TitleScene();
     ~TitleScene() override;
 
-    enum class TitleState { MAIN, SETTINGS, WAITING, JOINING_LAN };
+    enum class TitleState { MAIN, MODE_SELECT, JOIN_SELECT, SETTINGS, WAITING, JOINING_LAN };
     TitleState state = TitleState::MAIN;
     int cursor = 0;
     int waitTimer = 0; 

@@ -1,12 +1,14 @@
+#include "Camera.h"
 #include "Bullet.h"
+#include "Character.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "Scene.h"
 #include "SceneManager.h"
 
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed)
-    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(5.0f)
+Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -39,7 +41,15 @@ void Bullet::Update()
     position.x += velocity.x;
     position.y += velocity.y;
 
-    // 画面外に出たら消滅
+    float dx = position.x - startPos.x;
+    float dy = position.y - startPos.y;
+    if (dx * dx + dy * dy > maxRange * maxRange)
+    {
+        SetActive(false);
+        return;
+    }
+
+    // 画面外に出たら消去
     if (position.x < -200 || position.x > 2100 || position.y < -200 ||
         position.y > 1300)
     {
@@ -68,25 +78,8 @@ void Bullet::Update()
 
 void Bullet::Draw()
 {
-    float screenX = position.x;
-    float screenY = position.y;
-
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
-    {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
-        {
-            Player *player = dynamic_cast<Player *>(obj);
-            if (player && player->IsActive())
-            {
-                float zoomScale = 75.0f / 40.0f;
-                Vector2 pPos = player->GetPosition();
-                screenX = 960.0f + (position.x - pPos.x) * zoomScale;
-                screenY = 540.0f + (position.y - pPos.y) * zoomScale;
-                break;
-            }
-        }
-    }
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
 
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(radius), GetColor(0, 255, 255), TRUE);
@@ -94,14 +87,25 @@ void Bullet::Draw()
 
 void Bullet::OnCollisionEnter(Collider *otherCollider)
 {
-    // 敵に当たったらダメージを与えて自身も消滅
-    if (otherCollider->GetOwner() && otherCollider->GetOwner()->GetObjectTag() == ObjectTag::Enemy)
+    if (otherCollider->GetOwner())
     {
-        Enemy *enemy = dynamic_cast<Enemy *>(otherCollider->GetOwner());
-        if (enemy)
+        Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
+        if (target && target->teamId != this->teamId && target->teamId != -1)
         {
-            enemy->Damage();
+            if (target->GetObjectTag() == ObjectTag::Enemy) {
+                Enemy *enemy = dynamic_cast<Enemy *>(target);
+                if (enemy) enemy->Damage();
+            } else if (target->GetObjectTag() == ObjectTag::Player) {
+                Player *player = dynamic_cast<Player *>(target);
+                if (player) player->TakeDamage();
+            }
+            
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetEffectManager())
+            {
+                scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 10);
+            }
+            SetActive(false);
         }
-        SetActive(false);
     }
 }
