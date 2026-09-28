@@ -52,7 +52,7 @@ class Enemy : public Character
     float GetEffectiveRangeCells() const { return effectiveRangeCells; }
     void SetEffectiveRangeCells(float cells) { effectiveRangeCells = cells; }
 
-    void OnHearGunshot(const Vector2 &soundPos);
+    void OnHearGunshot(const Vector2 &soundPos, float loudness = 1.0f);
     void Damage();
 
     void StealthKill();

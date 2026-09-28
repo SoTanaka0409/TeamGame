@@ -72,4 +72,5 @@ class Weapon
     int GetMaxAmmo() const { return data ? data->maxAmmo : 0; }
     bool IsReloading() const { return isReloading; }
     const WeaponData* GetData() const { return data; }
+    virtual float GetMoveSpreadPenalty() const { return 0.0f; }
 };

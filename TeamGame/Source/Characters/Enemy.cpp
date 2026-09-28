@@ -29,7 +29,7 @@ Enemy::~Enemy()
 {
 }
 
-void Enemy::OnHearGunshot(const Vector2 &soundPos)
+void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness)
 {
     if (aiState == EnemyAIState::ALERT) return;
 

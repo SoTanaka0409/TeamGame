@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <cstdlib>
 #include "SniperRifle.h"
 #include "Bullet.h"
@@ -21,13 +21,14 @@ SniperRifle::SniperRifle() : Weapon("SniperRifle") {}
  * @param additionalSpread 追加の拡散角度
  * @details ブレを考慮しつつ高速・長射程のBulletオブジェクトを生成し、スナイパー特有の銃声を鳴らす
  */
-void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, float additionalSpread)
+void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving)
 {
     if (CanFire() && data)
     {
         auto scene = SceneManager::GetInstance().GetCurrentScene();
         if (scene && scene->GetObjectManager())
         {
+            float additionalSpread = isMoving ? GetMoveSpreadPenalty() : 0.0f;
             float totalSpread = data->spreadAngle + additionalSpread;
             float halfSpreadRad = (totalSpread / 2.0f) * (3.14159265f / 180.0f);
             float randomAngle = 0.0f;
