@@ -1,13 +1,15 @@
-#include "GameScene.h"
+﻿#include "GameScene.h"
 #include "Camera.h"
 #include "DebugManager.h"
 #include "EffectManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
+#include "../Objects/Item.h"
 #include "InputManager.h"
 #include "Player.h"
 #include "ResultScene.h"
 #include "ClearScene.h"
+#include "GameOverScene.h"
 #include "TitleScene.h"
 #include "SceneManager.h"
 #include "NetworkManager.h"
@@ -226,7 +228,7 @@ void GameScene::Update()
                     stats.rankName = "S";
                     SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
                 } else {
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<ResultScene>());
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
                 }
                 return;
             }

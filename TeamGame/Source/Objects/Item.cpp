@@ -1,8 +1,11 @@
-#include "Item.h"
+﻿#include "Item.h"
 #include "../Core/Camera.h"
 #include "../Characters/Player.h"
+#include "../Characters/Character.h"
+#include "../Characters/Enemy.h"
 #include "../Managers/SceneManager.h"
 #include "../Scenes/Scene.h"
+#include "../Scenes/GameScene.h"
 #include "../Managers/SoundManager.h"
 #include "DxLib.h"
 #include <cmath>
@@ -44,28 +47,51 @@ void Item::Draw()
     float screenY = Camera::WorldToScreenY(position.y + floatOffset);
 
     // アイテムの種類に応じて色を変える（回復＝緑、弾薬＝黄色）
-    unsigned int color = (type == ItemType::Health) ? GetColor(50, 255, 50) : GetColor(255, 200, 50);
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), 15, color, TRUE);
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), 15, GetColor(255, 255, 255), FALSE);
+    if (type == ItemType::HorrorTrap) {
+        // おどろおどろしい黒赤いモヤのような見た目
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180 + (int)(std::sin(time * 2) * 50));
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), 15 + (int)(std::sin(time*3)*3), GetColor(20, 0, 0), TRUE);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), 10, GetColor(80, 0, 0), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    } else {
+        unsigned int color = (type == ItemType::Health) ? GetColor(50, 255, 50) : GetColor(255, 200, 50);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), 15, color, TRUE);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), 15, GetColor(255, 255, 255), FALSE);
+    }
 }
 
 void Item::OnCollisionEnter(Collider* otherCollider)
 {
-    // プレイヤーが触れたら効果を発動して消滅する
-    if (otherCollider->GetTag() == "Player")
+    if (otherCollider->GetTag() == "Player" || otherCollider->GetTag() == "Enemy" || otherCollider->GetTag() == "PlayerBody" || otherCollider->GetTag() == "EnemyBody")
     {
-        Player* player = dynamic_cast<Player*>(otherCollider->GetOwner());
-        if (player)
+        Character* character = dynamic_cast<Character*>(otherCollider->GetOwner());
+        if (character)
         {
-            if (type == ItemType::Health) {
-                player->status.Heal(amount);
+            if (type == ItemType::Health && character->status.GetCurrentHp() >= character->status.GetMaxHp()) {
+                return;
+            }
+
+            if (type == ItemType::HorrorTrap) {
+                // 爆音を鳴らして敵AIをすべて引き寄せる
+                SoundManager::GetInstance().Play3D("trap_scare", position, 9999.0f, 1.0f, -1);
+                
+                // もし踏んだのがプレイヤーなら、ホラーエフェクトを発動
+                if (character->GetObjectTag() == ObjectTag::Player) {
+                    auto gameScene = std::dynamic_pointer_cast<GameScene>(SceneManager::GetInstance().GetCurrentScene());
+                    if (gameScene) {
+                        gameScene->TriggerHorrorEffect(180); // 3秒間
+                    }
+                }
+            } else if (type == ItemType::Health) {
+                character->status.Heal(amount);
+                SoundManager::GetInstance().Play3D("item_get", position, 1500.0f, 1.0f, character->teamId);
             }
             else if (type == ItemType::Ammo) {
-                player->AddAmmo(amount);
+                Player* player = dynamic_cast<Player*>(character);
+                if (player) player->AddAmmo(amount);
+                SoundManager::GetInstance().Play3D("item_get", position, 1500.0f, 1.0f, character->teamId);
             }
-            // 取得SEを鳴らす
-            SoundManager::GetInstance().Play3D("item_get", position, 500.0f);
+            SetActive(false);
         }
-        SetActive(false); // 取得したら消滅
     }
 }

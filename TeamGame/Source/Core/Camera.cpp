@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 
 float Camera::TargetWorldX = 0.0f;
 float Camera::TargetWorldY = 0.0f;

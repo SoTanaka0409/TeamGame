@@ -1,4 +1,4 @@
-#include <cstdlib>
+﻿#include <cstdlib>
 #include "Shotgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
@@ -10,8 +10,20 @@
 #include "Enemy.h"
 
 
+/**
+ * @brief Shotgunのコンストラクタ
+ * @details 親クラスWeaponを"Shotgun"という名前で初期化する
+ */
 Shotgun::Shotgun() : Weapon("Shotgun") {}
 
+/**
+ * @brief 複数の弾を発射する実装
+ * @param pos 発射位置
+ * @param dir 発射方向
+ * @param teamId チームID
+ * @param additionalSpread 追加の拡散角度
+ * @details 扇状に広がるように計算された角度で複数のBulletオブジェクトを生成し、ショットガン専用の銃声を鳴らす
+ */
 void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, float additionalSpread)
 {
     if (CanFire() && data)

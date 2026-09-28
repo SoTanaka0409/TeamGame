@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include "EnemyBullet.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
@@ -6,6 +6,15 @@
 #include "Scene.h"
 #include "SceneManager.h"
 
+/**
+ * @brief EnemyBulletのコンストラクタ
+ * @param startX 初期位置X
+ * @param startY 初期位置Y
+ * @param dir 進行方向
+ * @param speed 弾の速度
+ * @param range 最大射程距離
+ * @details 初期位置や速度を設定し、敵の弾専用の円形コライダーを作成してコライダーマネージャーに登録する
+ */
 EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float speed, float range)
     : myColliderManager(nullptr), radius(6.0f), maxRange(range), startPos(startX, startY)
 {
@@ -24,6 +33,10 @@ EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float s
     }
 }
 
+/**
+ * @brief EnemyBulletのデストラクタ
+ * @details 登録したコライダーをコライダーマネージャーから削除し、メモリを解放する
+ */
 EnemyBullet::~EnemyBullet()
 {
     if (myColliderManager)
@@ -35,6 +48,10 @@ EnemyBullet::~EnemyBullet()
 
 #include "Stage.h"
 
+/**
+ * @brief 毎フレームの敵の弾の更新処理
+ * @details 弾を移動させ、最大射程の超過、画面外への退出、およびステージの壁・障害物との衝突をチェックし、条件を満たせば消滅させる
+ */
 void EnemyBullet::Update()
 {
     position.x += velocity.x;
@@ -75,6 +92,10 @@ void EnemyBullet::Update()
 
 #include "ObjectManager.h"
 
+/**
+ * @brief 敵の弾の描画処理
+ * @details カメラ座標に合わせて描画位置を計算し、赤い円を描画して敵の弾であることを視覚的に表現する
+ */
 void EnemyBullet::Draw()
 {
     float screenX = Camera::WorldToScreenX(position.x);
@@ -86,6 +107,11 @@ void EnemyBullet::Draw()
                static_cast<int>(radius + 2.0f), GetColor(255, 200, 200), FALSE);
 }
 
+/**
+ * @brief 他のコライダーと衝突したときの処理
+ * @param otherCollider 衝突相手のコライダー
+ * @details 衝突相手がプレイヤー（タグが"Player"）であればプレイヤーにダメージを与え、弾自身は消滅する
+ */
 void EnemyBullet::OnCollisionEnter(Collider *otherCollider)
 {
     if (otherCollider->GetTag() == "Player")

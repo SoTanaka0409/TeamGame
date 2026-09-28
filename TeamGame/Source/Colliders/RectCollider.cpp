@@ -1,4 +1,4 @@
-#include "RectCollider.h"
+﻿#include "RectCollider.h"
 #include "CircleCollider.h"
 
 RectCollider::RectCollider(Object2D *owner, float width, float height,

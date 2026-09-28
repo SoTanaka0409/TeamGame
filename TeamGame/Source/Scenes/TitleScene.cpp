@@ -1,4 +1,4 @@
-#include "TitleScene.h"
+ï»¿#include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
 #include "InputManager.h"
@@ -150,7 +150,7 @@ void TitleScene::Update()
             SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_HOST));
         }
         
-        if (currEsc) // ƒLƒƒƒ“ƒZƒ‹
+        if (currEsc) // ã‚­ãƒ£ãƒ³ã‚»ãƒ«
         {
             NetworkManager::GetInstance().Disconnect();
             if (udpHandle != -1) { DeleteUDPSocket(udpHandle); udpHandle = -1; }

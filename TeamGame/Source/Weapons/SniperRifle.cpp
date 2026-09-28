@@ -1,37 +1,33 @@
 ﻿#include <cmath>
 #include <cstdlib>
-#include "Handgun.h"
+#include "SniperRifle.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
 #include "SoundManager.h"
 
-#include "Enemy.h"
-
-
 /**
- * @brief Handgunのコンストラクタ
- * @details 親クラスWeaponを"Handgun"という名前で初期化する
+ * @brief SniperRifleのコンストラクタ
+ * @details 親クラスWeaponを"SniperRifle"という名前で初期化する
  */
-Handgun::Handgun() : Weapon("Handgun") {}
+SniperRifle::SniperRifle() : Weapon("SniperRifle") {}
 
 /**
- * @brief 弾を発射する実装
+ * @brief スナイパーの弾を発射する実装
  * @param pos 発射位置
  * @param dir 発射方向
  * @param teamId チームID
  * @param additionalSpread 追加の拡散角度
- * @details 射撃可能であればブレを計算してBulletオブジェクトを生成し、銃声を鳴らし、弾薬を消費する
+ * @details ブレを考慮しつつ高速・長射程のBulletオブジェクトを生成し、スナイパー特有の銃声を鳴らす
  */
-void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, float additionalSpread)
+void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, float additionalSpread)
 {
     if (CanFire() && data)
     {
         auto scene = SceneManager::GetInstance().GetCurrentScene();
         if (scene && scene->GetObjectManager())
         {
-            // Create bullet and add to ObjectManager
             float totalSpread = data->spreadAngle + additionalSpread;
             float halfSpreadRad = (totalSpread / 2.0f) * (3.14159265f / 180.0f);
             float randomAngle = 0.0f;
@@ -43,19 +39,16 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, float add
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
             Bullet* bullet = new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId);
-            // scene->GetObjectManager()->AddObject(bullet);
             
-            // 3D銃声を鳴らす（最大聞こえる距離を1000として設定）
-            SoundManager::GetInstance().Play3D("gunshot", pos, 1000.0f);
+            // スナイパー特有の銃声
+            SoundManager::GetInstance().Play3D("sniper_shot", pos, 1500.0f, 1.0f, teamId);
 
-            
             ResetCoolTime();
             UseAmmo(1);
         }
     }
     else if (currentAmmo <= 0 && !isReloading)
     {
-        // Auto-reload on empty
         Reload();
     }
 }

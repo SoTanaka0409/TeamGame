@@ -1,4 +1,4 @@
-#include "DebugManager.h"
+﻿#include "DebugManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include <cstdio>

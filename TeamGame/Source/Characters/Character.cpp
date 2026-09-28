@@ -1,4 +1,4 @@
-#include "Character.h"
+﻿#include "Character.h"
 #include "ColliderManager.h"
 #include "Scene.h"
 #include "SceneManager.h"

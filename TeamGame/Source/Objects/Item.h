@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "Object2D.h"
 #include "../Colliders/CircleCollider.h"
 
 enum class ItemType {
     Health,
-    Ammo
+    Ammo,
+    HorrorTrap
 };
 
 class Item : public Object2D
