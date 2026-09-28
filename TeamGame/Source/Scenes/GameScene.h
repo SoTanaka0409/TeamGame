@@ -41,6 +41,7 @@ class GameScene : public Scene
 
     float gameTimer = 0.0f;
     int totalEnemiesSpawned = 0;
+    int defeatedEnemiesCount = 0;
     int team0Kills = 0;
     int team1Kills = 0;
     bool isCleared = false;

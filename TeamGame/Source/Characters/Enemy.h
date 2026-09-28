@@ -24,6 +24,7 @@ class Enemy : public Character
     int patrolChangeTimer;
     int investigateTimer;
     int shootCooldown;
+    int aimDelayTimer;
     int strafeDirection;
     int strafeTimer;
     float effectiveRangeCells = 4.0f; // 有効射程 (セル単位、デフォルト4.0セル)
@@ -57,7 +58,11 @@ class Enemy : public Character
     void StealthKill();
     bool IsAlerted() const { return aiState == EnemyAIState::ALERT; }
     EnemyAIState GetAIState() const { return aiState; }
+    void SetTargetCharacter(class Character *c) { targetCharacter = c; }
+    void SetTargetPlayer(class Character *p) { targetCharacter = p; }
+
     bool CheckLineOfSightToTarget() const;
+    bool CheckLineOfSightToPlayer() const { return CheckLineOfSightToTarget(); }
 
     void MoveSmart(const Vector2 &desiredDir);
 };

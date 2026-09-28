@@ -26,7 +26,7 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos)
 
 Shotgun::Shotgun() : Weapon("Shotgun") {}
 
-void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId)
+void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving)
 {
     if (CanFire() && data)
     {
@@ -34,13 +34,19 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId)
         if (scene)
         {
             int pelletCount = 5;
-            float spreadRad = data->spreadAngle * (3.14159f / 180.0f);
+            float spreadMultiplier = isMoving ? 1.6f : 1.0f;
+            float spreadRad = data->spreadAngle * spreadMultiplier * (3.14159f / 180.0f);
             float baseAngle = std::atan2(dir.y, dir.x);
 
             for (int i = 0; i < pelletCount; i++)
             {
                 // -spread/2 to +spread/2
                 float angleOffset = (pelletCount > 1) ? (-spreadRad / 2.0f + (spreadRad / (pelletCount - 1)) * i) : 0.0f;
+                if (isMoving)
+                {
+                    // 移動時は各ペレットに小さなランダムブレを上乗せ
+                    angleOffset += ((std::rand() % 1000) / 1000.0f - 0.5f) * 0.08f;
+                }
                 float finalAngle = baseAngle + angleOffset;
                 Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 

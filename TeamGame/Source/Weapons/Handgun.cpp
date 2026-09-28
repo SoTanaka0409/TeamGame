@@ -25,19 +25,25 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos)
 
 Handgun::Handgun() : Weapon("Handgun") {}
 
-void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId)
+void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving)
 {
     if (CanFire() && data)
     {
         auto scene = SceneManager::GetInstance().GetCurrentScene();
         if (scene)
         {
-            // Create bullet using CSV data
-            new Bullet(pos.x, pos.y, dir, data->bulletSpeed, data->range, data->bulletRadius);
+            // 移動状態に応じた拡散角（静止時: 約±2°, 移動時: 約±9°）
+            float maxSpreadRad = isMoving ? 0.157f : 0.035f;
+            float angleOffset = ((std::rand() % 1000) / 1000.0f - 0.5f) * maxSpreadRad;
+            float baseAngle = std::atan2(dir.y, dir.x);
+            float finalAngle = baseAngle + angleOffset;
+            Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
+
+            // Create bullet using CSV data & spread direction
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius);
             if (scene->GetEffectManager())
             {
-                float angle = std::atan2(dir.y, dir.x);
-                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, angle, 16.0f);
+                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, finalAngle, 16.0f);
             }
             NotifyEnemiesOfGunshot(pos);
             ResetCoolTime();

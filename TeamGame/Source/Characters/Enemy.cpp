@@ -11,13 +11,14 @@
 #include <cmath>
 #include <cstdlib>
 
-Enemy::Enemy(float startX, float startY)
+Enemy::Enemy(float startX, float startY, int tId)
     : Character(ObjectTag::Enemy, startX, startY, 25.0f), damageColorTimer(0),
-      currentStage(nullptr), cellSize(1.0f), targetPlayer(nullptr),
+      currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0),
-      strafeDirection(1), strafeTimer(0)
+      aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
+    teamId = tId;
     // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
     status.Init(3, 0.75f, 1);
     collider->SetTag("Enemy");
@@ -49,14 +50,14 @@ void Enemy::OnHearGunshot(const Vector2 &soundPos)
     }
 }
 
-bool Enemy::CheckLineOfSightToPlayer() const
+bool Enemy::CheckLineOfSightToTarget() const
 {
-    if (!targetPlayer || !targetPlayer->IsActive() || !currentStage || cellSize <= 0.0f)
+    if (!targetCharacter || !targetCharacter->IsActive() || !currentStage || cellSize <= 0.0f)
     {
         return false;
     }
 
-    Vector2 pPos = targetPlayer->GetPosition();
+    Vector2 pPos = targetCharacter->GetPosition();
     float dx = pPos.x - position.x;
     float dy = pPos.y - position.y;
     float dist = std::sqrt(dx * dx + dy * dy);
@@ -69,11 +70,14 @@ bool Enemy::CheckLineOfSightToPlayer() const
     }
 
     // 草むら潜伏判定: 草むらの中に居るプレイヤーは超至近距離(1.0セル以内)でしか視認できない
-    if (targetPlayer->IsInBush())
+    if (const Player* pPlayer = dynamic_cast<const Player*>(targetCharacter))
     {
-        if (dist > cellSize * 1.0f)
+        if (pPlayer->IsInBush())
         {
-            return false;
+            if (dist > cellSize * 1.0f)
+            {
+                return false;
+            }
         }
     }
 
@@ -211,8 +215,12 @@ void Enemy::Update()
 
     if (canSeePlayer)
     {
-        aiState = EnemyAIState::ALERT;
-        lastKnownPos = targetPlayer->GetPosition();
+        if (aiState != EnemyAIState::ALERT)
+        {
+            aiState = EnemyAIState::ALERT;
+            aimDelayTimer = 25; // 初回視認時に約0.4秒のエイム遅延（隙）を発生
+        }
+        lastKnownPos = targetCharacter->GetPosition();
     }
     else if (aiState == EnemyAIState::ALERT)
     {
@@ -221,9 +229,14 @@ void Enemy::Update()
         investigateTimer = 60; // 1秒間探索してすぐ巡回へ
     }
 
-    if (aiState == EnemyAIState::ALERT && targetPlayer && targetPlayer->IsActive())
+    if (aiState == EnemyAIState::ALERT && targetCharacter && targetCharacter->IsActive())
     {
-        Vector2 pPos = targetPlayer->GetPosition();
+        if (aimDelayTimer > 0)
+        {
+            aimDelayTimer--;
+        }
+
+        Vector2 pPos = targetCharacter->GetPosition();
         float dx = pPos.x - position.x;
         float dy = pPos.y - position.y;
         float dist = std::sqrt(dx * dx + dy * dy);
@@ -241,44 +254,44 @@ void Enemy::Update()
             strafeTimer = 60 + (rand() % 60); // 1〜2秒ごとに方向転換
         }
 
-        // 攻撃モーション（射撃直前）に入ったら近づくのをやめる
-        if (shootCooldown < 30)
+        // 【移動しながらの射撃・追従】
+        // プレイヤーと一定距離(1.5セル)離れている場合は、撃つ動作中であっても前進・追従移動しながら射撃
+        bool isMovingToTarget = false;
+        if (dist > cellSize * 1.5f)
         {
-            // 撃つ直前は左右にだけ動く（カニ歩き）
-            Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-            MoveSmart(strafeDir);
+            // 前進 ＋ 左右移動（ジグザグ追従）
+            Vector2 approachAndStrafe(facingDir.x + (-facingDir.y * strafeDirection * 0.5f),
+                                      facingDir.y + (facingDir.x * strafeDirection * 0.5f));
+            MoveSmart(approachAndStrafe);
+            isMovingToTarget = true;
         }
         else
         {
-            // クールダウン中は、遠ければ近づきつつ左右に動き、近ければ左右のみに動く
-            if (dist > cellSize * 2.5f)
-            {
-                // 前進 ＋ 左右移動（ジグザグ移動）
-                Vector2 approachAndStrafe(facingDir.x + (-facingDir.y * strafeDirection * 0.5f),
-                                          facingDir.y + (facingDir.x * strafeDirection * 0.5f));
-                MoveSmart(approachAndStrafe);
-            }
-            else
-            {
-                // 十分近ければ左右移動のみ
-                Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-                MoveSmart(strafeDir);
-            }
+            // 至近距離であれば左右移動（カニ歩き）のみ
+            Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+            MoveSmart(strafeDir);
         }
 
-        // 【射撃判定】 有効射程（GetEffectiveRange）以内の場合に発砲
-        if (shootCooldown <= 0 && dist <= GetEffectiveRange())
+        // 【射撃判定 & ブレ（ガバエイム化）】
+        if (shootCooldown <= 0 && aimDelayTimer <= 0 && dist <= GetEffectiveRange())
         {
+            // エイムの拡散角（追従移動中: 約±26°[0.45rad]の大ブレ、静止/カニ歩き: 約±11°[0.20rad]）
+            float maxSpreadRad = isMovingToTarget ? 0.45f : 0.20f;
+            float angleOffset = ((rand() % 1000) / 1000.0f - 0.5f) * maxSpreadRad;
+            float baseAngle = std::atan2(facingDir.y, facingDir.x);
+            float finalAngle = baseAngle + angleOffset;
+            Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
+
             Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f),
                             position.y + facingDir.y * (radius + 5.0f));
-            // 弾速をプレイヤーと同じ速さ(20.0f)、弾の最大射程を敵の有効射程(GetEffectiveRange())に設定
-            new EnemyBullet(muzzlePos.x, muzzlePos.y, facingDir, 20.0f, GetEffectiveRange());
+            
+            // 弾速を 20.0f → 14.0f に低減して回避しやすく調整
+            new EnemyBullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange());
 
             auto scene = SceneManager::GetInstance().GetCurrentScene();
             if (scene && scene->GetEffectManager())
             {
-                float angle = std::atan2(facingDir.y, facingDir.x);
-                scene->GetEffectManager()->AddMuzzleFlashEffect(muzzlePos.x, muzzlePos.y, angle, 16.0f);
+                scene->GetEffectManager()->AddMuzzleFlashEffect(muzzlePos.x, muzzlePos.y, finalAngle, 16.0f);
             }
 
             shootCooldown = 160;
@@ -338,7 +351,7 @@ void Enemy::Draw()
     float screenY = position.y;
     float renderRadius = radius;
 
-    if (targetPlayer && targetPlayer->IsActive() && cellSize > 0.0f)
+    if (targetCharacter && targetCharacter->IsActive() && cellSize > 0.0f)
     {
                 screenX = Camera::WorldToScreenX(position.x);
         screenY = Camera::WorldToScreenY(position.y);
