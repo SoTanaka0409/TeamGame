@@ -1,4 +1,4 @@
-﻿#include "GameScene.h"
+#include "GameScene.h"
 #include "Camera.h"
 #include "DebugManager.h"
 #include "EffectManager.h"
@@ -441,11 +441,7 @@ void GameScene::Draw()
         const int menuSpacing = 60;
         
     
-    // Draw scores
-    char scoreText[128];
-    sprintf_s(scoreText, sizeof(scoreText), "BLUE(YOU): %d  vs  RED: %d", team0Kills, team1Kills);
-    DrawString(800, 20, scoreText, GetColor(255, 255, 255));
-    
+
 
     if (state == GameState::PLAYING && introTimer > 0.0f)
     {
