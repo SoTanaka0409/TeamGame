@@ -414,9 +414,9 @@ void GameScene::Draw()
         }
     }
     
-        DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
-    DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(180, 180, 180));
-    DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(180, 180, 180));
+        DrawString(15, 15, "[ESC]キーでポーズ", GetColor(255, 255, 255));
+    DrawString(15, 45, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(200, 200, 200));
+    DrawString(15, 70, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(200, 200, 200));
 
     // 画面左下にプレイヤーのHP・武器UIを表示（デバッグ文字列との重なりを完全解消）
     if (player && player->IsActive()) {
@@ -504,28 +504,28 @@ void GameScene::Draw()
 
     int activeEnemyCount = GetActiveEnemyCount();
     
-    // Kill Count Bar UI (Top Right)
+    // キルカウントバーUI（画面中央上部に配置して右上のデバッグ表示との重なりを完全解消）
     int maxKills = 10;
-    int barWidth = 300;
-    int barHeight = 25;
-    int startX = 1920 - 350;
-    int startY = 30;
+    int barWidth = 260;
+    int barHeight = 22;
+    int startX = 860;
+    int startY = 20;
 
-    // Background
-    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(50, 50, 50), TRUE);
-    DrawBox(startX, startY + 40, startX + barWidth, startY + 40 + barHeight, GetColor(50, 50, 50), TRUE);
+    // 背景バー
+    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
+    DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
 
-    // Ally Kills Bar (Blue)
+    // 味方キル数バー (青)
     int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
     DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
-    SetFontSize(24);
-    DrawFormatString(startX - 180, startY + 2, GetColor(255, 255, 255), "ALLY KILLS: %d/%d", team0Kills, maxKills);
+    SetFontSize(20);
+    DrawFormatString(startX - 165, startY + 1, GetColor(255, 255, 255), "ALLY KILLS: %d/%d", team0Kills, maxKills);
 
-    // Enemy Kills Bar (Red)
+    // 敵キル数バー (赤)
     int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
-    DrawBox(startX, startY + 40, startX + enemyBarW, startY + 40 + barHeight, GetColor(255, 50, 50), TRUE);
-    DrawFormatString(startX - 190, startY + 42, GetColor(255, 255, 255), "ENEMY KILLS: %d/%d", team1Kills, maxKills);
-    SetFontSize(32); // Reset to default
+    DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
+    DrawFormatString(startX - 175, startY + 33, GetColor(255, 255, 255), "ENEMY KILLS: %d/%d", team1Kills, maxKills);
+    SetFontSize(32); // デフォルトフォントサイズに戻す
 
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }

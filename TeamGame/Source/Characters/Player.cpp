@@ -378,6 +378,12 @@ void Player::Draw()
     // 白い線を描画（太さ2）
     DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
 
+    // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
+    if (!weapons.empty() && weapons[currentWeaponIndex]) {
+        std::string wName = weapons[currentWeaponIndex]->GetName();
+        DrawString(static_cast<int>(screenX) - 25, static_cast<int>(screenY) - static_cast<int>(radius) - 22, wName.c_str(), GetColor(200, 220, 255));
+    }
+
     // 【サーチ的な感じでブレ幅（予測線）を描画】
     if (currentStage && cellSize > 0.0f)
     {
