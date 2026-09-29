@@ -83,7 +83,6 @@ void GameScene::SpawnEnemiesRandomly(int count)
     {
         Enemy* allyBot = new Enemy((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0);
         allyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        if (objectManager) objectManager->AddObject(allyBot);
         enemies.push_back(allyBot);
     }
     
@@ -93,7 +92,6 @@ void GameScene::SpawnEnemiesRandomly(int count)
     {
         Enemy* enemyBot = new Enemy((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1);
         enemyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        if (objectManager) objectManager->AddObject(enemyBot);
         enemies.push_back(enemyBot);
     }
 }
@@ -120,21 +118,18 @@ void GameScene::Init()
     player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
     player->SetStage(stagePtr, cellSize);
-    if (objectManager) objectManager->AddObject(player);
 
     if (currentPlayMode == PlayMode::LOCAL_COOP)
     {
         remotePlayer = new Player(startX + 50.0f, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
-        if (objectManager) objectManager->AddObject(remotePlayer);
     }
     else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
     {
         remotePlayer = new Player(startX, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetRemote(true);
-        if (objectManager) objectManager->AddObject(remotePlayer);
     }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
