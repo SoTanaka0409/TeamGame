@@ -414,15 +414,16 @@ void GameScene::Draw()
         }
     }
     
-    DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
-    DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(150, 150, 150));
-    DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(150, 150, 150));
+        DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
+    DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(180, 180, 180));
+    DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(180, 180, 180));
 
+    // 画面左下にプレイヤーのHP・武器UIを表示（デバッグ文字列との重なりを完全解消）
     if (player && player->IsActive()) {
-        player->DrawUI(10, 100);
+        player->DrawUI(20, 920);
     }
     if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
-        remotePlayer->DrawUI(1920 / 2 + 10, 100);
+        remotePlayer->DrawUI(1920 / 2 + 20, 920);
     }
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)

@@ -649,6 +649,12 @@ void Player::DrawUI(int screenX, int screenY)
 {
     if (weapons.empty()) return;
     
+    // UI背景の半透明黒ボックスを描画（視認性を向上させて文字の重なりを解消）
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+    DrawBox(screenX - 10, screenY - 10, screenX + 220, screenY + 130, GetColor(0, 0, 0), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    DrawBox(screenX - 10, screenY - 10, screenX + 220, screenY + 130, GetColor(100, 100, 100), FALSE);
+
     Weapon* currentWeapon = weapons[currentWeaponIndex];
     if (currentWeapon)
     {
@@ -659,7 +665,7 @@ void Player::DrawUI(int screenX, int screenY)
         }
         else
         {
-            DrawBox(screenX, screenY, screenX + 100, screenY + 50, GetColor(50, 50, 50), TRUE);
+            DrawBox(screenX, screenY, screenX + 110, screenY + 40, GetColor(50, 50, 50), TRUE);
             DrawString(screenX + 10, screenY + 10, currentWeapon->GetName().c_str(), GetColor(255, 255, 255));
         }
 
@@ -671,31 +677,35 @@ void Player::DrawUI(int screenX, int screenY)
         } else {
             sprintf_s(ammoText, sizeof(ammoText), "Ammo: %d / %d", currentAmmo, maxAmmo);
         }
-        DrawString(screenX + 10, screenY + 60, ammoText, GetColor(255, 255, 0));
+        DrawString(screenX + 10, screenY + 50, ammoText, GetColor(255, 255, 0));
 
-        // Draw Player HP
+        // HP表示
         char hpText[64];
         snprintf(hpText, sizeof(hpText), "HP: %d / %d", status.GetCurrentHp(), status.GetMaxHp());
-        DrawString(screenX + 10, screenY + 80, hpText, GetColor(100, 255, 100));
+        DrawString(screenX + 10, screenY + 75, hpText, GetColor(100, 255, 100));
 
-        // Draw Skill UI
+        // スキルUI表示
         if (currentSkill)
         {
             char skillText[64];
             int ct = currentSkill->GetCoolTimeTimer();
             if (ct > 0) {
-                snprintf(skillText, sizeof(skillText), "Skill [%s]: CD %d", currentSkill->GetData()->name.c_str(), ct);
-                DrawString(screenX + 10, screenY + 100, skillText, GetColor(150, 150, 150));
+                snprintf(skillText, sizeof(skillText), "Skill: CT %d.%.1fs", ct / 60, (ct % 60) / 6.0f);
+                DrawString(screenX + 10, screenY + 100, skillText, GetColor(200, 200, 200));
             } else {
-                snprintf(skillText, sizeof(skillText), "Skill [%s]: Ready! (E)", currentSkill->GetData()->name.c_str());
-                DrawString(screenX + 10, screenY + 100, skillText, GetColor(0, 255, 255));
+                snprintf(skillText, sizeof(skillText), "Skill: READY");
+                DrawString(screenX + 10, screenY + 100, skillText, GetColor(0, 220, 255));
             }
         }
     }
 }
 
-void Player::AddAmmo(int amount) {
-    if (!weapons.empty() && weapons[currentWeaponIndex]) {
-        weapons[currentWeaponIndex]->UseAmmo(-amount);
+
+
+void Player::AddAmmo(int amount)
+{
+    if (!weapons.empty() && weapons[currentWeaponIndex])
+    {
+        weapons[currentWeaponIndex]->AddAmmo(amount);
     }
 }

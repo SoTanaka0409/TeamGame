@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector2.h"
 #include <string>
 #include "WeaponManager.h"
@@ -60,6 +60,16 @@ class Weapon
     {
         currentAmmo -= amount;
         if (currentAmmo <= 0) currentAmmo = 0;
+    }
+
+    void AddAmmo(int amount)
+    {
+        if (data) {
+            currentAmmo += amount;
+            if (currentAmmo > data->maxAmmo) {
+                currentAmmo = data->maxAmmo;
+            }
+        }
     }
 
     void ResetCoolTime()
