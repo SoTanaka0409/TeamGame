@@ -56,7 +56,7 @@ void Player::Update()
                 Enemy* e = dynamic_cast<Enemy*>(obj);
                 if (e && e->IsActive() && e->teamId != this->teamId && e->teamId != -1) {
                     // 距離無制限（99999）で音を届かせる
-                    e->OnHearGunshot(position, 99999.0f);
+                    e->OnHearGunshot(position, 99999.0f, teamId);
                 }
             }
         }

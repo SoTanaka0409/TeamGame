@@ -1,8 +1,9 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
+#include "SoundManager.h"
 #include "DxLib.h"
-#include "EnemyBullet.h"
+#include "Bullet.h"
 #include "Player.h"
 #include "Stage.h"
 #include "SceneManager.h"
@@ -15,7 +16,8 @@ Enemy::Enemy(float startX, float startY, int tId)
     : Character(ObjectTag::Enemy, startX, startY, 25.0f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
-      lastKnownPos(startX, startY), patrolChangeTimer(0), investigateTimer(0), shootCooldown(0),
+      lastKnownPos(startX, startY), patrolChangeTimer(0),
+      moveToCenterTimer(300), investigateTimer(0), shootCooldown(0),
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
@@ -29,20 +31,25 @@ Enemy::~Enemy()
 {
 }
 
-void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness)
+void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness, int shooterTeamId)
 {
+    if (shooterTeamId != -1 && shooterTeamId == this->teamId)
+    {
+        return;
+    }
+
     if (aiState == EnemyAIState::ALERT) return;
 
     float dx = soundPos.x - position.x;
     float dy = soundPos.y - position.y;
     float dist = std::sqrt(dx * dx + dy * dy);
 
-    // 【聴覚検知低下】 至近距離(4セル以内)の銃声のみ気付く
-    if (cellSize > 0.0f && dist < cellSize * 4.0f)
+    float maxDist = (loudness > 1.0f) ? loudness : (cellSize * 15.0f);
+    if (cellSize > 0.0f && dist < maxDist)
     {
         lastKnownPos = soundPos;
         aiState = EnemyAIState::INVESTIGATE;
-        investigateTimer = 60; // 1秒間だけ調査
+        investigateTimer = 180;
         if (dist > 0.0001f)
         {
             facingDir = Vector2(dx / dist, dy / dist);
@@ -50,27 +57,60 @@ void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness)
     }
 }
 
-bool Enemy::CheckLineOfSightToTarget() const
+void Enemy::UpdateTarget()
 {
-    if (!targetCharacter || !targetCharacter->IsActive() || !currentStage || cellSize <= 0.0f)
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (!scene || !scene->GetObjectManager()) return;
+
+    if (targetCharacter && !targetCharacter->IsActive()) {
+        targetCharacter = nullptr;
+    }
+
+    float minDist = 999999.0f;
+    Character* visibleEnemy = nullptr;
+
+    for (auto obj : scene->GetObjectManager()->GetObjects())
+    {
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c != this && c->IsActive() && c->teamId != this->teamId && c->teamId != -1)
+        {
+            if (CheckLineOfSightToTarget(c)) {
+                float dx = c->GetPosition().x - position.x;
+                float dy = c->GetPosition().y - position.y;
+                float dist = dx * dx + dy * dy;
+                if (dist < minDist) {
+                    minDist = dist;
+                    visibleEnemy = c;
+                }
+            }
+        }
+    }
+
+    if (visibleEnemy) {
+        targetCharacter = visibleEnemy;
+    }
+}
+
+bool Enemy::CheckLineOfSightToTarget(Character* target) const
+{
+    Character* checkTarget = target ? target : targetCharacter;
+    if (!checkTarget || !checkTarget->IsActive() || !currentStage || cellSize <= 0.0f)
     {
         return false;
     }
 
-    Vector2 pPos = targetCharacter->GetPosition();
+    Vector2 pPos = checkTarget->GetPosition();
     float dx = pPos.x - position.x;
     float dy = pPos.y - position.y;
     float dist = std::sqrt(dx * dx + dy * dy);
 
-    // 【察知能力】 最大視界距離を有効射程（デフォルト4セル分）に設定
-    float maxSightDist = GetEffectiveRange();
+    float maxSightDist = GetSightRange();
     if (dist > maxSightDist)
     {
         return false;
     }
 
-    // 草むら潜伏判定: 草むらの中に居るプレイヤーは超至近距離(1.0セル以内)でしか視認できない
-    if (const Player* pPlayer = dynamic_cast<const Player*>(targetCharacter))
+    if (const Player* pPlayer = dynamic_cast<const Player*>(checkTarget))
     {
         if (pPlayer->IsInBush())
         {
@@ -81,7 +121,6 @@ bool Enemy::CheckLineOfSightToTarget() const
         }
     }
 
-    // 至近距離(1.0セル以内)以外は視野角判定 (前方34° = 左右17°(0.30rad))
     if (dist > cellSize * 1.0f)
     {
         float facingAngle = std::atan2(facingDir.y, facingDir.x);
@@ -92,13 +131,12 @@ bool Enemy::CheckLineOfSightToTarget() const
             angleDiff = std::abs(angleDiff - 2.0f * 3.14159265f);
         }
 
-        if (angleDiff > 0.3000f) // 17°超は視野外
+        if (angleDiff > 0.8000f)
         {
             return false;
         }
     }
 
-    // レイキャスティングによる壁遮蔽チェック (障害物を貫通して見えない)
     if (dist > cellSize * 0.5f)
     {
         int steps = static_cast<int>(dist / (cellSize * 0.5f));
@@ -107,21 +145,17 @@ bool Enemy::CheckLineOfSightToTarget() const
         float stepX = dx / steps;
         float stepY = dy / steps;
 
-        float currX = position.x + stepX;
-        float currY = position.y + stepY;
-
         for (int i = 1; i < steps; ++i)
         {
-            int gX = static_cast<int>(currX / cellSize);
-            int gY = static_cast<int>(currY / cellSize);
+            float checkX = position.x + stepX * i;
+            float checkY = position.y + stepY * i;
+            int gX = static_cast<int>(checkX / cellSize);
+            int gY = static_cast<int>(checkY / cellSize);
 
-            if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsLightBlockingWall(gX, gY))
+            if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsSolidWall(gX, gY))
             {
-                return false; // 壁で視界遮断
+                return false;
             }
-
-            currX += stepX;
-            currY += stepY;
         }
     }
 
@@ -200,6 +234,7 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
 void Enemy::Update()
 {
+    UpdateTarget();
     if (damageColorTimer > 0)
     {
         damageColorTimer--;
@@ -211,9 +246,9 @@ void Enemy::Update()
     }
 
     // 視界チェック
-    bool canSeePlayer = CheckLineOfSightToPlayer();
+    bool canSeeTarget = CheckLineOfSightToTarget(targetCharacter);
 
-    if (canSeePlayer)
+    if (canSeeTarget)
     {
         if (aiState != EnemyAIState::ALERT)
         {
@@ -246,47 +281,58 @@ void Enemy::Update()
             facingDir = Vector2(dx / dist, dy / dist);
         }
 
-        // カニ歩き（ストレイフ）の方向転換タイマー
-        strafeTimer--;
-        if (strafeTimer <= 0)
-        {
-            strafeDirection = (rand() % 2 == 0) ? 1 : -1;
-            strafeTimer = 60 + (rand() % 60); // 1〜2秒ごとに方向転換
-        }
+        bool canHitDirectly = (dist <= GetEffectiveRange()) && CheckLineOfSightToTarget(targetCharacter);
 
-        // 【移動しながらの射撃・追従】
-        // プレイヤーと一定距離(1.5セル)離れている場合は、撃つ動作中であっても前進・追従移動しながら射撃
-        bool isMovingToTarget = false;
-        if (dist > cellSize * 1.5f)
+        if (!canHitDirectly)
         {
-            // 前進 ＋ 左右移動（ジグザグ追従）
-            Vector2 approachAndStrafe(facingDir.x + (-facingDir.y * strafeDirection * 0.5f),
-                                      facingDir.y + (facingDir.x * strafeDirection * 0.5f));
-            MoveSmart(approachAndStrafe);
-            isMovingToTarget = true;
+            if (currentStage) {
+                pathfinder.CalculatePath(position, pPos, currentStage, cellSize);
+                Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+                if (pathDir.x != 0 || pathDir.y != 0) {
+                    facingDir = pathDir;
+                    MoveSmart(pathDir);
+                } else {
+                    MoveSmart(facingDir);
+                }
+            } else {
+                MoveSmart(facingDir);
+            }
         }
         else
         {
-            // 至近距離であれば左右移動（カニ歩き）のみ
+            strafeTimer--;
+            if (strafeTimer <= 0)
+            {
+                strafeDirection = (rand() % 2 == 0) ? 1 : -1;
+                strafeTimer = 40 + (rand() % 40);
+            }
             Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
             MoveSmart(strafeDir);
         }
 
-        // 【射撃判定 & ブレ（ガバエイム化）】
-        if (shootCooldown <= 0 && aimDelayTimer <= 0 && dist <= GetEffectiveRange())
+        if (shootCooldown <= 0 && aimDelayTimer <= 0 && canHitDirectly)
         {
-            // エイムの拡散角（追従移動中: 約±26°[0.45rad]の大ブレ、静止/カニ歩き: 約±11°[0.20rad]）
-            float maxSpreadRad = isMovingToTarget ? 0.45f : 0.20f;
-            float angleOffset = ((rand() % 1000) / 1000.0f - 0.5f) * maxSpreadRad;
             float baseAngle = std::atan2(facingDir.y, facingDir.x);
+            float angleOffset = 0.0f;
+
+            if (rand() % 2 == 0)
+            {
+                float missDir = (rand() % 2 == 0) ? 1.0f : -1.0f;
+                float missDegree = 12.0f + (rand() % 14);
+                angleOffset = missDir * (missDegree * 3.14159265f / 180.0f);
+            }
+            else
+            {
+                angleOffset = ((rand() % 1000) / 1000.0f - 0.5f) * (6.0f * 3.14159265f / 180.0f);
+            }
+
             float finalAngle = baseAngle + angleOffset;
             Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 
             Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f),
                             position.y + facingDir.y * (radius + 5.0f));
             
-            // 弾速を 20.0f → 14.0f に低減して回避しやすく調整
-            new EnemyBullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange());
+            new Bullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange(), 6.0f, teamId);
 
             auto scene = SceneManager::GetInstance().GetCurrentScene();
             if (scene && scene->GetEffectManager())
@@ -294,7 +340,9 @@ void Enemy::Update()
                 scene->GetEffectManager()->AddMuzzleFlashEffect(muzzlePos.x, muzzlePos.y, finalAngle, 16.0f);
             }
 
-            shootCooldown = 160;
+            SoundManager::GetInstance().Play3D("gunshot", position, 1000.0f, 1.0f, teamId);
+
+            shootCooldown = 75;
         }
     }
     else if (aiState == EnemyAIState::INVESTIGATE)
@@ -306,9 +354,22 @@ void Enemy::Update()
 
         if (dist > cellSize * 0.8f && investigateTimer > 20)
         {
-            Vector2 toTarget(dx / dist, dy / dist);
-            facingDir = toTarget;
-            MoveSmart(toTarget);
+            if (currentStage) {
+                pathfinder.CalculatePath(position, lastKnownPos, currentStage, cellSize);
+                Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+                if (pathDir.x != 0 || pathDir.y != 0) {
+                    facingDir = pathDir;
+                    MoveSmart(pathDir);
+                } else {
+                    Vector2 toTarget(dx / dist, dy / dist);
+                    facingDir = toTarget;
+                    MoveSmart(toTarget);
+                }
+            } else {
+                Vector2 toTarget(dx / dist, dy / dist);
+                facingDir = toTarget;
+                MoveSmart(toTarget);
+            }
         }
         else
         {
@@ -323,61 +384,86 @@ void Enemy::Update()
     }
     else
     {
-        // PATROL (のんびり徘徊モード)
-        patrolChangeTimer--;
-        if (patrolChangeTimer <= 0)
+        // PATROL
+        if (moveToCenterTimer > 0 && currentStage)
         {
-            patrolChangeTimer = 60 + (std::rand() % 90);
-            int dirType = std::rand() % 8;
-            float angles[] = { 0.0f, 0.7854f, 1.5708f, 2.3562f, 3.1415f, -2.3562f, -1.5708f, -0.7854f };
-            float ang = angles[dirType];
-            moveDir = Vector2(std::cos(ang), std::sin(ang));
-            facingDir = moveDir;
+            moveToCenterTimer--;
+            float centerX = (currentStage->GetWidth() * cellSize) / 2.0f;
+            float centerY = (currentStage->GetHeight() * cellSize) / 2.0f;
+            Vector2 centerPos(centerX, centerY);
+            
+            float dx = centerX - position.x;
+            float dy = centerY - position.y;
+            float dist = std::sqrt(dx * dx + dy * dy);
+            
+            if (dist > cellSize * 2.0f)
+            {
+                pathfinder.CalculatePath(position, centerPos, currentStage, cellSize);
+                Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+                if (pathDir.x != 0 || pathDir.y != 0) {
+                    moveDir = pathDir;
+                    facingDir = moveDir;
+                    MoveSmart(moveDir);
+                } else {
+                    moveDir = Vector2(dx / dist, dy / dist);
+                    facingDir = moveDir;
+                    MoveSmart(moveDir);
+                }
+                patrolChangeTimer = 60;
+            }
+            else
+            {
+                moveToCenterTimer = 0;
+            }
         }
-        else if ((std::rand() % 20) == 0)
+        else
         {
-            float scanOffset = ((std::rand() % 100) / 100.0f - 0.5f) * 1.57f;
-            float currAng = std::atan2(moveDir.y, moveDir.x) + scanOffset;
-            facingDir = Vector2(std::cos(currAng), std::sin(currAng));
-        }
+            patrolChangeTimer--;
+            if (patrolChangeTimer <= 0)
+            {
+                patrolChangeTimer = 60 + (std::rand() % 90);
+                int dirType = std::rand() % 8;
+                float angles[] = { 0.0f, 0.7854f, 1.5708f, 2.3562f, 3.1415f, -2.3562f, -1.5708f, -0.7854f };
+                float ang = angles[dirType];
+                moveDir = Vector2(std::cos(ang), std::sin(ang));
+                facingDir = moveDir;
+            }
+            else if ((std::rand() % 20) == 0)
+            {
+                float scanOffset = ((std::rand() % 100) / 100.0f - 0.5f) * 1.57f;
+                float currAng = std::atan2(moveDir.y, moveDir.x) + scanOffset;
+                facingDir = Vector2(std::cos(currAng), std::sin(currAng));
+            }
 
-        MoveSmart(moveDir);
-    }
+            MoveSmart(moveDir);
+        }    }
 }
 
 void Enemy::Draw()
 {
-    float screenX = position.x;
-    float screenY = position.y;
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
     float renderRadius = radius;
 
-    if (targetCharacter && targetCharacter->IsActive() && cellSize > 0.0f)
-    {
-                screenX = Camera::WorldToScreenX(position.x);
-        screenY = Camera::WorldToScreenY(position.y);
-    }
-
-    // 画面外のカリング
+    // カメラ範囲外のカリング
     if (screenX < -100.0f || screenX > 2020.0f || screenY < -100.0f || screenY > 1180.0f)
     {
         return;
     }
 
-    // 本体描画 (被弾時は黄色、警戒時は鮮やかな赤、調査時はオレンジ、通常は暗めの赤)
-    unsigned int bodyColor = GetColor(180, 30, 30);
-    if (damageColorTimer > 0)
-    {
-        bodyColor = GetColor(255, 255, 0);
+    // チーム別カラー（チーム0＝青系、チーム1＝赤系）
+    unsigned int bodyColor;
+    if (teamId == 0) {
+        bodyColor = GetColor(30, 30, 180);
+        if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
+        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(40, 40, 240);
+        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(30, 140, 230);
+    } else {
+        bodyColor = GetColor(180, 30, 30);
+        if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
+        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(240, 40, 40);
+        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 140, 30);
     }
-    else if (aiState == EnemyAIState::ALERT)
-    {
-        bodyColor = GetColor(240, 40, 40);
-    }
-    else if (aiState == EnemyAIState::INVESTIGATE)
-    {
-        bodyColor = GetColor(230, 140, 30);
-    }
-
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(renderRadius), bodyColor, TRUE);
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),

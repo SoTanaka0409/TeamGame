@@ -45,12 +45,55 @@ bool PathfindingComponent::CalculatePath(const Vector2& startPos, const Vector2&
     int goalX = static_cast<int>(targetPos.x / cellSize);
     int goalY = static_cast<int>(targetPos.y / cellSize);
 
-    // ゴールが壁なら、一番近い通路をゴールにするか諦める（ここではシンプルに諦める）
-    if (stage->IsSolidWall(goalX, goalY)) {
-        return false;
+    if (stage->IsSolidWall(startX, startY)) {
+        for (int r = 1; r <= 3; ++r) {
+            bool found = false;
+            for (int dy = -r; dy <= r && !found; ++dy) {
+                for (int dx = -r; dx <= r && !found; ++dx) {
+                    int nx = startX + dx;
+                    int ny = startY + dy;
+                    if (!stage->IsOutOfBounds(nx, ny) && !stage->IsSolidWall(nx, ny)) {
+                        startX = nx;
+                        startY = ny;
+                        found = true;
+                    }
+                }
+            }
+            if (found) break;
+        }
     }
 
-    // すでに同じゴールを目指している場合は再計算しない（重い処理を減らす）
+    if (stage->IsSolidWall(goalX, goalY)) {
+        bool foundValid = false;
+        int bestDist = 999999;
+        int validX = goalX;
+        int validY = goalY;
+        for (int r = 1; r <= 6; ++r) {
+            for (int dy = -r; dy <= r; ++dy) {
+                for (int dx = -r; dx <= r; ++dx) {
+                    int nx = goalX + dx;
+                    int ny = goalY + dy;
+                    if (!stage->IsOutOfBounds(nx, ny) && !stage->IsSolidWall(nx, ny)) {
+                        int dist = std::abs(nx - startX) + std::abs(ny - startY);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            validX = nx;
+                            validY = ny;
+                            foundValid = true;
+                        }
+                    }
+                }
+            }
+            if (foundValid) break;
+        }
+        if (foundValid) {
+            goalX = validX;
+            goalY = validY;
+        } else {
+            return false;
+        }
+    }
+
     if (HasPath() && goalX == lastTargetGridX && goalY == lastTargetGridY) {
         return true;
     }

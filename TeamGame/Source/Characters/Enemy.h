@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Character.h"
+#include "PathfindingComponent.h"
 #include "Vector2.h"
 
 enum class EnemyAIState
@@ -11,6 +12,9 @@ enum class EnemyAIState
 
 class Enemy : public Character
 {
+private:
+    PathfindingComponent pathfinder;
+    int moveToCenterTimer;
   private:
     int damageColorTimer;
     class Stage *currentStage;
@@ -27,7 +31,8 @@ class Enemy : public Character
     int aimDelayTimer;
     int strafeDirection;
     int strafeTimer;
-    float effectiveRangeCells = 4.0f; // 有効射程 (セル単位、デフォルト4.0セル)
+    float effectiveRangeCells = 12.0f;
+    float sightRangeCells = 22.0f; // 有効射程 (セル単位、デフォルト4.0セル)
 
   public:
     Enemy(float startX, float startY, int tId = 1);
@@ -49,10 +54,11 @@ class Enemy : public Character
     void UpdateTarget();
 
     float GetEffectiveRange() const { return effectiveRangeCells * cellSize; }
+    float GetSightRange() const { return sightRangeCells * cellSize; }
     float GetEffectiveRangeCells() const { return effectiveRangeCells; }
     void SetEffectiveRangeCells(float cells) { effectiveRangeCells = cells; }
 
-    void OnHearGunshot(const Vector2 &soundPos, float loudness = 1.0f);
+    void OnHearGunshot(const Vector2 &soundPos, float loudness = 1.0f, int shooterTeamId = -1);
     void Damage();
 
     void StealthKill();
@@ -60,8 +66,9 @@ class Enemy : public Character
     EnemyAIState GetAIState() const { return aiState; }
     void SetTargetCharacter(class Character *c) { targetCharacter = c; }
     void SetTargetPlayer(class Character *p) { targetCharacter = p; }
+    void ResetMoveToCenter() { moveToCenterTimer = 300; }
 
-    bool CheckLineOfSightToTarget() const;
+    bool CheckLineOfSightToTarget(Character* target = nullptr) const;
     bool CheckLineOfSightToPlayer() const { return CheckLineOfSightToTarget(); }
 
     void MoveSmart(const Vector2 &desiredDir);

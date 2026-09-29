@@ -1,4 +1,4 @@
-#include "Handgun.h"
+﻿#include "Handgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
@@ -7,7 +7,7 @@
 
 #include "Enemy.h"
 
-static void NotifyEnemiesOfGunshot(const Vector2 &pos)
+static void NotifyEnemiesOfGunshot(const Vector2 &pos, int shooterTeamId)
 {
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetObjectManager())
@@ -17,7 +17,7 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos)
             Enemy *enemy = dynamic_cast<Enemy *>(obj);
             if (enemy && enemy->IsActive())
             {
-                enemy->OnHearGunshot(pos);
+                enemy->OnHearGunshot(pos, 1000.0f, shooterTeamId);
             }
         }
     }
@@ -45,7 +45,7 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, finalAngle, 16.0f);
             }
-            NotifyEnemiesOfGunshot(pos);
+            NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
             UseAmmo(1);
         }

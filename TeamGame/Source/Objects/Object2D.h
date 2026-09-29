@@ -20,6 +20,7 @@ class Object2D
     Vector2 position;
     float width, height;
     bool isActive;
+    bool markedForDeletion = false;
     ObjectTag objectTag;
 
   public:
@@ -68,4 +69,6 @@ class Object2D
     {
         isActive = active;
     }
+    void DestroyPermanently() { markedForDeletion = true; }
+    bool IsMarkedForDeletion() const { return markedForDeletion; }
 };

@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 #include <cstdlib>
 #include "SniperRifle.h"
 #include "Bullet.h"

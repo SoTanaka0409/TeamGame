@@ -44,7 +44,7 @@ void ObjectManager::RemoveDestroyedObjects()
     auto it = objects.begin();
     while (it != objects.end())
     {
-        if (!(*it)->IsActive())
+        if ((*it)->IsMarkedForDeletion() || (!(*it)->IsActive() && (*it)->GetObjectTag() != ObjectTag::Player && (*it)->GetObjectTag() != ObjectTag::Enemy))
         {
             if ((*it)->GetObjectTag() == ObjectTag::Player || (*it)->GetObjectTag() == ObjectTag::Enemy)
             {

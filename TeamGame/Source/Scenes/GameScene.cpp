@@ -49,7 +49,7 @@ void GameScene::ClearEnemies()
         {
             if (obj && obj->GetObjectTag() == ObjectTag::Enemy)
             {
-                obj->SetActive(false);
+                obj->DestroyPermanently();
             }
         }
     }
@@ -209,6 +209,8 @@ void GameScene::Update()
                             ch->status.Heal(ch->status.GetMaxHp());
                             ch->SetActive(true);
                             ch->invincibleTimer = 180;
+                            Enemy* e = dynamic_cast<Enemy*>(ch);
+                            if (e) { e->ResetMoveToCenter(); }
                         }
                     }
                 }
@@ -381,12 +383,13 @@ void GameScene::Draw()
         
         if (introTimer > 0.0f)
         {
-            // Easing: start at enemySpawnY, move to playerSpawnY
+            // イントロカメラ: プレイヤーに連動せず、マップ中心X・カメラ単体でYスクロール
             float t = 1.0f - (introTimer / 300.0f);
             // smoothstep easing
             t = t * t * (3.0f - 2.0f * t);
             
-            Camera::TargetWorldX = playerWorldX; // Keep X centered on player
+            float midWorldX = (stage.GetWidth() / 2.0f) * worldCellSize;
+            Camera::TargetWorldX = midWorldX;
             Camera::TargetWorldY = enemySpawnY + (playerSpawnY - enemySpawnY) * t;
         }
         else
