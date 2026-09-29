@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Character.h"
 #include "PathfindingComponent.h"
 #include "Vector2.h"
@@ -39,8 +39,8 @@ private:
     int aimDelayTimer;                ///< エイムディレイタイマー
     int strafeDirection;              ///< かに歩き（横移動）方向
     int strafeTimer;                  ///< かに歩き切り替えタイマー
-    float effectiveRangeCells = 12.0f;///< 攻撃有効射程（12セル）
-    float sightRangeCells = 22.0f;    ///< 広域索敵視界（22セル）
+    float effectiveRangeCells = 10.0f;///< 攻撃有効射程（10セル）
+    float sightRangeCells = 14.0f;    ///< 索敵視界（14セル: プレイヤーのライト照射範囲14セルに統一）
 
 public:
     /**
