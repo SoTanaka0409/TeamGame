@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -297,7 +297,7 @@ void Player::Update()
             for (auto obj : scene->GetObjectManager()->GetObjects())
             {
                 Enemy *enemy = dynamic_cast<Enemy *>(obj);
-                if (enemy && enemy->IsActive())
+                if (enemy && enemy->IsActive() && enemy->teamId != this->teamId)
                 {
                     // 敵がこちらに気づいていない(非ALERT状態)場合のみ暗殺可能
                     if (!enemy->IsAlerted())
@@ -482,7 +482,7 @@ void Player::Draw()
         for (auto obj : scene->GetObjectManager()->GetObjects())
         {
             Enemy *enemy = dynamic_cast<Enemy *>(obj);
-            if (enemy && enemy->IsActive() && !enemy->IsAlerted())
+            if (enemy && enemy->IsActive() && enemy->teamId != this->teamId && !enemy->IsAlerted())
             {
                 Vector2 ePos = enemy->GetPosition();
                 float dx = ePos.x - position.x;
