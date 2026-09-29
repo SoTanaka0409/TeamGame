@@ -83,7 +83,8 @@ void GameScene::SpawnEnemiesRandomly(int count)
     {
         Enemy* allyBot = new Enemy((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0);
         allyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        // objectManager->AddObject(allyBot);
+        if (objectManager) objectManager->AddObject(allyBot);
+        enemies.push_back(allyBot);
     }
     
     // Enemy bots (Team 1)
@@ -92,7 +93,8 @@ void GameScene::SpawnEnemiesRandomly(int count)
     {
         Enemy* enemyBot = new Enemy((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1);
         enemyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        // objectManager->AddObject(enemyBot);
+        if (objectManager) objectManager->AddObject(enemyBot);
+        enemies.push_back(enemyBot);
     }
 }
 void GameScene::Init()
@@ -515,16 +517,16 @@ void GameScene::Draw()
     DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
     DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
 
-    // 味方キル数バー (青)
+        // 自チームの敵撃破数バー (青: Spaceキーや射撃で敵を倒すと増える)
     int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
     DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
     SetFontSize(20);
-    DrawFormatString(startX - 165, startY + 1, GetColor(255, 255, 255), "ALLY KILLS: %d/%d", team0Kills, maxKills);
+    DrawFormatString(startX - 180, startY + 1, GetColor(255, 255, 255), "ENEMY KILLS: %d/%d", team0Kills, maxKills);
 
-    // 敵キル数バー (赤)
+    // 敵チームの味方撃破数バー (赤: 味方や自分がやられると増える)
     int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
     DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
-    DrawFormatString(startX - 175, startY + 33, GetColor(255, 255, 255), "ENEMY KILLS: %d/%d", team1Kills, maxKills);
+    DrawFormatString(startX - 175, startY + 33, GetColor(255, 255, 255), "ALLY LOSSES: %d/%d", team1Kills, maxKills);
     SetFontSize(32); // デフォルトフォントサイズに戻す
 
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
