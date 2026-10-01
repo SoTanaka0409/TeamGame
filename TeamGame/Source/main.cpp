@@ -1,4 +1,4 @@
-﻿#include "DxLib.h"
+#include "DxLib.h"
 #include "StageManager.h"
 #include "Player.h"
 #include <string>
@@ -35,7 +35,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     bool prevTabState = false;
     bool prevF1State = false;
-    bool prevRState = false;
+    bool prevLState = false;
     bool prevTState = false;
 
     // メインループ
@@ -61,7 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // ----------------------------------------------------
         bool currTabState = (CheckHitKey(KEY_INPUT_TAB) != 0);
         bool currF1State = (CheckHitKey(KEY_INPUT_F1) != 0);
-        bool currRState = (CheckHitKey(KEY_INPUT_R) != 0);
+        bool currLState = (CheckHitKey(KEY_INPUT_L) != 0);
         bool currTState = (CheckHitKey(KEY_INPUT_T) != 0);
 
         // 【Tabキー または F1キー の押し下げで【ホラー暗闇】↔【暗闇解除・全視界透視】を確実に切替】
@@ -70,8 +70,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             isDebugView = !isDebugView;
         }
 
-        // Rキー: 同テーマ内で別のステージバリエーション(1〜4)に切替
-        if (currRState && !prevRState)
+        // Lキー: 同テーマ内で別のステージバリエーション(1〜4)に切替
+        if (currLState && !prevLState)
         {
             stageManager.NextVariation();
             Point2D newStart = stageManager.GetCurrentStage().GetPlayerStartPos();
@@ -88,7 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         prevTabState = currTabState;
         prevF1State = currF1State;
-        prevRState = currRState;
+        prevLState = currLState;
         prevTState = currTState;
 
         // ----------------------------------------------------
@@ -105,7 +105,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         DrawBox(12, 12, 1020, 80, GetColor(15, 20, 30), TRUE);
         DrawBox(12, 12, 1020, 80, GetColor(0, 180, 240), FALSE);
 
-        DrawString(22, 18, "[WASD]:移動  [Tab/F1]:暗闇ON/OFF切替  [右クリック]:ライトON/OFF  [R]:ステージ切替  [T]:テーマ切替", GetColor(255, 255, 255));
+        DrawString(22, 18, "[WASD]:移動  [Tab/F1]:暗闇ON/OFF切替  [右クリック]:ライトON/OFF  [L]:ステージ切替  [T]:テーマ切替", GetColor(255, 255, 255));
         
         std::string modeText = fullStageName;
         if (isDebugView)
@@ -144,7 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             DrawString(legX + 15, legY + 12, "凡例 : [Tabキー / F1キー] 暗闇モード ↔ 全視界透視モード 切替", GetColor(220, 220, 220));
             DrawString(legX + 15, legY + 38, "       [右クリック] 懐中電灯ON/OFF   [Grass1] 草むら隠れ対応", GetColor(220, 220, 220));
-            DrawString(legX + 15, legY + 64, "       [Rキー] ステージ切替(1~4)   [Tキー] テーマ切替(1~4)", GetColor(220, 220, 220));
+            DrawString(legX + 15, legY + 64, "       [Lキー] ステージ切替(1~4)   [Tキー] テーマ切替(1~4)", GetColor(220, 220, 220));
         }
 
         ScreenFlip();

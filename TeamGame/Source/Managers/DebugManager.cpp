@@ -1,4 +1,4 @@
-﻿#include "DebugManager.h"
+#include "DebugManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include <cstdio>
@@ -43,5 +43,5 @@ void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX,
     // 操作ガイド
     DrawString(startX + 15, startY + 95, "--- DEBUG CONTROLS ---", GetColor(180, 180, 180));
     DrawString(startX + 15, startY + 118, "[TAB / F1] : 暗闇 / デバッグ切り替え", GetColor(255, 255, 255));
-    DrawString(startX + 15, startY + 141, "[R] : ステージリセット", GetColor(255, 255, 255));
+    DrawString(startX + 15, startY + 141, "[L] : ステージリセット", GetColor(255, 255, 255));
 }
