@@ -1,11 +1,23 @@
-﻿#include "WeaponManager.h"
+#include "WeaponManager.h"
 #include "DxLib.h"
 #include <fstream>
 #include <sstream>
 
 void WeaponManager::LoadFromCSV(const std::string& filePath)
 {
-    std::ifstream file(filePath);
+    std::vector<std::string> searchPaths = {
+        "Resource/" + filePath,
+        "TeamGame/Resource/" + filePath,
+        filePath
+    };
+
+    std::ifstream file;
+    for (const auto& path : searchPaths)
+    {
+        file.open(path);
+        if (file.is_open()) break;
+    }
+
     if (!file.is_open())
     {
         printfDx("Failed to load %s\n", filePath.c_str());
@@ -43,10 +55,14 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
             data.uiImagePath.pop_back();
         }
 
-        // 画像の読み込み (もしパスがあれば)
+        // 画像の読み込み (もしパスがあれば Resource ディレクトリも検索)
         if (!data.uiImagePath.empty() && data.uiImagePath != "NONE")
         {
-            data.uiImageHandle = LoadGraph(data.uiImagePath.c_str());
+            data.uiImageHandle = LoadGraph(("Resource/" + data.uiImagePath).c_str());
+            if (data.uiImageHandle == -1)
+            {
+                data.uiImageHandle = LoadGraph(data.uiImagePath.c_str());
+            }
         }
 
         weaponDatabase[data.name] = data;
