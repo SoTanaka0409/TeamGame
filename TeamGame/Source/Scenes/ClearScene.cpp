@@ -1,4 +1,4 @@
-#include "ClearScene.h"
+﻿#include "ClearScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "DebugManager.h"
@@ -106,7 +106,7 @@ void ClearScene::Draw()
     int minutes = static_cast<int>(stats.clearTimeSec) / 60;
     float seconds = fmodf(stats.clearTimeSec, 60.0f);
     char timeStr[64];
-    snprintf(timeStr, sizeof(timeStr), "クリアタイム : %02d:%05.2f", minutes, seconds);
+    snprintf(timeStr, sizeof(timeStr), "クリアタイム: %02d:%05.2f", minutes, seconds);
 
     char enemyStr[64];
     snprintf(enemyStr, sizeof(enemyStr), "撃破数      : %d / %d", stats.defeatedEnemies, stats.totalEnemies);
@@ -119,7 +119,7 @@ void ClearScene::Draw()
     DrawString(panelX + 60, panelY + 170, scoreStr, GetColor(255, 255, 255));
 
     // ランク表示
-    DrawString(panelX + 60, panelY + 240, "評価ランク  :", GetColor(255, 255, 255));
+    DrawString(panelX + 60, panelY + 240, "評価ランク  : ", GetColor(255, 255, 255));
 
     unsigned int rankColor = GetColor(255, 215, 0); // Gold for S
     if (stats.rankName == "A") rankColor = GetColor(200, 200, 255);

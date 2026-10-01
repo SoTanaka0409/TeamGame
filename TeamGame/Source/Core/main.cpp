@@ -1,4 +1,4 @@
-#include "DxLib.h"
+﻿#include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "TitleScene.h"
@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // ウィンドウタイトルの設定
     SetMainWindowText("TeamGame");
 
-    // DXライブラリの文字列処理をUTF-8に設定
+    // DXライブラリの文字列処理をUTF-8に設定6
     SetUseCharCodeFormat(DX_CHARCODEFORMAT_UTF8);
 
     // DXライブラリの初期化

@@ -427,3 +427,42 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# =========================================================================
+# Custom Exclusions for Portfolio & Submission Cleanliness (企業提出用除外設定)
+# =========================================================================
+
+# Python scripts & tools (開発作業用スクリプト・ツール)
+*.py
+*.pyc
+__pycache__/
+Scripts/
+Tools/
+
+# 3D Raw Models & Asset files (未加工モデル素材・xファイル)
+*.x
+*.X
+*.obj
+*.fbx
+*.blend
+*.max
+*.3ds
+
+# Task management / Excel / Note files (作業メモ・タスク管理)
+*.xlsx
+*.xls
+tasks.txt
+title.txt
+
+# Person-specific & Backup files (個人用バックアップ・一時作業ファイル)
+*_eita.cpp
+*_sou.cpp
+*_old.cpp
+*_old.h
+*_backup.*
+*.bak
+
+# Runtime logs (実行時ログ)
+TeamGame/Log.txt
+Log.txt
+

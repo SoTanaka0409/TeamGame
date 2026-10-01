@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector2.h"
 #include <string>
 #include "WeaponManager.h"
@@ -41,7 +41,7 @@ class Weapon
         }
     }
 
-    virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, float additionalSpread = 0.0f) = 0;
+    virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, bool isMoving = false) = 0;
     
     virtual void Reload()
     {
@@ -62,6 +62,16 @@ class Weapon
         if (currentAmmo <= 0) currentAmmo = 0;
     }
 
+    void AddAmmo(int amount)
+    {
+        if (data) {
+            currentAmmo += amount;
+            if (currentAmmo > data->maxAmmo) {
+                currentAmmo = data->maxAmmo;
+            }
+        }
+    }
+
     void ResetCoolTime()
     {
         if (data) coolTimeTimer = data->fireInterval;
@@ -72,4 +82,5 @@ class Weapon
     int GetMaxAmmo() const { return data ? data->maxAmmo : 0; }
     bool IsReloading() const { return isReloading; }
     const WeaponData* GetData() const { return data; }
+    virtual float GetMoveSpreadPenalty() const { return 0.0f; }
 };

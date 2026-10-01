@@ -1,4 +1,4 @@
-#include "WeaponManager.h"
+ï»¿#include "WeaponManager.h"
 #include "DxLib.h"
 #include <fstream>
 #include <sstream>
@@ -13,7 +13,7 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
     }
 
     std::string line;
-    // ƒwƒbƒ_[s‚ğƒXƒLƒbƒv
+    // ãƒ˜ãƒƒãƒ€ãƒ¼è¡Œã‚’ã‚¹ã‚­ãƒƒãƒ—
     std::getline(file, line);
 
     while (std::getline(file, line))
@@ -43,7 +43,7 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
             data.uiImagePath.pop_back();
         }
 
-        // ‰æ‘œ‚Ì“Ç‚İ‚İ (‚à‚µƒpƒX‚ª‚ ‚ê‚Î)
+        // ç”»åƒã®èª­ã¿è¾¼ã¿ (ã‚‚ã—ãƒ‘ã‚¹ãŒã‚ã‚Œã°)
         if (!data.uiImagePath.empty() && data.uiImagePath != "NONE")
         {
             data.uiImageHandle = LoadGraph(data.uiImagePath.c_str());

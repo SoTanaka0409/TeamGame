@@ -4,10 +4,12 @@
 #include "EffectManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
+#include "../Objects/Item.h"
 #include "InputManager.h"
 #include "Player.h"
 #include "ResultScene.h"
 #include "ClearScene.h"
+#include "GameOverScene.h"
 #include "TitleScene.h"
 #include "SceneManager.h"
 #include "NetworkManager.h"
@@ -47,7 +49,7 @@ void GameScene::ClearEnemies()
         {
             if (obj && obj->GetObjectTag() == ObjectTag::Enemy)
             {
-                obj->SetActive(false);
+                obj->DestroyPermanently();
             }
         }
     }
@@ -81,7 +83,7 @@ void GameScene::SpawnEnemiesRandomly(int count)
     {
         Enemy* allyBot = new Enemy((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0);
         allyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        // objectManager->AddObject(allyBot);
+        enemies.push_back(allyBot);
     }
     
     // Enemy bots (Team 1)
@@ -90,7 +92,7 @@ void GameScene::SpawnEnemiesRandomly(int count)
     {
         Enemy* enemyBot = new Enemy((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1);
         enemyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        // objectManager->AddObject(enemyBot);
+        enemies.push_back(enemyBot);
     }
 }
 void GameScene::Init()
@@ -207,6 +209,8 @@ void GameScene::Update()
                             ch->status.Heal(ch->status.GetMaxHp());
                             ch->SetActive(true);
                             ch->invincibleTimer = 180;
+                            Enemy* e = dynamic_cast<Enemy*>(ch);
+                            if (e) { e->ResetMoveToCenter(); }
                         }
                     }
                 }
@@ -226,7 +230,7 @@ void GameScene::Update()
                     stats.rankName = "S";
                     SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
                 } else {
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<ResultScene>());
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
                 }
                 return;
             }
@@ -379,12 +383,13 @@ void GameScene::Draw()
         
         if (introTimer > 0.0f)
         {
-            // Easing: start at enemySpawnY, move to playerSpawnY
+            // イントロカメラ: プレイヤーに連動せず、マップ中心X・カメラ単体でYスクロール
             float t = 1.0f - (introTimer / 300.0f);
             // smoothstep easing
             t = t * t * (3.0f - 2.0f * t);
             
-            Camera::TargetWorldX = playerWorldX; // Keep X centered on player
+            float midWorldX = (stage.GetWidth() / 2.0f) * worldCellSize;
+            Camera::TargetWorldX = midWorldX;
             Camera::TargetWorldY = enemySpawnY + (playerSpawnY - enemySpawnY) * t;
         }
         else
@@ -409,15 +414,16 @@ void GameScene::Draw()
         }
     }
     
-    DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
-    DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(150, 150, 150));
-    DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(150, 150, 150));
+        DrawString(15, 15, "[ESC]キーでポーズ", GetColor(255, 255, 255));
+    DrawString(15, 45, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(200, 200, 200));
+    DrawString(15, 70, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(200, 200, 200));
 
+    // 画面左下にプレイヤーのHP・武器UIを表示（デバッグ文字列との重なりを完全解消）
     if (player && player->IsActive()) {
-        player->DrawUI(10, 100);
+        player->DrawUI(20, 920);
     }
     if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
-        remotePlayer->DrawUI(1920 / 2 + 10, 100);
+        remotePlayer->DrawUI(1920 / 2 + 20, 920);
     }
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
@@ -433,11 +439,7 @@ void GameScene::Draw()
         const int menuSpacing = 60;
         
     
-    // Draw scores
-    char scoreText[128];
-    sprintf_s(scoreText, sizeof(scoreText), "BLUE(YOU): %d  vs  RED: %d", team0Kills, team1Kills);
-    DrawString(800, 20, scoreText, GetColor(255, 255, 255));
-    
+
 
     if (state == GameState::PLAYING && introTimer > 0.0f)
     {
@@ -498,28 +500,28 @@ void GameScene::Draw()
 
     int activeEnemyCount = GetActiveEnemyCount();
     
-    // Kill Count Bar UI (Top Right)
+    // キルカウントバーUI（画面中央上部に配置して右上のデバッグ表示との重なりを完全解消）
     int maxKills = 10;
-    int barWidth = 300;
-    int barHeight = 25;
-    int startX = 1920 - 350;
-    int startY = 30;
+    int barWidth = 260;
+    int barHeight = 22;
+    int startX = 860;
+    int startY = 20;
 
-    // Background
-    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(50, 50, 50), TRUE);
-    DrawBox(startX, startY + 40, startX + barWidth, startY + 40 + barHeight, GetColor(50, 50, 50), TRUE);
+    // 背景バー
+    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
+    DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
 
-    // Ally Kills Bar (Blue)
+    // 自チーム（味方）のキル数バー (青: 味方チームが敵を倒すと増える)
     int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
     DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
-    SetFontSize(24);
-    DrawFormatString(startX - 180, startY + 2, GetColor(255, 255, 255), "ALLY KILLS: %d/%d", team0Kills, maxKills);
+    SetFontSize(20);
+    DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
 
-    // Enemy Kills Bar (Red)
+    // 敵チームのキル数バー (赤: 敵チームが味方を倒すと増える)
     int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
-    DrawBox(startX, startY + 40, startX + enemyBarW, startY + 40 + barHeight, GetColor(255, 50, 50), TRUE);
-    DrawFormatString(startX - 190, startY + 42, GetColor(255, 255, 255), "ENEMY KILLS: %d/%d", team1Kills, maxKills);
-    SetFontSize(32); // Reset to default
+    DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
+    DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+    SetFontSize(32); // デフォルトフォントサイズに戻す
 
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }
