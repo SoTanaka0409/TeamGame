@@ -237,7 +237,7 @@ void GameScene::Update()
 
             DebugManager::GetInstance().Update();
 
-            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_L))
             {
                 stageManager.NextVariation();
                 if (player)
@@ -485,17 +485,19 @@ void GameScene::Draw()
         DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(30, 30, 40), TRUE);
         DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(100, 100, 100), FALSE);
         DrawString(ruleX, ruleY, "【遊び方・操作】", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 40, "W A S D : 移動", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 80, "マウス : 視点移動 / 狙う", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 120, "左クリック : 撃つ (または Z キー)", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 160, "右クリック : 懐中電灯ON/OFF", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 200, "Q キー : 武器切り替え", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 240, "E キー : 視点固定", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 35, "W A S D : 移動", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 70, "マウス : 視点移動 / 狙う", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 105, "左クリック : 撃つ (または Z キー)", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 140, "右クリック : 懐中電灯ON/OFF", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 175, "R キー : リロード", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 210, "SPACE キー : ナイフ暗殺", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 245, "Q キー : 武器切り替え", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 280, "E キー : 視点固定", GetColor(255, 255, 255));
         
-        DrawString(ruleX, ruleY + 300, "[ ルール ]", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 340, "- 敵の攻撃を避けながら進む", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 380, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 420, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 330, "[ ルール ]", GetColor(255, 200, 0));
+        DrawString(ruleX, ruleY + 365, "- 敵の攻撃を避けながら進む", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 400, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 435, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
     }
 
     int activeEnemyCount = GetActiveEnemyCount();
