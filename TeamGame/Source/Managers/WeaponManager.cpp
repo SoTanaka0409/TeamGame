@@ -36,7 +36,7 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
         std::string token;
         WeaponData data;
 
-        // Name, Range, SpreadAngle, BulletRadius, BulletSpeed, MaxAmmo, FireInterval, ReloadTime, ModelPath, UIImagePath
+        // Name, Range, SpreadAngle, BulletRadius, BulletSpeed, MaxAmmo, FireInterval, ReloadTime, Damage, PelletCount, ModelPath, UIImagePath
         std::getline(ss, data.name, ',');
         
         std::getline(ss, token, ','); data.range = std::stof(token);
@@ -46,6 +46,8 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
         std::getline(ss, token, ','); data.maxAmmo = std::stoi(token);
         std::getline(ss, token, ','); data.fireInterval = std::stoi(token);
         std::getline(ss, token, ','); data.reloadTime = std::stoi(token);
+        std::getline(ss, token, ','); data.damage = std::stoi(token);
+        std::getline(ss, token, ','); data.pelletCount = std::stoi(token);
         
         std::getline(ss, data.modelPath, ',');
         std::getline(ss, data.uiImagePath, ',');

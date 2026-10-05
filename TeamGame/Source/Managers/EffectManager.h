@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <vector>
 
 /**
@@ -181,6 +181,23 @@ class SparkParticle : public Effect
 };
 
 /**
+ * @brief ソナー波（音波ピン探知）エフェクト
+ */
+class SonarWaveEffect : public Effect
+{
+  public:
+    float maxRadius;
+    unsigned int color;
+
+    SonarWaveEffect(float startX, float startY, float maxR = 350.0f, int life = 35, unsigned int col = 0)
+        : Effect(startX, startY, life), maxRadius(maxR), color(col)
+    {
+    }
+
+    void Draw() override;
+};
+
+/**
  * @brief 全てのエフェクトを管理するクラス
  * @details パーティクルや斬撃などのエフェクトを生成・更新・描画・破棄する機能を提供する。
  */
@@ -233,6 +250,14 @@ class EffectManager
      * @param radius フラッシュの半径 (デフォルト: 18.0f)
      */
     void AddMuzzleFlashEffect(float worldX, float worldY, float dirAngle, float radius = 18.0f);
+    
+    /**
+     * @brief ソナー音波探知エフェクトの追加
+     * @param worldX ワールドX座標
+     * @param worldY ワールドY座標
+     * @param color 波の色
+     */
+    void AddSonarWaveEffect(float worldX, float worldY, unsigned int color = 0);
     
     /**
      * @brief 画面全体のガンフラッシュ効果のトリガー

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -17,6 +17,8 @@ struct WeaponData
     int maxAmmo;          // 最大装弾数
     int fireInterval;     // 発射間隔(フレーム数)
     int reloadTime;       // リロード時間(フレーム数)
+    int damage = 1;       // 1発あたりのダメージ
+    int pelletCount = 1;  // 1回の射撃で発射する弾丸数
     std::string modelPath; // 3Dモデルのパス
     std::string uiImagePath; // UI用画像のパス
     int uiImageHandle = -1;  // 画像のハンドル

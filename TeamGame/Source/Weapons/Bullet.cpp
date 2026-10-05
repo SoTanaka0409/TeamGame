@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "Bullet.h"
 #include "Character.h"
 #include "ColliderManager.h"
@@ -18,8 +18,8 @@
  * @param tId チームID
  * @details 初期位置、速度などの設定を行い、コライダーマネージャーに円形コライダーを登録する
  */
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId)
-    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId)
+Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId, int dmg)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId), damage(dmg)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -130,10 +130,10 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
         {
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage();
+                if (enemy) enemy->Damage(this->damage);
             } else if (target->GetObjectTag() == ObjectTag::Player) {
                 Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage();
+                if (player) player->TakeDamage(this->damage);
             }
             
             auto scene = SceneManager::GetInstance().GetCurrentScene();

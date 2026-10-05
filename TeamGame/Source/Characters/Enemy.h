@@ -128,7 +128,7 @@ public:
     /**
      * @brief ダメージ受信処理
      */
-    void Damage();
+    void Damage(int amount = 1);
 
     /**
      * @brief ステルスキル受信処理

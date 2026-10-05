@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -8,12 +8,13 @@
 #include "Stage.h"
 #include "SceneManager.h"
 #include "Scene.h"
+#include "CharacterManager.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY, int tId)
-    : Character(ObjectTag::Enemy, startX, startY, 25.0f), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 35.0f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0),
@@ -21,10 +22,25 @@ Enemy::Enemy(float startX, float startY, int tId)
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
-    // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
-    status.Init(3, 0.75f, 1);
+    std::string botType = (teamId == 0) ? "AllyBot" : "EnemyBot";
+    const CharacterData* data = CharacterManager::GetInstance().GetCharacterData(botType);
+    if (!data && teamId != 0) data = CharacterManager::GetInstance().GetCharacterData("EnemyBot");
+
+    if (data)
+    {
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+        collider->SetRadius(data->colliderRadius);
+        radius = data->colliderRadius;
+        sightRangeCells = data->sightRangeCells;
+        effectiveRangeCells = data->effectiveRangeCells;
+    }
+    else
+    {
+        status.Init(3, 1.5f, 1);
+        collider->SetRadius(35.0f);
+        radius = 35.0f;
+    }
     collider->SetTag("Enemy");
-    collider->SetRadius(15.0f); // 重なった時のみ判定されるタイトなコライダー半径 (15.0px)
 }
 
 Enemy::~Enemy()
@@ -110,11 +126,23 @@ bool Enemy::CheckLineOfSightToTarget(Character* target) const
         return false;
     }
 
-    if (const Player* pPlayer = dynamic_cast<const Player*>(checkTarget))
+    bool selfInBush = this->IsInBush();
+    bool targetInBush = checkTarget->IsInBush();
+
+    if (targetInBush)
     {
-        if (pPlayer->IsInBush())
+        if (selfInBush)
         {
-            if (dist > cellSize * 1.0f)
+            // お互い草むらの中にいる場合は中・近距離(5.0セル)でお互いを認識・交戦
+            if (dist > cellSize * 5.0f)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            // ターゲットだけが草むら内に潜んでいる場合は至近距離(1.5セル)以外は見えない
+            if (dist > cellSize * 1.5f)
             {
                 return false;
             }
@@ -228,12 +256,27 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
     if (currentStage)
     {
-        currentStage->ResolveCollision(position, 15.0f, cellSize);
+        currentStage->ResolveCollision(position, radius, cellSize);
     }
 }
 
 void Enemy::Update()
 {
+    // 草むら潜伏チェック
+    if (currentStage && cellSize > 0.0f)
+    {
+        int gX = static_cast<int>(position.x / cellSize);
+        int gY = static_cast<int>(position.y / cellSize);
+        if (!currentStage->IsOutOfBounds(gX, gY))
+        {
+            m_isInBush = (currentStage->GetCell(gX, gY) == CellType::BUSH);
+        }
+        else
+        {
+            m_isInBush = false;
+        }
+    }
+
     UpdateTarget();
     if (damageColorTimer > 0)
     {
@@ -568,9 +611,9 @@ void Enemy::Draw()
 #include "SceneManager.h"
 #include "Scene.h"
 
-void Enemy::Damage()
+void Enemy::Damage(int amount)
 {
-    status.TakeDamage(1);
+    status.TakeDamage(amount);
     damageColorTimer = 15;
     aiState = EnemyAIState::ALERT; // 被弾したら即警戒状態
 
@@ -614,7 +657,7 @@ void Enemy::OnCollisionStay(Collider *otherCollider)
         float dx = position.x - otherPos.x;
         float dy = position.y - otherPos.y;
         float dist = std::sqrt(dx * dx + dy * dy);
-        float otherRadius = 15.0f;
+        float otherRadius = 35.0f;
         if (CircleCollider *c = dynamic_cast<CircleCollider *>(otherCollider))
         {
             otherRadius = c->GetRadius();
@@ -630,7 +673,7 @@ void Enemy::OnCollisionStay(Collider *otherCollider)
 
             if (currentStage)
             {
-                currentStage->ResolveCollision(position, 15.0f, cellSize);
+                currentStage->ResolveCollision(position, radius, cellSize);
             }
         }
     }

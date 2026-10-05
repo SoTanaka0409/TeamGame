@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Status.h"
@@ -26,12 +26,25 @@ class Character : public Object2D
     };
     std::vector<ActiveEffect> activeEffects; ///< 現在かかっているエフェクトのリスト
 
+  protected:
+    bool m_isInBush = false; ///< ブッシュ潜伏状態
+
   public:
     Status status; ///< キャラクターのステータス
     int teamId; ///< 所属するチームID
     bool isDeadProcessed = false; ///< 死亡処理が済んでいるかどうかのフラグ
     int respawnTimer = 0; ///< リスポーンまでのタイマー
     int invincibleTimer = 0; ///< 無敵時間のタイマー
+
+    /**
+     * @brief ブッシュに潜伏中かどうか取得
+     */
+    bool IsInBush() const { return m_isInBush; }
+
+    /**
+     * @brief ブッシュ潜伏状態を設定
+     */
+    void SetInBush(bool val) { m_isInBush = val; }
 
     /**
      * @brief コンストラクタ
