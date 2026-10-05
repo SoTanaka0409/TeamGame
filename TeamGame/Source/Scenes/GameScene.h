@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
 #include "StageManager.h"
 #include "DebugManager.h"
@@ -53,6 +53,10 @@ class GameScene : public Scene
 
     float gameTimer = 0.0f;              ///< 経過時間のタイマー
     float introTimer = 0.0f;             ///< カメラ演出用のタイマー
+    float brightTimer = 0.0f;            ///< 明るい状態（薄明時間帯）のタイマー
+    float nextBrightInterval = 1200.0f;  ///< 次の薄明時間帯までのタイマー
+    float sonarPingTimer = 900.0f;       ///< ソナー用タイマー
+    float sonarNotificationTimer = 0.0f; ///< ソナー通知用タイマー
     int totalEnemiesSpawned = 0;         ///< スポーンした敵の総数
     int itemSpawnTimer = 0;              ///< アイテムスポーン用タイマー
     int trapSpawnTimer = 0;              ///< トラップスポーン用タイマー

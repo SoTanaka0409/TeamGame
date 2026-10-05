@@ -100,6 +100,10 @@ void GameScene::Init()
     Scene::Init();
     gameTimer = 0.0f;
     isCleared = false;
+    brightTimer = 0.0f;
+    nextBrightInterval = 1200.0f;
+    sonarPingTimer = 900.0f;
+    sonarNotificationTimer = 0.0f;
     
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
@@ -154,6 +158,20 @@ void GameScene::Update()
         else
         {
             gameTimer += 0.016f;
+
+            if (brightTimer > 0.0f)
+            {
+                brightTimer -= 1.0f;
+            }
+            else
+            {
+                nextBrightInterval -= 1.0f;
+                if (nextBrightInterval <= 0.0f)
+                {
+                    brightTimer = 900.0f; // 15秒間（900フレーム）の薄明時間
+                    nextBrightInterval = 1200.0f; // 次まで20秒（1200フレーム）
+                }
+            }
 
             if (introTimer > 0.0f)
             {
@@ -406,11 +424,23 @@ void GameScene::Draw()
         Scene::Draw();
     }
 
+    float brightRatio = 0.0f;
+    if (brightTimer > 0.0f)
+    {
+        if (brightTimer > 840.0f) {
+            brightRatio = (900.0f - brightTimer) / 60.0f; // 最初の1秒で滑らかに明るくなる
+        } else if (brightTimer < 60.0f) {
+            brightRatio = brightTimer / 60.0f; // 最後の1秒で滑らかに暗闇に戻る
+        } else {
+            brightRatio = 1.0f;
+        }
+    }
+
     if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
     {
         if (introTimer <= 0.0f) 
         {
-            player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
+            player->RenderLightMask(0, 0, 1920, 1080, 0, 0, brightRatio);
         }
     }
     
@@ -522,6 +552,26 @@ void GameScene::Draw()
     DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
     DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
     SetFontSize(32); // デフォルトフォントサイズに戻す
+
+    if (brightTimer > 0.0f)
+    {
+        int bannerW = 440;
+        int bannerH = 40;
+        int bannerX = 1920 / 2 - bannerW / 2;
+        int bannerY = 85;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
+        DrawBox(bannerX, bannerY, bannerX + bannerW, bannerY + bannerH, GetColor(15, 20, 35), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(bannerX, bannerY, bannerX + bannerW, bannerY + bannerH, GetColor(255, 200, 50), FALSE);
+
+        SetFontSize(22);
+        char brightMsg[64];
+        snprintf(brightMsg, sizeof(brightMsg), "【薄明時間帯】 月光照射中 (残り %.1f秒)", brightTimer / 60.0f);
+        int msgW = GetDrawStringWidth(brightMsg, -1);
+        DrawString(1920 / 2 - msgW / 2, bannerY + 8, brightMsg, GetColor(255, 220, 100));
+        SetFontSize(32);
+    }
 
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }

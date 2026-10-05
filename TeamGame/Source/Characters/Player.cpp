@@ -22,7 +22,7 @@ Player::Player(float startX, float startY)
 {
     teamId = 0;
     autoPingTimer = 600;
-    status.Init(10, 5.0f, 1);
+    status.Init(10, 1.5f, 1); // プレイヤーの移動速度を 1.5f に設定
     collider->SetTag("Player");
     weapons.push_back(new Handgun());
     weapons.push_back(new Shotgun());
@@ -168,6 +168,8 @@ void Player::Update()
                 {
                     position.y = nextY;
                 }
+
+                currentStage->ResolveCollision(position, 35.0f, cellSize);
             }
             else
             {
@@ -546,7 +548,7 @@ void Player::OnCollisionExit(Collider *otherCollider)
 {
 }
 
-void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY) const
+void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY, float brightRatio) const
 {
     if (!currentStage || cellSize <= 0.0f) return;
 
@@ -567,6 +569,9 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
 
+    // 明るい時間帯 (brightRatio > 0.0f) の広域環境光ブースト
+    float globalBrightVal = brightRatio * 0.70f; // 最大70%の月光・環境光
+
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
     {
         for (int px = rectX; px < rectX + rectW; px += resolutionStep)
@@ -575,7 +580,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
             float dy = py - playerPixelY;
             float dist = std::sqrt(dx * dx + dy * dy);
 
-            float lightVal = 0.0f;
+            float lightVal = globalBrightVal; // 基本環境光に明るい時間帯の値を適用
 
             // A. プレイヤー周囲の足元明かり
             if (dist < closeRadius)
@@ -638,7 +643,9 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             if (lightVal < 0.98f)
             {
-                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, lightVal)) * 248);
+                // 明るい時間帯は暗闇マスクの最大不透明度を248から大幅に下げ(約75まで)、うっすら月光のようにマップ全体を自然に照らす
+                float maxDarkAlpha = 248.0f * (1.0f - brightRatio * 0.70f);
+                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, lightVal)) * maxDarkAlpha);
                 if (alpha > 8)
                 {
                     SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);

@@ -1,4 +1,4 @@
-﻿#include "ClearScene.h"
+#include "ClearScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "DebugManager.h"
@@ -119,14 +119,18 @@ void ClearScene::Draw()
     DrawString(panelX + 60, panelY + 170, scoreStr, GetColor(255, 255, 255));
 
     // ランク表示
-    DrawString(panelX + 60, panelY + 240, "評価ランク  : ", GetColor(255, 255, 255));
+    const char* rankLabel = "評価ランク  : ";
+    int labelW = GetDrawStringWidth(rankLabel, -1);
+    DrawString(panelX + 60, panelY + 230, rankLabel, GetColor(255, 255, 255));
 
     unsigned int rankColor = GetColor(255, 215, 0); // Gold for S
     if (stats.rankName == "A") rankColor = GetColor(200, 200, 255);
     else if (stats.rankName == "B") rankColor = GetColor(100, 255, 100);
     else if (stats.rankName == "C") rankColor = GetColor(200, 150, 100);
 
-    DrawString(panelX + 220, panelY + 235, stats.rankName.c_str(), rankColor);
+    SetFontSize(40);
+    DrawString(panelX + 60 + labelW, panelY + 222, stats.rankName.c_str(), rankColor);
+    SetFontSize(32);
 
     // メニュー選択
     const char* options[] = {

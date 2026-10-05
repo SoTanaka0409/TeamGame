@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -13,7 +13,7 @@
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY, int tId)
-    : Character(ObjectTag::Enemy, startX, startY, 25.0f), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 35.0f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0),
@@ -21,10 +21,10 @@ Enemy::Enemy(float startX, float startY, int tId)
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
-    // 【移動速度の低下】 プレイヤー(5.0f)に対し非常に遅い速度 (0.75f)
-    status.Init(3, 0.75f, 1);
+    // 【移動速度の二倍化】 プレイヤー(10.0f)に対し合わせた移動速度 (1.50f)
+    status.Init(3, 1.50f, 1);
     collider->SetTag("Enemy");
-    collider->SetRadius(15.0f); // 重なった時のみ判定されるタイトなコライダー半径 (15.0px)
+    collider->SetRadius(35.0f); // プレイヤーと完全統一したコライダー半径 (35.0px)
 }
 
 Enemy::~Enemy()
@@ -228,7 +228,7 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
     if (currentStage)
     {
-        currentStage->ResolveCollision(position, 15.0f, cellSize);
+        currentStage->ResolveCollision(position, 35.0f, cellSize);
     }
 }
 
@@ -614,7 +614,7 @@ void Enemy::OnCollisionStay(Collider *otherCollider)
         float dx = position.x - otherPos.x;
         float dy = position.y - otherPos.y;
         float dist = std::sqrt(dx * dx + dy * dy);
-        float otherRadius = 15.0f;
+        float otherRadius = 35.0f;
         if (CircleCollider *c = dynamic_cast<CircleCollider *>(otherCollider))
         {
             otherRadius = c->GetRadius();
@@ -630,7 +630,7 @@ void Enemy::OnCollisionStay(Collider *otherCollider)
 
             if (currentStage)
             {
-                currentStage->ResolveCollision(position, 15.0f, cellSize);
+                currentStage->ResolveCollision(position, 35.0f, cellSize);
             }
         }
     }
