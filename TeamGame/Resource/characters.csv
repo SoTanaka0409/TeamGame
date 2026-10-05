@@ -1,0 +1,4 @@
+Type,MaxHp,MoveSpeed,AttackPower,ColliderRadius,SightRangeCells,EffectiveRangeCells,ShootCooldown,AimDelayFrames,RespawnTimeFrames
+Player,10,1.5,1,35.0,14.0,10.0,0,0,180
+EnemyBot,3,1.5,1,35.0,14.0,10.0,75,25,180
+AllyBot,5,1.5,1,35.0,14.0,10.0,60,20,180

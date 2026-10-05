@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Object2D.h"
 #include "../Colliders/CircleCollider.h"
 
@@ -18,7 +18,7 @@ private:
     float time;
 
 public:
-    Item(float startX, float startY, ItemType itemType, int amountValue);
+    Item(float startX, float startY, ItemType itemType, int amountValue = -1);
     ~Item();
 
     void Update() override;

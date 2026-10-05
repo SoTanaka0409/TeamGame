@@ -1,4 +1,4 @@
-﻿#include "SceneManager.h"
+#include "SceneManager.h"
 #include "Scene.h"
 #pragma once
 #include "SkillData.h"

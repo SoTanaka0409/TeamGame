@@ -11,6 +11,9 @@
 #include "SniperRifle.h"
 #include "SceneManager.h"
 #include "Scene.h"
+#include "GameSettings.h"
+#include "CharacterManager.h"
+#include "GameBalanceManager.h"
 #include "../Skills/Skill.h"
 #include "../Skills/SkillData.h"
 #include <cmath>
@@ -22,13 +25,31 @@ Player::Player(float startX, float startY)
 {
     teamId = 0;
     autoPingTimer = 600;
-    status.Init(10, 5.0f, 1);
+    
+    // CharacterManager(characters.csv)からパラメータを適用
+    const CharacterData* data = CharacterManager::GetInstance().GetCharacterData("Player");
+    if (data)
+    {
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+        if (collider) collider->SetRadius(data->colliderRadius);
+        radius = data->colliderRadius;
+    }
+    else
+    {
+        status.Init(10, 1.5f, 1);
+    }
+
     collider->SetTag("Player");
     weapons.push_back(new Handgun());
     weapons.push_back(new Shotgun());
     weapons.push_back(new SniperRifle());
     currentWeaponIndex = 0;
-    currentSkill = nullptr;
+    const SkillData* defaultSkillData = SkillDataManager::GetInstance().GetSkillData(1);
+    if (defaultSkillData) {
+        currentSkill = new Skill(defaultSkillData);
+    } else {
+        currentSkill = nullptr;
+    }
 }
 
 Player::~Player()
@@ -46,21 +67,6 @@ void Player::Update()
 {
     if (invincibleTimer > 0) invincibleTimer--;
     
-    // 10秒ごとのオートピン（位置バレ）
-    autoPingTimer--;
-    if (autoPingTimer <= 0) {
-        autoPingTimer = 600;
-        auto scene = SceneManager::GetInstance().GetCurrentScene();
-        if (scene && scene->GetObjectManager()) {
-            for (auto obj : scene->GetObjectManager()->GetObjects()) {
-                Enemy* e = dynamic_cast<Enemy*>(obj);
-                if (e && e->IsActive() && e->teamId != this->teamId && e->teamId != -1) {
-                    // 距離無制限（99999）で音を届かせる
-                    e->OnHearGunshot(position, 99999.0f, teamId);
-                }
-            }
-        }
-    }
     // 追加: バフ・デバフのタイマー更新
     UpdateActiveEffects();
 
@@ -191,20 +197,66 @@ void Player::Update()
     {
         if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            int mouseX, mouseY;
-            GetMousePoint(&mouseX, &mouseY);
-            float dx = mouseX - Camera::WorldToScreenX(position.x);
-            float dy = mouseY - Camera::WorldToScreenY(position.y);
-            float dirLen = std::sqrt(dx * dx + dy * dy);
-            if (dirLen > 0.0001f)
+            // 視点固定（Eキー）の処理
+            bool isEKeyHeld = InputManager::GetInstance().IsKeyHeld(KEY_INPUT_E);
+            bool isEKeyPressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_E);
+
+            if (GameSettings::GetInstance().isAimLockHoldMode)
             {
-                facingDir.x = dx / dirLen;
-                facingDir.y = dy / dirLen;
+                // 長押しモード: Eキーを押している間のみ固定
+                isAimLocked = isEKeyHeld;
+            }
+            else
+            {
+                // 切り替えモード: Eキーが押された瞬間にトグル
+                if (isEKeyPressed && !prevAimLockKey)
+                {
+                    isAimLocked = !isAimLocked;
+                }
+            }
+            prevAimLockKey = isEKeyPressed;
+
+            // 視点固定が解除されている時のみマウス方向へ更新
+            if (!isAimLocked)
+            {
+                int mouseX, mouseY;
+                GetMousePoint(&mouseX, &mouseY);
+                float dx = mouseX - Camera::WorldToScreenX(position.x);
+                float dy = mouseY - Camera::WorldToScreenY(position.y);
+                float dirLen = std::sqrt(dx * dx + dy * dy);
+                if (dirLen > 0.0001f)
+                {
+                    facingDir.x = dx / dirLen;
+                    facingDir.y = dy / dirLen;
+                }
+            }
+
+            // 武器切り替え処理 (Qキー / 1~3キー / マウスホイール)
+            int wheelRot = GetMouseWheelRotVol();
+            if (wheelRot > 0)
+            {
+                currentWeaponIndex = (currentWeaponIndex + static_cast<int>(weapons.size()) - 1) % weapons.size();
+            }
+            else if (wheelRot < 0)
+            {
+                currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
             }
 
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_Q))
             {
                 currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
+            }
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_1) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD1))
+            {
+                if (weapons.size() > 0) currentWeaponIndex = 0;
+            }
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_2) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD2))
+            {
+                if (weapons.size() > 1) currentWeaponIndex = 1;
+            }
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_3) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD3))
+            {
+                if (weapons.size() > 2) currentWeaponIndex = 2;
             }
 
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
@@ -212,12 +264,11 @@ void Player::Update()
                 if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
             }
             
-            // スキル（ガジェット）の発動 (Eキー)
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_E))
+            // スキル（ガジェット）の発動 (Fキー)
+            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F))
             {
                 if (currentSkill && currentSkill->CanUse(this)) {
                     currentSkill->Use(this);
-                    // 必要ならSoundManager::GetInstance().Play3D("skill_use", position, 500.0f); など
                 }
             }
         }
@@ -381,7 +432,8 @@ void Player::Draw()
     // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
     if (!weapons.empty() && weapons[currentWeaponIndex]) {
         std::string wName = weapons[currentWeaponIndex]->GetName();
-        DrawString(static_cast<int>(screenX) - 25, static_cast<int>(screenY) - static_cast<int>(radius) - 22, wName.c_str(), GetColor(200, 220, 255));
+        if (isAimLocked) wName += " [視点固定]";
+        DrawString(static_cast<int>(screenX) - 35, static_cast<int>(screenY) - static_cast<int>(radius) - 22, wName.c_str(), isAimLocked ? GetColor(255, 220, 0) : GetColor(200, 220, 255));
     }
 
     // 【サーチ的な感じでブレ幅（予測線）を描画】
@@ -520,10 +572,52 @@ void Player::Draw()
     }
 }
 
-void Player::TakeDamage()
+void Player::RenderBloodSplatterOverlay(int screenWidth, int screenHeight) const
+{
+    if (!IsActive()) return;
+    int lowHpThreshold = GameBalanceManager::GetInstance().GetInt("LowHpThreshold", 3);
+    if (status.GetCurrentHp() > lowHpThreshold) return;
+
+    // HP 3 以下の時に画面外枠にパルス赤枠エフェクトを描画
+    static float pulseTimer = 0.0f;
+    pulseTimer += 0.08f;
+    float pulse = (std::sin(pulseTimer) + 1.0f) * 0.5f; // 0.0 ~ 1.0
+
+    int hpGap = 4 - status.GetCurrentHp(); // 1(HP=3), 2(HP=2), 3(HP=1)
+    int baseAlpha = 70 + hpGap * 35;
+    int currentAlpha = static_cast<int>(baseAlpha + pulse * 60);
+    if (currentAlpha > 240) currentAlpha = 240;
+
+    int borderSteps = 6;
+    for (int i = 0; i < borderSteps; ++i)
+    {
+        int bandThickness = (borderSteps - i) * 10;
+        int stepAlpha = static_cast<int>(currentAlpha * (0.3f + 0.7f * (float)(borderSteps - i) / borderSteps));
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, stepAlpha);
+        // 上
+        DrawBox(0, 0, screenWidth, bandThickness, GetColor(180, 0, 0), TRUE);
+        // 下
+        DrawBox(0, screenHeight - bandThickness, screenWidth, screenHeight, GetColor(180, 0, 0), TRUE);
+        // 左
+        DrawBox(0, 0, bandThickness, screenHeight, GetColor(180, 0, 0), TRUE);
+        // 右
+        DrawBox(screenWidth - bandThickness, 0, screenWidth, screenHeight, GetColor(180, 0, 0), TRUE);
+    }
+
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(currentAlpha * 0.95f));
+    DrawBox(0, 0, screenWidth, screenHeight, GetColor(255, 30, 30), FALSE);
+    DrawBox(3, 3, screenWidth - 3, screenHeight - 3, GetColor(220, 10, 10), FALSE);
+
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(160 + pulse * 85));
+    DrawString(screenWidth / 2 - 80, 30, "!! LOW HP DANGER !!", GetColor(255, 60, 60));
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
+void Player::TakeDamage(int amount)
 {
     if (invincibleTimer > 0) return;
-    status.TakeDamage(1);
+    status.TakeDamage(amount);
     damageColorTimer = 30;
     
     if (status.IsDead())
@@ -671,8 +765,11 @@ void Player::DrawUI(int screenX, int screenY)
         }
         else
         {
-            DrawBox(screenX, screenY, screenX + 110, screenY + 40, GetColor(50, 50, 50), TRUE);
-            DrawString(screenX + 10, screenY + 10, currentWeapon->GetName().c_str(), GetColor(255, 255, 255));
+            char weaponTitle[64];
+            snprintf(weaponTitle, sizeof(weaponTitle), "[%d] %s", currentWeaponIndex + 1, currentWeapon->GetName().c_str());
+            DrawBox(screenX, screenY, screenX + 140, screenY + 35, GetColor(40, 40, 60), TRUE);
+            DrawBox(screenX, screenY, screenX + 140, screenY + 35, GetColor(0, 200, 255), FALSE);
+            DrawString(screenX + 8, screenY + 8, weaponTitle, GetColor(255, 255, 255));
         }
 
         int currentAmmo = currentWeapon->GetCurrentAmmo();

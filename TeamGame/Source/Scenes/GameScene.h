@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
 #include "StageManager.h"
 #include "DebugManager.h"
@@ -49,10 +49,16 @@ class GameScene : public Scene
     bool prevEsc = false;                ///< 前フレームでのESC入力状態
     bool prevUp = false;                 ///< 前フレームでの上入力状態
     bool prevDown = false;               ///< 前フレームでの下入力状態
+    bool prevLeft = false;               ///< 前フレームでの左入力状態
+    bool prevRight = false;              ///< 前フレームでの右入力状態
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
 
     float gameTimer = 0.0f;              ///< 経過時間のタイマー
     float introTimer = 0.0f;             ///< カメラ演出用のタイマー
+    float brightTimer = 0.0f;            ///< 15秒間明るくなるイベントの残り時間（フレーム数）
+    float nextBrightInterval = 1200.0f;  ///< 次の明るい時間帯が発生するまでのタイマー
+    float sonarPingTimer = 900.0f;       ///< 15秒周期の相互音波ピン探知タイマー（900フレーム＝15秒）
+    float sonarNotificationTimer = 0.0f; ///< 音波ピン発生時のUI通知表示タイマー
     int totalEnemiesSpawned = 0;         ///< スポーンした敵の総数
     int itemSpawnTimer = 0;              ///< アイテムスポーン用タイマー
     int trapSpawnTimer = 0;              ///< トラップスポーン用タイマー

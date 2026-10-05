@@ -1,4 +1,4 @@
-﻿#include "ClearScene.h"
+#include "ClearScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "DebugManager.h"
@@ -84,18 +84,20 @@ void ClearScene::Draw()
 
     // タイトルアニメーション (拡大＆波打つエフェクト)
     float pulse = sinf(animTimer * 4.0f) * 4.0f;
-    int titleY = static_cast<int>(180 + pulse);
+    int titleY = static_cast<int>(150 + pulse);
 
+    SetFontSize(48);
+    int titleWidth = GetDrawStringWidth("STAGE CLEAR!", -1);
     // タイトル文字シャドウ
-    DrawString(centerX - 198, titleY + 4, "=== STAGE CLEAR! ===", GetColor(0, 0, 0));
+    DrawString(centerX - titleWidth / 2 + 4, titleY + 4, "STAGE CLEAR!", GetColor(0, 0, 0));
     // メインタイトル文字
-    DrawString(centerX - 200, titleY, "=== STAGE CLEAR! ===", GetColor(255, 215, 0));
+    DrawString(centerX - titleWidth / 2, titleY, "STAGE CLEAR!", GetColor(255, 215, 0));
 
     // リザルト枠
-    int panelW = 600;
-    int panelH = 340;
+    int panelW = 700;
+    int panelH = 380;
     int panelX = centerX - panelW / 2;
-    int panelY = 320;
+    int panelY = 240;
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
     DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(20, 30, 45), TRUE);
@@ -103,66 +105,82 @@ void ClearScene::Draw()
     DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 200, 255), FALSE);
 
     // スコア＆統計情報表示
+    SetFontSize(24);
     int minutes = static_cast<int>(stats.clearTimeSec) / 60;
     float seconds = fmodf(stats.clearTimeSec, 60.0f);
     char timeStr[64];
-    snprintf(timeStr, sizeof(timeStr), "クリアタイム: %02d:%05.2f", minutes, seconds);
+    snprintf(timeStr, sizeof(timeStr), "クリアタイム : %02d:%05.2f", minutes, seconds);
 
     char enemyStr[64];
-    snprintf(enemyStr, sizeof(enemyStr), "撃破数      : %d / %d", stats.defeatedEnemies, stats.totalEnemies);
+    snprintf(enemyStr, sizeof(enemyStr), "撃破数       : %d / %d", stats.defeatedEnemies, stats.totalEnemies);
 
     char scoreStr[64];
-    snprintf(scoreStr, sizeof(scoreStr), "最終スコア  : %d pts", stats.rankScore);
+    snprintf(scoreStr, sizeof(scoreStr), "最終スコア   : %d pts", stats.rankScore);
 
-    DrawString(panelX + 60, panelY + 50, timeStr, GetColor(255, 255, 255));
-    DrawString(panelX + 60, panelY + 110, enemyStr, GetColor(255, 255, 255));
-    DrawString(panelX + 60, panelY + 170, scoreStr, GetColor(255, 255, 255));
+    DrawString(panelX + 80, panelY + 45, timeStr, GetColor(255, 255, 255));
+    DrawString(panelX + 80, panelY + 115, enemyStr, GetColor(255, 255, 255));
+    DrawString(panelX + 80, panelY + 185, scoreStr, GetColor(255, 255, 255));
 
-    // ランク表示
-    DrawString(panelX + 60, panelY + 240, "評価ランク  : ", GetColor(255, 255, 255));
+    // ランク表示（「評価ランク : 」と ランク大文字 "S" などの横位置・縦位置を精密に揃える）
+    const char* rankLabel = "評価ランク   : ";
+    DrawString(panelX + 80, panelY + 260, rankLabel, GetColor(255, 255, 255));
+
+    int labelWidth = GetDrawStringWidth(rankLabel, -1);
 
     unsigned int rankColor = GetColor(255, 215, 0); // Gold for S
     if (stats.rankName == "A") rankColor = GetColor(200, 200, 255);
     else if (stats.rankName == "B") rankColor = GetColor(100, 255, 100);
     else if (stats.rankName == "C") rankColor = GetColor(200, 150, 100);
 
-    DrawString(panelX + 220, panelY + 235, stats.rankName.c_str(), rankColor);
+    // ランク文字を強調大文字フォント(40pt)で位置調整して描画
+    SetFontSize(40);
+    DrawString(panelX + 80 + labelWidth + 5, panelY + 248, stats.rankName.c_str(), rankColor);
 
     // メニュー選択
+    SetFontSize(28);
     const char* options[] = {
         "もう一度プレイ (RETRY)",
         "タイトル画面へ (TITLE)"
     };
 
-    int menuStartY = 730;
+    int menuStartY = 670;
     int menuSpacing = 60;
 
     for (int i = 0; i < 2; ++i)
     {
         int itemY = menuStartY + i * menuSpacing;
         unsigned int color = (i == menuCursor) ? GetColor(255, 255, 0) : GetColor(180, 180, 180);
+        int optWidth = GetDrawStringWidth(options[i], -1);
+        int optX = centerX - optWidth / 2;
 
         if (i == menuCursor)
         {
             // カーソル矢印
             float arrowOffset = sinf(animTimer * 8.0f) * 5.0f;
-            DrawString(static_cast<int>(centerX - 160 + arrowOffset), itemY, ">", color);
+            DrawString(static_cast<int>(optX - 35 + arrowOffset), itemY, ">", color);
         }
 
-        DrawString(centerX - 130, itemY, options[i], color);
+        DrawString(optX, itemY, options[i], color);
     }
 
     if (animTimer < 2.0f)
     {
         if (DebugManager::GetInstance().IsDebugMode())
         {
+            SetFontSize(20);
             char waitMsg[64];
             snprintf(waitMsg, sizeof(waitMsg), "[ DEBUG: 決定操作ロック中... (あと %.1f 秒) ]", 2.0f - animTimer);
-            DrawString(centerX - 210, 920, waitMsg, GetColor(255, 120, 120));
+            int msgWidth = GetDrawStringWidth(waitMsg, -1);
+            DrawString(centerX - msgWidth / 2, 820, waitMsg, GetColor(255, 100, 100));
         }
     }
     else
     {
-        DrawString(centerX - 160, 920, "[ W / S ] 選択   [ Enter ] 決定", GetColor(120, 150, 180));
+        SetFontSize(22);
+        const char* guideMsg = "[ W / S / 矢印キー ] 選択   [ Enter / Space / 左クリック ] 決定";
+        int msgWidth = GetDrawStringWidth(guideMsg, -1);
+        DrawString(centerX - msgWidth / 2, 820, guideMsg, GetColor(140, 180, 220));
     }
+
+    SetFontSize(32); // フォントサイズをデフォルトに戻す
 }

@@ -1,4 +1,4 @@
-﻿#include "Handgun.h"
+#include "Handgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
@@ -40,7 +40,7 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
             // Create bullet using CSV data & spread direction
-            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius);
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, data->damage);
             if (scene->GetEffectManager())
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, finalAngle, 16.0f);

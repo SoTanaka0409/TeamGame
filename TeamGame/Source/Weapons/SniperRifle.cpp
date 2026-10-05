@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <cstdlib>
 #include "SniperRifle.h"
 #include "Bullet.h"
@@ -39,7 +39,8 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
             float finalAngle = currentAngle + randomAngle;
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
-            Bullet* bullet = new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId);
+            int dmg = data ? data->damage : 3;
+            Bullet* bullet = new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, dmg);
             
             // スナイパー特有の銃声
             SoundManager::GetInstance().Play3D("sniper_shot", pos, 1500.0f, 1.0f, teamId);

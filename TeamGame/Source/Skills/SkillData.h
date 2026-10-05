@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include <vector>
 #include <fstream>
@@ -65,12 +65,26 @@ public:
 
     // CSVファイルの読み込み
     bool LoadFromCSV(const std::string& filePath) {
-        std::ifstream file(filePath);
+        std::vector<std::string> searchPaths = {
+            "Resource/" + filePath,
+            "Source/Skills/" + filePath,
+            filePath
+        };
+
+        std::ifstream file;
+        for (const auto& path : searchPaths)
+        {
+            file.open(path);
+            if (file.is_open()) break;
+        }
+
         if (!file.is_open()) return false;
 
         std::string line;
-        // ヘッダー行を読み飛ばす場合は以下を有効に
-        // std::getline(file, line); 
+        // ヘッダー行をスキップ
+        if (!std::getline(file, line)) return false;
+
+        skillDatabase.clear();
 
         while (std::getline(file, line)) {
             if (line.empty()) continue;
@@ -79,19 +93,24 @@ public:
             std::string cell;
             SkillData data;
 
-            // ID, Name, Description, ImagePath, MajorTag, MinorTag, EffectValue, Duration, CoolTime
-            std::getline(ss, cell, ','); data.id = std::stoi(cell);
-            std::getline(ss, cell, ','); data.name = cell;
-            std::getline(ss, cell, ','); data.description = cell;
-            std::getline(ss, cell, ','); data.imagePath = cell;
-            std::getline(ss, cell, ','); data.majorTag = ParseMajorTag(cell);
-            std::getline(ss, cell, ','); data.minorTag = ParseMinorTag(cell);
-            std::getline(ss, cell, ','); data.effectValue = std::stof(cell);
-            std::getline(ss, cell, ','); data.duration = std::stoi(cell);
-            std::getline(ss, cell, ','); data.coolTime = std::stoi(cell);
+            try {
+                // ID, Name, Description, ImagePath, MajorTag, MinorTag, EffectValue, Duration, CoolTime
+                if (!std::getline(ss, cell, ',')) continue; data.id = std::stoi(cell);
+                if (!std::getline(ss, cell, ',')) continue; data.name = cell;
+                if (!std::getline(ss, cell, ',')) continue; data.description = cell;
+                if (!std::getline(ss, cell, ',')) continue; data.imagePath = cell;
+                if (!std::getline(ss, cell, ',')) continue; data.majorTag = ParseMajorTag(cell);
+                if (!std::getline(ss, cell, ',')) continue; data.minorTag = ParseMinorTag(cell);
+                if (!std::getline(ss, cell, ',')) continue; data.effectValue = std::stof(cell);
+                if (!std::getline(ss, cell, ',')) continue; data.duration = std::stoi(cell);
+                if (!std::getline(ss, cell, ',')) continue; data.coolTime = std::stoi(cell);
 
-            skillDatabase.push_back(data);
+                skillDatabase.push_back(data);
+            } catch (...) {
+                // 不正な行はスキップ
+            }
         }
+        file.close();
         return true;
     }
 

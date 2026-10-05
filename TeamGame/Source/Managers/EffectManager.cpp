@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "EffectManager.h"
 #include "DxLib.h"
 #include "ObjectManager.h"
@@ -179,6 +179,27 @@ void MuzzleFlashEffect::Draw()
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
+void SonarWaveEffect::Draw()
+{
+    float screenX = Camera::WorldToScreenX(x);
+    float screenY = Camera::WorldToScreenY(y);
+
+    if (screenX < -200.0f || screenX > 2120.0f || screenY < -200.0f || screenY > 1280.0f)
+        return;
+
+    float progress = 1.0f - (static_cast<float>(lifeTimer) / maxLife); // 0.0 -> 1.0
+    float currentRadius = maxRadius * progress * Camera::ZoomScale;
+    int alpha = static_cast<int>(220.0f * (1.0f - progress));
+    if (alpha <= 0) return;
+
+    unsigned int drawCol = (color != 0) ? color : GetColor(0, 220, 255);
+
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), static_cast<int>(currentRadius), drawCol, FALSE);
+    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), static_cast<int>(currentRadius * 0.95f), drawCol, FALSE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
 EffectManager::EffectManager()
 {
 }
@@ -247,6 +268,11 @@ void EffectManager::AddMuzzleFlashEffect(float worldX, float worldY, float dirAn
 
     // 発砲の瞬間に撃った人の周囲のみを一瞬明るくフラッシュ（5フレーム間）
     TriggerGunFlash(worldX, worldY, 5);
+}
+
+void EffectManager::AddSonarWaveEffect(float worldX, float worldY, unsigned int color)
+{
+    AddEffect(new SonarWaveEffect(worldX, worldY, 350.0f, 35, color));
 }
 
 void EffectManager::Update()

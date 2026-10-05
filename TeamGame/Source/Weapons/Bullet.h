@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Vector2.h"
@@ -19,6 +19,7 @@ class Bullet : public Object2D
     float maxRange;
     Vector2 startPos;
     int teamId;
+    int damage;
 
   public:
     /**
@@ -30,9 +31,10 @@ class Bullet : public Object2D
      * @param range 最大射程距離
      * @param radius 弾の当たり判定の半径
      * @param tId チームID（デフォルト0）
+     * @param dmg ダメージ量（デフォルト1）
      * @details 弾の初期パラメータを設定し、コライダーを登録する
      */
-    Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius, int tId = 0);
+    Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius, int tId = 0, int dmg = 1);
     virtual ~Bullet();
 
     /**
