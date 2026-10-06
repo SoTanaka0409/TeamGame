@@ -74,7 +74,7 @@ public:
     /**
      * @brief ダメージ受信処理
      */
-    void TakeDamage();
+    void TakeDamage(int amount = 1);
     
     /**
      * @brief 弾薬の回復・補充
@@ -115,7 +115,7 @@ public:
     /**
      * @brief ライト・視界マスクのレンダリング
      */
-    void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY, float brightRatio = 0.0f) const;
+    void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX = 0, float startDrawY = 0, float brightRatio = 0.0f) const;
 
     /**
      * @brief 被弾時の血しぶきオーバーレイ描画
@@ -172,12 +172,18 @@ public:
      */
     bool IsRemote() const { return isRemote; }
 
+    /**
+     * @brief 視点固定（エイムロック）状態かどうか
+     */
+    bool IsAimLocked() const { return isAimLocked; }
+
 private:
     float m_lightAngle = 0.0f;  ///< ライト照射角度
     bool m_isLightOn = true;    ///< ライトON/OFF
-    bool m_isInBush = false;    ///< ブッシュ潜伏中
     bool m_prevMouseRight = false; ///< 前フレーム右クリック状態
     bool isRemote = false;      ///< リモートプレイヤーフラグ
+    bool isAimLocked = false;   ///< 視点固定（エイムロック）フラグ
+    bool prevAimLockKey = false; ///< 前フレームの視点固定キー状態
     PlayerInputType m_inputType = PlayerInputType::KEYBOARD_MOUSE; ///< 操作タイプ
 
     float m_maxSpotDistCells = 14.0f; ///< 照射最大距離（セル）

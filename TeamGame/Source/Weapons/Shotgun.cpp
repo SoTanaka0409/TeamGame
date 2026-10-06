@@ -1,4 +1,4 @@
-﻿#include "Shotgun.h"
+#include "Shotgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
@@ -33,7 +33,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
         auto scene = SceneManager::GetInstance().GetCurrentScene();
         if (scene)
         {
-            int pelletCount = 5;
+            int pelletCount = (data && data->pelletCount > 0) ? data->pelletCount : 5;
             float spreadMultiplier = isMoving ? 1.6f : 1.0f;
             float spreadRad = data->spreadAngle * spreadMultiplier * (3.14159f / 180.0f);
             float baseAngle = std::atan2(dir.y, dir.x);
@@ -50,7 +50,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
                 float finalAngle = baseAngle + angleOffset;
                 Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 
-                new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius);
+                new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, data->damage);
             }
             if (scene->GetEffectManager())
             {

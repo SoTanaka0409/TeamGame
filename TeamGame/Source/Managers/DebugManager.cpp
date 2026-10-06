@@ -1,12 +1,14 @@
-﻿#include "DebugManager.h"
+#include "DebugManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include <cstdio>
 
 void DebugManager::Update()
 {
-    // Tabキー または F1キーで暗闇モード / デバッグ表示切り替え
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
+    // 0キー（またはテンキー0, Tab, F1）でデバッグモードのON/OFF切り替え
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_0) ||
+        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD0) ||
+        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
     {
         ToggleDebugMode();
@@ -15,6 +17,9 @@ void DebugManager::Update()
 
 void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX, float playerY, int enemyCount)
 {
+    // デバッグモードがOFFの場合はオーバーレイ画面を描画しない
+    if (!m_isDebugMode) return;
+
     int startX = 1420;
     int startY = 15;
     int boxW = 480;
@@ -27,8 +32,8 @@ void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX,
     DrawBox(startX, startY, startX + boxW, startY + boxH, GetColor(0, 200, 255), FALSE);
 
     // モード状態
-    unsigned int statusColor = m_isDebugMode ? GetColor(0, 255, 100) : GetColor(255, 180, 0);
-    const char* modeStr = m_isDebugMode ? "[DEBUG MODE: ON (全体表示)]" : "[HORROR MODE: ON (暗闇表示)]";
+    unsigned int statusColor = GetColor(0, 255, 100);
+    const char* modeStr = "[DEBUG MODE: ON (全体表示・キー有効)]";
     DrawString(startX + 15, startY + 12, modeStr, statusColor);
 
     // ステージ情報
@@ -42,6 +47,6 @@ void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX,
 
     // 操作ガイド
     DrawString(startX + 15, startY + 95, "--- DEBUG CONTROLS ---", GetColor(180, 180, 180));
-    DrawString(startX + 15, startY + 118, "[TAB / F1] : 暗闇 / デバッグ切り替え", GetColor(255, 255, 255));
-    DrawString(startX + 15, startY + 141, "[R] : ステージリセット", GetColor(255, 255, 255));
+    DrawString(startX + 15, startY + 118, "[0 / TAB] : デバッグ表示 ON/OFF", GetColor(255, 255, 255));
+    DrawString(startX + 15, startY + 141, "[T] テーマ変更 | [L] マップ変更", GetColor(255, 255, 255));
 }

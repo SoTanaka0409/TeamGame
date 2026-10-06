@@ -1,11 +1,23 @@
-﻿#include "WeaponManager.h"
+#include "WeaponManager.h"
 #include "DxLib.h"
 #include <fstream>
 #include <sstream>
 
 void WeaponManager::LoadFromCSV(const std::string& filePath)
 {
-    std::ifstream file(filePath);
+    std::vector<std::string> searchPaths = {
+        "Resource/" + filePath,
+        "TeamGame/Resource/" + filePath,
+        filePath
+    };
+
+    std::ifstream file;
+    for (const auto& path : searchPaths)
+    {
+        file.open(path);
+        if (file.is_open()) break;
+    }
+
     if (!file.is_open())
     {
         printfDx("Failed to load %s\n", filePath.c_str());
@@ -24,7 +36,7 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
         std::string token;
         WeaponData data;
 
-        // Name, Range, SpreadAngle, BulletRadius, BulletSpeed, MaxAmmo, FireInterval, ReloadTime, ModelPath, UIImagePath
+        // Name, Range, SpreadAngle, BulletRadius, BulletSpeed, MaxAmmo, FireInterval, ReloadTime, Damage, PelletCount, ModelPath, UIImagePath
         std::getline(ss, data.name, ',');
         
         std::getline(ss, token, ','); data.range = std::stof(token);
@@ -34,6 +46,8 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
         std::getline(ss, token, ','); data.maxAmmo = std::stoi(token);
         std::getline(ss, token, ','); data.fireInterval = std::stoi(token);
         std::getline(ss, token, ','); data.reloadTime = std::stoi(token);
+        std::getline(ss, token, ','); data.damage = std::stoi(token);
+        std::getline(ss, token, ','); data.pelletCount = std::stoi(token);
         
         std::getline(ss, data.modelPath, ',');
         std::getline(ss, data.uiImagePath, ',');
@@ -43,10 +57,14 @@ void WeaponManager::LoadFromCSV(const std::string& filePath)
             data.uiImagePath.pop_back();
         }
 
-        // 画像の読み込み (もしパスがあれば)
+        // 画像の読み込み (もしパスがあれば Resource ディレクトリも検索)
         if (!data.uiImagePath.empty() && data.uiImagePath != "NONE")
         {
-            data.uiImageHandle = LoadGraph(data.uiImagePath.c_str());
+            data.uiImageHandle = LoadGraph(("Resource/" + data.uiImagePath).c_str());
+            if (data.uiImageHandle == -1)
+            {
+                data.uiImageHandle = LoadGraph(data.uiImagePath.c_str());
+            }
         }
 
         weaponDatabase[data.name] = data;

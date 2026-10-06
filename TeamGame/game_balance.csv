@@ -1,0 +1,11 @@
+Key,Value,Description
+TargetKillCount,10,勝利に必要なキル数目標
+InitialEnemyCount,5,敵Botの初期スポーン数
+BrightEventDurationFrames,900,エリア明るい時間帯の持続フレーム数(15秒)
+BrightEventMinIntervalFrames,1200,明るい時間帯の最小発生間隔フレーム数(20秒)
+BrightEventMaxIntervalFrames,2100,明るい時間帯の最大発生間隔フレーム数(35秒)
+SonarPingIntervalFrames,900,相互音波探知ピンの発生周期フレーム数(15秒)
+SonarNotificationFrames,180,音波探知UIバナーの表示時間フレーム数(3秒)
+LowHpThreshold,3,枠上危険赤枠エフェクトを表示するHP閾値
+RespawnTimeFrames,180,リスポーン所要時間フレーム数(3秒)
+IntroCameraDurationFrames,300,ラウンド開始時カメラ演出フレーム数(5秒)
