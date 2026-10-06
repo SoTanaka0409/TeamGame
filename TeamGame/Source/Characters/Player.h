@@ -115,7 +115,7 @@ public:
     /**
      * @brief ライト・視界マスクのレンダリング
      */
-    void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY) const;
+    void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX = 0, float startDrawY = 0, float brightRatio = 0.0f) const;
 
     /**
      * @brief 被弾時の血しぶきオーバーレイ描画

@@ -640,7 +640,7 @@ void Player::OnCollisionExit(Collider *otherCollider)
 {
 }
 
-void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY) const
+void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY, float brightRatio) const
 {
     if (!currentStage || cellSize <= 0.0f) return;
 
@@ -657,9 +657,15 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     int stageWidth = currentStage->GetWidth();
     int stageHeight = currentStage->GetHeight();
 
+    
+
     const int resolutionStep = 4; // 高速4pxステップ
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
+
+    // 月明かり（薄明時間帯）の環境光ブーストと最大暗闇アルファの滑らかな緩和
+    float globalBrightVal = brightRatio * 0.05f;
+    float maxDarkAlpha = 248.0f * (1.0f - brightRatio * 0.10f);
 
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
     {
@@ -730,9 +736,11 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 }
             }
 
-            if (lightVal < 0.98f)
+            float effectiveLightVal = (std::max)(lightVal, globalBrightVal);
+
+            if (effectiveLightVal < 0.98f)
             {
-                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, lightVal)) * 248);
+                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, effectiveLightVal)) * maxDarkAlpha);
                 if (alpha > 8)
                 {
                     SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
