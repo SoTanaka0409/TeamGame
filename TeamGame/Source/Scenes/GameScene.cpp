@@ -490,15 +490,25 @@ void GameScene::Draw()
         Scene::Draw();
     }
 
+    float brightRatio = 0.0f;
+    if (brightTimer > 0.0f)
+    {
+        if (brightTimer > 780.0f) {
+            // 最初の2秒間（120フレーム）で滑らかに月明かりが射し込む
+            brightRatio = (900.0f - brightTimer) / 120.0f;
+        } else if (brightTimer < 120.0f) {
+            // 最後の2秒間（120フレーム）で滑らかに元の暗闇に戻る
+            brightRatio = brightTimer / 120.0f;
+        } else {
+            brightRatio = 1.0f;
+        }
+    }
+
     if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
     {
         if (introTimer <= 0.0f) 
         {
-            // 15秒間明るくなる時間帯イベント中以外のみ暗闇ライトマスクを描画
-            if (brightTimer <= 0.0f)
-            {
-                player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
-            }
+            player->RenderLightMask(0, 0, 1920, 1080, 0, 0, brightRatio);
         }
     }
 
@@ -512,14 +522,14 @@ void GameScene::Draw()
     DrawString(15, 45, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(200, 200, 200));
     DrawString(15, 70, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(200, 200, 200));
 
-    // 15秒間エリア明るい時間帯のUIバナー表示
+    // 薄明時間帯（月光照射）のUIバナー表示
     if (brightTimer > 0.0f)
     {
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
         DrawBox(1920 / 2 - 250, 65, 1920 / 2 + 250, 105, GetColor(250, 200, 50), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawBox(1920 / 2 - 250, 65, 1920 / 2 + 250, 105, GetColor(255, 255, 255), FALSE);
-        DrawFormatString(1920 / 2 - 230, 75, GetColor(0, 0, 0), "【エリア視界全開】 明るい時間帯 (残り %.1f秒)", brightTimer / 60.0f);
+        DrawFormatString(1920 / 2 - 230, 75, GetColor(0, 0, 0), "【薄明・月光時間帯】 月明かり照射中 (残り %.1f秒)", brightTimer / 60.0f);
     }
 
     // 15秒周期の相互音波ピン探知通知バナー表示
