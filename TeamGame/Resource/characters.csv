@@ -1,4 +1,6 @@
-Type,MaxHp,MoveSpeed,AttackPower,ColliderRadius,SightRangeCells,EffectiveRangeCells,ShootCooldown,AimDelayFrames,RespawnTimeFrames
-Player,10,1.5,1,35.0,14.0,10.0,0,0,180
-EnemyBot,3,1.5,1,35.0,14.0,10.0,75,25,180
-AllyBot,5,1.5,1,35.0,14.0,10.0,60,20,180
+﻿Id,Name,Type,MaxHp,MoveSpeed,AttackPower,SkillId,Description
+1,Assault,Assault,100,4.2,25,2,攻守のバランスに優れた標準型アタッカー (攻撃バフ所持)
+2,Speed,Speed,80,5.2,15,1,高い機動力を誇るスカウト (即時HP回復所持)
+3,Heavy,Heavy,150,3.4,30,4,高い耐久力を誇る重装タンク (周囲スタンパルス所持)
+4,Sniper,Sniper,90,4.0,45,3,遠距離からの精密射撃が得意な狙撃手 (視界奪取フラッシュバン所持)
+5,Tactical,Tactical,110,4.5,20,1,特殊戦術に長けたサポート兵 (即時HP回復所持)

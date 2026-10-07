@@ -30,8 +30,7 @@ private:
     int currentWeaponIndex;              ///< 現在装備中の武器インデックス
     int autoPingTimer;                   ///< オートピン送信タイマー
     bool m_isMoving = false;             ///< 移動中フラグ
-    
-    class Skill* currentSkill = nullptr; ///< 現在装備中のスキル（ガジェット）
+
 
 public:
     /**
@@ -155,7 +154,7 @@ public:
     /**
      * @brief スキルのセット
      */
-    void SetSkill(class Skill* skill) { currentSkill = skill; }
+    void SetSkill(std::unique_ptr<Skill> skill) { SetEquippedSkill(std::move(skill)); }
     
     /**
      * @brief 操作入力タイプの設定

@@ -1,15 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 
 // 大分類タグ
 enum class SkillMajorTag {
     StatusBuff,   // 自分や味方のステータス上昇・回復
     Debuff,       // 敵への妨害
-    Trap          // 設置型トラップ（今回は未実装・拡張用）
+    Trap          // 設置型トラップ
 };
 
 // 小分類タグ
@@ -40,84 +37,17 @@ class SkillDataManager {
 private:
     std::vector<SkillData> skillDatabase;
 
-    SkillDataManager() {} // シングルトン
+    SkillDataManager();
 
-    SkillMajorTag ParseMajorTag(const std::string& str) {
-        if (str == "Debuff") return SkillMajorTag::Debuff;
-        if (str == "Trap") return SkillMajorTag::Trap;
-        return SkillMajorTag::StatusBuff; // デフォルト
-    }
-
-    SkillMinorTag ParseMinorTag(const std::string& str) {
-        if (str == "Heal") return SkillMinorTag::Heal;
-        if (str == "AttackUp") return SkillMinorTag::AttackUp;
-        if (str == "SpeedUp") return SkillMinorTag::SpeedUp;
-        if (str == "Blind") return SkillMinorTag::Blind;
-        if (str == "Stun") return SkillMinorTag::Stun;
-        return SkillMinorTag::None;
-    }
+    SkillMajorTag ParseMajorTag(const std::string& str) const;
+    SkillMinorTag ParseMinorTag(const std::string& str) const;
 
 public:
-    static SkillDataManager& GetInstance() {
-        static SkillDataManager instance;
-        return instance;
-    }
+    static SkillDataManager& GetInstance();
 
     // CSVファイルの読み込み
-    bool LoadFromCSV(const std::string& filePath) {
-        std::vector<std::string> searchPaths = {
-            "Resource/" + filePath,
-            "Source/Skills/" + filePath,
-            filePath
-        };
+    bool LoadFromCSV(const std::string& filePath);
 
-        std::ifstream file;
-        for (const auto& path : searchPaths)
-        {
-            file.open(path);
-            if (file.is_open()) break;
-        }
-
-        if (!file.is_open()) return false;
-
-        std::string line;
-        // ヘッダー行をスキップ
-        if (!std::getline(file, line)) return false;
-
-        skillDatabase.clear();
-
-        while (std::getline(file, line)) {
-            if (line.empty()) continue;
-
-            std::stringstream ss(line);
-            std::string cell;
-            SkillData data;
-
-            try {
-                // ID, Name, Description, ImagePath, MajorTag, MinorTag, EffectValue, Duration, CoolTime
-                if (!std::getline(ss, cell, ',')) continue; data.id = std::stoi(cell);
-                if (!std::getline(ss, cell, ',')) continue; data.name = cell;
-                if (!std::getline(ss, cell, ',')) continue; data.description = cell;
-                if (!std::getline(ss, cell, ',')) continue; data.imagePath = cell;
-                if (!std::getline(ss, cell, ',')) continue; data.majorTag = ParseMajorTag(cell);
-                if (!std::getline(ss, cell, ',')) continue; data.minorTag = ParseMinorTag(cell);
-                if (!std::getline(ss, cell, ',')) continue; data.effectValue = std::stof(cell);
-                if (!std::getline(ss, cell, ',')) continue; data.duration = std::stoi(cell);
-                if (!std::getline(ss, cell, ',')) continue; data.coolTime = std::stoi(cell);
-
-                skillDatabase.push_back(data);
-            } catch (...) {
-                // 不正な行はスキップ
-            }
-        }
-        file.close();
-        return true;
-    }
-
-    const SkillData* GetSkillData(int id) const {
-        for (const auto& skill : skillDatabase) {
-            if (skill.id == id) return &skill;
-        }
-        return nullptr;
-    }
+    // データ検索
+    const SkillData* GetSkillData(int id) const;
 };

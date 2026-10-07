@@ -1,4 +1,4 @@
-﻿#include "PathfindingComponent.h"
+#include "PathfindingComponent.h"
 #include "../Stage/Stage.h"
 #include <queue>
 #include <unordered_set>
@@ -110,7 +110,7 @@ bool PathfindingComponent::CalculatePath(const Vector2& startPos, const Vector2&
         return std::abs(x1 - x2) + std::abs(y1 - y2);
     };
 
-    AStarNode* startNode = new AStarNode(startX, startY, 0, getManhattan(startX, startY, goalX, goalY));
+    AStarNode* startNode = new AStarNode(startX, startY, 0, static_cast<float>(getManhattan(startX, startY, goalX, goalY)));
     openSet.push(startNode);
     allNodes[{startX, startY}] = startNode;
 
@@ -160,7 +160,7 @@ bool PathfindingComponent::CalculatePath(const Vector2& startPos, const Vector2&
                     neighbor->parent = current;
                 }
             } else {
-                neighbor = new AStarNode(nx, ny, newGCost, getManhattan(nx, ny, goalX, goalY), current);
+                neighbor = new AStarNode(nx, ny, newGCost, static_cast<float>(getManhattan(nx, ny, goalX, goalY)), current);
                 allNodes[{nx, ny}] = neighbor;
                 openSet.push(neighbor);
             }

@@ -544,10 +544,10 @@ void GameScene::Draw()
 
     // 画面左下にプレイヤーのHP・武器UIを表示
     if (player && player->IsActive()) {
-        player->DrawUI(20, 920);
+        player->DrawUI(25, 850);
     }
     if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
-        remotePlayer->DrawUI(1920 / 2 + 20, 920);
+        remotePlayer->DrawUI(1920 / 2 + 25, 850);
     }
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
