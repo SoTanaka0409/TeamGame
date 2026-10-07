@@ -1,3 +1,413 @@
-<?xml version='1.0' encoding='utf-8'?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
-  <ItemGroup><Filter Include="ソース ファイル"><UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier><Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions></Filter><Filter Include="ヘッダー ファイル"><UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier><Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions></Filter><Filter Include="リソース ファイル"><UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier><Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions></Filter></ItemGroup><ItemGroup><ClCompile Include="Source\Core\main.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Managers\ColliderManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Managers\EffectManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Managers\InputManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Managers\ObjectManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Managers\SceneManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Managers\SoundManager.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Scenes\GameScene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Scenes\ResultScene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Scenes\Scene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Scenes\TitleScene.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Objects\Object2D.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Characters\Character.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Characters\Enemy.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Characters\Player.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Weapons\Bullet.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Weapons\Handgun.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Weapons\Shotgun.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Colliders\CircleCollider.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Colliders\Collider.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Colliders\RectCollider.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Stage\Stage.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Stage\StageGenerator.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClCompile Include="Source\Stage\StageTest_main.cpp"><Filter>ソース ファイル</Filter></ClCompile><ClInclude Include="Source\Core\Vector2.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Managers\ColliderManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Managers\EffectManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Managers\InputManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Managers\ObjectManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Managers\SceneManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Managers\SoundManager.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Scenes\GameScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Scenes\ResultScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Scenes\Scene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Scenes\TitleScene.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Objects\Object2D.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Characters\Character.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Characters\Enemy.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Characters\Player.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Weapons\Bullet.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Weapons\Handgun.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Weapons\Shotgun.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Weapons\Weapon.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Colliders\CircleCollider.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Colliders\Collider.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Colliders\RectCollider.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Stage\Stage.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Stage\StageGenerator.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClInclude Include="Source\Stage\StageTypes.h"><Filter>ヘッダー ファイル</Filter></ClInclude><ClCompile Include="Source\Scenes\ClearScene.cpp"><Filter>Source Files\Scenes</Filter></ClCompile><ClCompile Include="Source\Scenes\GameOverScene.cpp"><Filter>Source Files\Scenes</Filter></ClCompile></ItemGroup><ItemGroup><ClInclude Include="Source\Scenes\ClearScene.h"><Filter>Header Files\Scenes</Filter></ClInclude><ClInclude Include="Source\Scenes\GameOverScene.h"><Filter>Header Files\Scenes</Filter></ClInclude></ItemGroup></Project>
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="CSV">
+      <UniqueIdentifier>{041B3D18-641B-5B70-B9FA-B467BA501B4C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{A4EE8921-F25E-5374-A583-FEC0C7F055E3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Characters">
+      <UniqueIdentifier>{22356208-2B46-5F5C-8E3F-3248775C52B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Colliders">
+      <UniqueIdentifier>{A4618550-C1C4-57EA-9BBE-8FEC0AA4B665}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Core">
+      <UniqueIdentifier>{1BF5677B-7D92-5090-90B0-CC0428AAFBD6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Managers">
+      <UniqueIdentifier>{5DA2F435-685F-5893-B888-DD209B0063A7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Objects">
+      <UniqueIdentifier>{A0CF71A6-F9D2-50FC-986E-38486E38D673}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Scenes">
+      <UniqueIdentifier>{F88F1EAA-44BD-5459-8AD7-3148F8B4DC9B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Skills">
+      <UniqueIdentifier>{5F0F3F5B-52C1-571E-A90D-340FE12D1C52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Stage">
+      <UniqueIdentifier>{7701ECA8-20D6-5FE5-B2C9-68A8CB3841E5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Weapons">
+      <UniqueIdentifier>{775A324C-EFDB-5AE9-B846-39D7805844E6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{17B304B7-4B4F-5648-BBF1-40284917B5BF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Characters">
+      <UniqueIdentifier>{51294714-E30D-5956-B8BC-555610139620}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Colliders">
+      <UniqueIdentifier>{09E1998B-945C-5008-9EDA-495078ED5F89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Core">
+      <UniqueIdentifier>{6C969306-4405-523B-BD56-2AB4101F75FC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Graphics">
+      <UniqueIdentifier>{78612874-B76A-5076-9E19-E89439E4B347}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Managers">
+      <UniqueIdentifier>{8842D8D9-FF57-5A40-A3F0-ED0EDDDBDBD4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Objects">
+      <UniqueIdentifier>{8F71287F-D672-5F98-9DE3-40E7BB3C376B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Scenes">
+      <UniqueIdentifier>{58AB79E5-825A-5EEE-A029-D2BFF6F43D1F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Skills">
+      <UniqueIdentifier>{DD40A415-8622-5296-8602-13F28E551967}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Stage">
+      <UniqueIdentifier>{C7AFD635-C028-5F24-8948-9078AEC85EBD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Weapons">
+      <UniqueIdentifier>{DAC28EE1-3FF5-55D0-81FA-12EAC1731668}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{1DDC7B95-E58F-558C-8232-0B7C165B41E5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Characters\Character.cpp">
+      <Filter>ソース ファイル\Characters</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Characters\Enemy.cpp">
+      <Filter>ソース ファイル\Characters</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Characters\PathfindingComponent.cpp">
+      <Filter>ソース ファイル\Characters</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Characters\Player.cpp">
+      <Filter>ソース ファイル\Characters</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Characters\Status.cpp">
+      <Filter>ソース ファイル\Characters</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Colliders\CircleCollider.cpp">
+      <Filter>ソース ファイル\Colliders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Colliders\Collider.cpp">
+      <Filter>ソース ファイル\Colliders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Colliders\RectCollider.cpp">
+      <Filter>ソース ファイル\Colliders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Camera.cpp">
+      <Filter>ソース ファイル\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\CharacterFactory.cpp">
+      <Filter>ソース ファイル\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\PlayerSelection.cpp">
+      <Filter>ソース ファイル\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\main.cpp">
+      <Filter>ソース ファイル\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\CharacterManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\ColliderManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\DebugManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\EffectManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\FontManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\GameBalanceManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\InputManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\ItemManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\NetworkManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\ObjectManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\SceneManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\SkillManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\SoundManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\WeaponManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Objects\Item.cpp">
+      <Filter>ソース ファイル\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Objects\Object2D.cpp">
+      <Filter>ソース ファイル\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\CharacterSelectScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\ClearScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\GameOverScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\GameScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\ResultScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\Scene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\TitleScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scenes\WeaponSelectScene.cpp">
+      <Filter>ソース ファイル\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Skills\Skill.cpp">
+      <Filter>ソース ファイル\Skills</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Skills\SkillData.cpp">
+      <Filter>ソース ファイル\Skills</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Stage\Stage.cpp">
+      <Filter>ソース ファイル\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Stage\StageGenerator.cpp">
+      <Filter>ソース ファイル\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Stage\StageManager.cpp">
+      <Filter>ソース ファイル\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Stage\StageTest_main.cpp">
+      <Filter>ソース ファイル\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UITextWindow.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\Bullet.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\EnemyBullet.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\Handgun.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\Shotgun.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\SniperRifle.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\Weapon.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Characters\Character.h">
+      <Filter>ヘッダー ファイル\Characters</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Characters\Enemy.h">
+      <Filter>ヘッダー ファイル\Characters</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Characters\PathfindingComponent.h">
+      <Filter>ヘッダー ファイル\Characters</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Characters\Player.h">
+      <Filter>ヘッダー ファイル\Characters</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Characters\Status.h">
+      <Filter>ヘッダー ファイル\Characters</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Colliders\CircleCollider.h">
+      <Filter>ヘッダー ファイル\Colliders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Colliders\Collider.h">
+      <Filter>ヘッダー ファイル\Colliders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Colliders\RectCollider.h">
+      <Filter>ヘッダー ファイル\Colliders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Camera.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CharacterFactory.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\FontManager.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\GameSettings.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\PlayerSelection.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ScopedFontSize.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Vector2.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Model.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Texture.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\CharacterManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\ColliderManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\DebugManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\EffectManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\FontManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\GameBalanceManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\InputManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\ItemManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\NetworkManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\ObjectManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\PacketTypes.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\ResourceManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\SceneManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\SkillManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\SoundManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\WeaponManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Objects\Item.h">
+      <Filter>ヘッダー ファイル\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Objects\Object2D.h">
+      <Filter>ヘッダー ファイル\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\CharacterSelectScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\ClearScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\GameOverScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\GameScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\ResultScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\Scene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\TitleScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scenes\WeaponSelectScene.h">
+      <Filter>ヘッダー ファイル\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Skills\Skill.h">
+      <Filter>ヘッダー ファイル\Skills</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Skills\SkillData.h">
+      <Filter>ヘッダー ファイル\Skills</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Stage\Stage.h">
+      <Filter>ヘッダー ファイル\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Stage\StageGenerator.h">
+      <Filter>ヘッダー ファイル\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Stage\StageManager.h">
+      <Filter>ヘッダー ファイル\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Stage\StageTypes.h">
+      <Filter>ヘッダー ファイル\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UITextWindow.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\Bullet.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\EnemyBullet.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\Handgun.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\Shotgun.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\SniperRifle.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\Weapon.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resource\characters.csv">
+      <Filter>CSV</Filter>
+    </None>
+    <None Include="Resource\game_balance.csv">
+      <Filter>CSV</Filter>
+    </None>
+    <None Include="Resource\items.csv">
+      <Filter>CSV</Filter>
+    </None>
+    <None Include="Resource\skills.csv">
+      <Filter>CSV</Filter>
+    </None>
+    <None Include="Resource\weapons.csv">
+      <Filter>CSV</Filter>
+    </None>
+    <None Include="Resource\Grass1.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+  </ItemGroup>
+</Project>
