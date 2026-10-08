@@ -1,4 +1,4 @@
-﻿#include "StageManager.h"
+#include "StageManager.h"
 #include "DxLib.h"
 #include <ctime>
 #include <vector>
@@ -12,25 +12,38 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
     m_config.mapWidth = mapWidth;
     m_config.mapHeight = mapHeight;
 
-    // Grass1.png 画像の全方位検索ロード
-    const std::vector<const char*> searchPaths = {
-        "Resource/Grass1.png",
-        "Resouce/Grass1.png",
-        "Grass1.png",
-        "TeamGame/Resource/Grass1.png",
-        "TeamGame/Resouce/Grass1.png",
-        "../Resource/Grass1.png",
-        "../Resouce/Grass1.png",
-        "c:/Users/student/Desktop/team/Resource/Grass1.png",
-        "c:/Users/student/Desktop/team/Resouce/Grass1.png"
+    // 画像ファイルの全方位検索ロード用ヘルパー
+    auto loadTileGraph = [](const std::vector<const char*>& fileNames) -> int {
+        const std::vector<const char*> baseDirs = {
+            "Resource/",
+            "Resouce/",
+            "",
+            "TeamGame/Resource/",
+            "TeamGame/Resouce/",
+            "../Resource/",
+            "../Resouce/",
+            "c:/Users/student/Desktop/team/Resource/",
+            "c:/Users/student/Desktop/team/Resouce/"
+        };
+        for (const auto& fileName : fileNames)
+        {
+            for (const auto& dir : baseDirs)
+            {
+                std::string fullPath = std::string(dir) + fileName;
+                int handle = LoadGraph(fullPath.c_str());
+                if (handle != -1) return handle;
+            }
+        }
+        return -1;
     };
 
-    m_hGrassGraph = -1;
-    for (const auto& path : searchPaths)
-    {
-        m_hGrassGraph = LoadGraph(path);
-        if (m_hGrassGraph != -1) break;
-    }
+    m_hFloorGraph     = loadTileGraph({ "Floor.png", "Floor1.png", "floor.png" });
+    m_hWallBlockGraph = loadTileGraph({ "BigRock.png", "RockLarge.png", "Rock_Large.png", "Big_Rock.png", "Wall.png", "Wall1.png", "WallBlock.png", "wall.png" });
+    m_hOuterWallGraph = loadTileGraph({ "OuterWall.png", "OuterWall1.png", "outerwall.png" });
+    m_hGrassGraph     = loadTileGraph({ "Grass1.png", "Grass.png", "grass.png" });
+    m_hWaterGraph     = loadTileGraph({ "Water.png", "Water1.png", "water.png" });
+    m_hCactusGraph    = loadTileGraph({ "Rock.png", "SmallRock.png", "NormalRock.png", "RockNormal.png", "Rock_Small.png", "Cactus.png", "cactus.png" });
+    m_hStarGraph      = loadTileGraph({ "Star.png", "Star1.png", "star.png" });
 
     // 起動時の初期乱数・テーマ・バリエーション
     m_currentSeed = m_rd() ^ static_cast<unsigned int>(std::time(nullptr));
@@ -76,10 +89,14 @@ void StageManager::Regenerate(unsigned int newSeed)
     }
 
     m_stage = StageGenerator::Generate(m_config, m_currentSeed, &m_currentTheme, &m_currentVariation);
-    if (m_hGrassGraph != -1)
-    {
-        m_stage.SetGrassGraph(m_hGrassGraph);
-    }
+    
+    m_stage.SetFloorGraph(m_hFloorGraph);
+    m_stage.SetWallBlockGraph(m_hWallBlockGraph);
+    m_stage.SetOuterWallGraph(m_hOuterWallGraph);
+    m_stage.SetGrassGraph(m_hGrassGraph);
+    m_stage.SetWaterGraph(m_hWaterGraph);
+    m_stage.SetCactusGraph(m_hCactusGraph);
+    m_stage.SetStarGraph(m_hStarGraph);
 }
 
 std::string StageManager::GetCurrentStageName() const

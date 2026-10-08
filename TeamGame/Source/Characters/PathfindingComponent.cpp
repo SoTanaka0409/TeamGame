@@ -165,7 +165,7 @@ bool PathfindingComponent::CalculatePath(const Vector2& startPos, const Vector2&
                 openSet.push(neighbor);
             }
         }
-    }
+    } 
 
     if (found && targetNode) {
         AStarNode* curr = targetNode;

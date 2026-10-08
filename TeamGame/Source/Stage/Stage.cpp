@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #define NOMINMAX
 #include "Stage.h"
 #include "DxLib.h"
@@ -142,7 +142,14 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
             CellType type = GetCell(x, y);
 
             unsigned int fColor = ((x + y) % 2 == 0) ? colorFloor1 : colorFloor2;
-            DrawBox(x1, y1, x2, y2, fColor, TRUE);
+            if (m_hFloorGraph != -1)
+            {
+                DrawExtendGraph(x1, y1, x2, y2, m_hFloorGraph, TRUE);
+            }
+            else
+            {
+                DrawBox(x1, y1, x2, y2, fColor, TRUE);
+            }
 
             int cx = (x1 + x2) / 2;
             int cy = (y1 + y2) / 2;
@@ -154,9 +161,16 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
                 break;
 
             case CellType::OUTER_WALL:
-                DrawBox(x1, y1, x2, y2, colorOuterWall, TRUE);
-                DrawBox(x1, y1, x2, y2, colorOuterBorder, FALSE);
-                DrawLine(x1, y1, x2, y2, GetColor(90, 100, 120));
+                if (m_hOuterWallGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hOuterWallGraph, TRUE);
+                }
+                else
+                {
+                    DrawBox(x1, y1, x2, y2, colorOuterWall, TRUE);
+                    DrawBox(x1, y1, x2, y2, colorOuterBorder, FALSE);
+                    DrawLine(x1, y1, x2, y2, GetColor(90, 100, 120));
+                }
                 break;
 
             case CellType::BUSH:
@@ -173,17 +187,36 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
                 break;
 
             case CellType::WATER:
-                DrawCircle(cx, cy, static_cast<int>(cellSize * 0.68f), colorWater, TRUE);
-                DrawCircle(cx, cy, static_cast<int>(cellSize * 0.68f), colorWaterBorder, FALSE);
+                if (m_hWaterGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hWaterGraph, TRUE);
+                }
+                else
+                {
+                    DrawCircle(cx, cy, static_cast<int>(cellSize * 0.68f), colorWater, TRUE);
+                    DrawCircle(cx, cy, static_cast<int>(cellSize * 0.68f), colorWaterBorder, FALSE);
+                }
                 break;
 
             case CellType::WALL_BLOCK:
-                DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
-                DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
-                DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                if (m_hWallBlockGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hWallBlockGraph, TRUE);
+                }
+                else
+                {
+                    DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
+                    DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
+                    DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                }
                 break;
 
             case CellType::CACTUS:
+                if (m_hCactusGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hCactusGraph, TRUE);
+                }
+                else
                 {
                     int r = static_cast<int>(cellSize * 0.45f);
                     DrawCircle(cx, cy, r, colorRock, TRUE);
@@ -204,9 +237,16 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
         if (spawn.type == SpawnType::CENTER_STAR)
         {
             int rStar = static_cast<int>(cellSize * 0.9f);
-            DrawCircle(cx, cy, rStar, GetColor(0, 115, 255), TRUE);
-            DrawCircle(cx, cy, rStar, GetColor(255, 255, 255), FALSE);
-            DrawString(cx - 5, cy - 6, "★", GetColor(255, 255, 255));
+            if (m_hStarGraph != -1)
+            {
+                DrawExtendGraph(cx - rStar, cy - rStar, cx + rStar, cy + rStar, m_hStarGraph, TRUE);
+            }
+            else
+            {
+                DrawCircle(cx, cy, rStar, GetColor(0, 115, 255), TRUE);
+                DrawCircle(cx, cy, rStar, GetColor(255, 255, 255), FALSE);
+                DrawString(cx - 5, cy - 6, "★", GetColor(255, 255, 255));
+            }
         }
     }
 }
@@ -259,7 +299,14 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
             CellType type = GetCell(x, y);
 
             unsigned int fColor = ((x + y) % 2 == 0) ? colorFloor1 : colorFloor2;
-            DrawBox(x1, y1, x2, y2, fColor, TRUE);
+            if (m_hFloorGraph != -1)
+            {
+                DrawExtendGraph(x1, y1, x2, y2, m_hFloorGraph, TRUE);
+            }
+            else
+            {
+                DrawBox(x1, y1, x2, y2, fColor, TRUE);
+            }
 
             int cx = (x1 + x2) / 2;
             int cy = (y1 + y2) / 2;
@@ -271,9 +318,16 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                 break;
 
             case CellType::OUTER_WALL:
-                DrawBox(x1, y1, x2, y2, colorOuterWall, TRUE);
-                DrawBox(x1, y1, x2, y2, colorOuterBorder, FALSE);
-                DrawLine(x1, y1, x2, y2, GetColor(90, 100, 120));
+                if (m_hOuterWallGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hOuterWallGraph, TRUE);
+                }
+                else
+                {
+                    DrawBox(x1, y1, x2, y2, colorOuterWall, TRUE);
+                    DrawBox(x1, y1, x2, y2, colorOuterBorder, FALSE);
+                    DrawLine(x1, y1, x2, y2, GetColor(90, 100, 120));
+                }
                 break;
 
             case CellType::BUSH:
@@ -290,17 +344,36 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                 break;
 
             case CellType::WATER:
-                DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.68f), colorWater, TRUE);
-                DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.68f), colorWaterBorder, FALSE);
+                if (m_hWaterGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hWaterGraph, TRUE);
+                }
+                else
+                {
+                    DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.68f), colorWater, TRUE);
+                    DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.68f), colorWaterBorder, FALSE);
+                }
                 break;
 
             case CellType::WALL_BLOCK:
-                DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
-                DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
-                DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                if (m_hWallBlockGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hWallBlockGraph, TRUE);
+                }
+                else
+                {
+                    DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
+                    DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
+                    DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                }
                 break;
 
             case CellType::CACTUS:
+                if (m_hCactusGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hCactusGraph, TRUE);
+                }
+                else
                 {
                     int r = static_cast<int>(zoomCellSize * 0.45f);
                     DrawCircle(cx, cy, r, colorRock, TRUE);
@@ -321,9 +394,16 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
         if (spawn.type == SpawnType::CENTER_STAR)
         {
             int rStar = static_cast<int>(zoomCellSize * 0.9f);
-            DrawCircle(cx, cy, rStar, GetColor(0, 115, 255), TRUE);
-            DrawCircle(cx, cy, rStar, GetColor(255, 255, 255), FALSE);
-            DrawString(cx - 5, cy - 6, "★", GetColor(255, 255, 255));
+            if (m_hStarGraph != -1)
+            {
+                DrawExtendGraph(cx - rStar, cy - rStar, cx + rStar, cy + rStar, m_hStarGraph, TRUE);
+            }
+            else
+            {
+                DrawCircle(cx, cy, rStar, GetColor(0, 115, 255), TRUE);
+                DrawCircle(cx, cy, rStar, GetColor(255, 255, 255), FALSE);
+                DrawString(cx - 5, cy - 6, "★", GetColor(255, 255, 255));
+            }
         }
     }
 }
