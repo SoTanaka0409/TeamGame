@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "EnemyBullet.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
@@ -29,7 +29,10 @@ EnemyBullet::EnemyBullet(float startX, float startY, const Vector2 &dir, float s
     if (scene)
     {
         myColliderManager = scene->GetColliderManager();
-        myColliderManager->AddCollider(collider);
+        if (myColliderManager)
+        {
+            myColliderManager->AddCollider(collider);
+        }
     }
 }
 

@@ -46,6 +46,7 @@ Player::Player(float startX, float startY)
     weapons.push_back(new SniperRifle());
     currentWeaponIndex = 0;
     SetEquippedSkillById(1);
+    SetModelPath("Resource/GreenCharacter/character.mv1");
 }
 
 Player::~Player()
@@ -55,9 +56,22 @@ Player::~Player()
     weapons.clear();
 }
 
+void Player::SetWeapons(const std::vector<Weapon*>& newWeapons)
+{
+    for (auto w : weapons)
+        delete w;
+    weapons.clear();
+
+    weapons = newWeapons;
+    currentWeaponIndex = 0;
+}
+
+
 void Player::Update()
 {
     Character::Update();
+    if (!CanAction()) return;
+
     if (invincibleTimer > 0) invincibleTimer--;
 
     if (!isRemote)
@@ -139,31 +153,94 @@ void Player::Update()
         {
             float velX = (moveDir.x / length) * status.GetSpeed();
             float velY = (moveDir.y / length) * status.GetSpeed();
-            
-            // X軸の移動と衝突判定
-            if (currentStage)
+
+            // 周囲の敵キャラクターの座標を取得
+            std::vector<Vector2> enemyPositions;
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetObjectManager())
             {
-                float nextX = position.x + velX;
-                int gridX = static_cast<int>(nextX / cellSize);
-                int gridY = static_cast<int>(position.y / cellSize);
-                if (!currentStage->IsSolidWall(gridX, gridY))
+                for (auto obj : scene->GetObjectManager()->GetObjects())
                 {
-                    position.x = nextX;
-                }
-                
-                // Y軸の移動と衝突判定
-                float nextY = position.y + velY;
-                gridX = static_cast<int>(position.x / cellSize);
-                gridY = static_cast<int>(nextY / cellSize);
-                if (!currentStage->IsSolidWall(gridX, gridY))
-                {
-                    position.y = nextY;
+                    if (obj && obj->IsActive() && obj->GetObjectTag() == ObjectTag::Enemy)
+                    {
+                        enemyPositions.push_back(obj->GetPosition());
+                    }
                 }
             }
-            else
+            float minDist = radius + 35.0f; // プレイヤー半径(35) + 敵半径(35) = 70px
+
+            // X軸の移動と衝突判定（壁および敵接触）
+            float nextX = position.x + velX;
+            bool blockedX = false;
+            if (currentStage)
             {
-                position.x += velX;
-                position.y += velY;
+                int gridX = static_cast<int>(nextX / cellSize);
+                int gridY = static_cast<int>(position.y / cellSize);
+                if (currentStage->IsSolidWall(gridX, gridY))
+                {
+                    blockedX = true;
+                }
+            }
+            if (!blockedX)
+            {
+                // 敵に触れている場合、敵の方向（距離が縮まる方向）への移動をブロック
+                for (const auto &ePos : enemyPositions)
+                {
+                    float curDx = ePos.x - position.x;
+                    float curDy = ePos.y - position.y;
+                    float curDistSq = curDx * curDx + curDy * curDy;
+
+                    float nextDx = ePos.x - nextX;
+                    float nextDy = ePos.y - position.y;
+                    float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+                    if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+                    {
+                        blockedX = true;
+                        break;
+                    }
+                }
+            }
+            if (!blockedX)
+            {
+                position.x = nextX;
+            }
+
+            // Y軸の移動と衝突判定（壁および敵接触）
+            float nextY = position.y + velY;
+            bool blockedY = false;
+            if (currentStage)
+            {
+                int gridX = static_cast<int>(position.x / cellSize);
+                int gridY = static_cast<int>(nextY / cellSize);
+                if (currentStage->IsSolidWall(gridX, gridY))
+                {
+                    blockedY = true;
+                }
+            }
+            if (!blockedY)
+            {
+                // 敵に触れている場合、敵の方向（距離が縮まる方向）への移動をブロック
+                for (const auto &ePos : enemyPositions)
+                {
+                    float curDx = ePos.x - position.x;
+                    float curDy = ePos.y - position.y;
+                    float curDistSq = curDx * curDx + curDy * curDy;
+
+                    float nextDx = ePos.x - position.x;
+                    float nextDy = ePos.y - nextY;
+                    float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+                    if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+                    {
+                        blockedY = true;
+                        break;
+                    }
+                }
+            }
+            if (!blockedY)
+            {
+                position.y = nextY;
             }
         }
     }
@@ -172,6 +249,21 @@ void Player::Update()
     {
         damageColorTimer--;
     }
+
+    // 3Dモデルのモーション制御（歩行・待機）
+    if (m_model)
+    {
+        if (m_isMoving)
+        {
+            m_model->PlayWalk();
+        }
+        else
+        {
+            m_model->PlayIdle();
+        }
+        m_model->Update(1.0f / 60.0f);
+    }
+
 
     if (!weapons.empty())
     {
@@ -247,6 +339,7 @@ void Player::Update()
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
             {
                 if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
+                if (m_model) m_model->PlayShoot();
             }
             
             // スキル（ガジェット）の発動 (Fキー)
@@ -287,6 +380,7 @@ void Player::Update()
             {
                 if (!weapons.empty() && currentWeaponIndex >= 0 && currentWeaponIndex < static_cast<int>(weapons.size()) && weapons[currentWeaponIndex]) 
                     weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
+                if (m_model) m_model->PlayShoot();
             }
             
             if (padState & PAD_INPUT_3) // Button X
@@ -386,9 +480,30 @@ void Player::Draw()
     }
 
     unsigned int color =
-        (damageColorTimer > 0) ? GetColor(255, 255, 0) : GetColor(0, 255, 0);
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(radius), color, TRUE);
+        (damageColorTimer > 0) ? GetColor(255, 255, 0) : m_themeColor;
+
+    // 3Dモデルが存在する場合はモデル描画と足元ガイド円を描画
+    if (m_model && m_model->IsLoaded())
+    {
+        // 足元にチームカラーのガイド円を描画（半透明）
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(radius), color, TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(radius), GetColor(255, 255, 255), FALSE);
+
+        // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
+        m_model->SetScreenPosition(screenX, screenY);
+        m_model->SetFacingDir(facingDir);
+        m_model->Draw();
+    }
+    else
+    {
+        // 3Dモデルがない場合の2Dフォールバック描画
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(radius), color, TRUE);
+    }
 
     // 向いている方角を線で描画
     float lineLen = 50.0f; // 線の長さ
@@ -605,6 +720,7 @@ void Player::TakeDamage(int amount)
     if (status.IsDead())
     {
         SetActive(false);
+        if (m_model) m_model->PlayDie();
         // ここに将来的にゲームオーバー画面（ResultScene）への遷移を追加します
     }
 }
@@ -633,8 +749,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float zoomCellSize = 75.0f;
     float zoomScale = zoomCellSize / cellSize;
 
-    float maxSpotDist = zoomCellSize * m_maxSpotDistCells;
-    float closeRadius = zoomCellSize * m_closeRadiusCells;
+    float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
+    float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
 
     int stageWidth = currentStage->GetWidth();
     int stageHeight = currentStage->GetHeight();

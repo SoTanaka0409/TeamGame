@@ -32,7 +32,10 @@ Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, floa
     if (scene)
     {
         myColliderManager = scene->GetColliderManager();
-        myColliderManager->AddCollider(collider);
+        if (myColliderManager)
+        {
+            myColliderManager->AddCollider(collider);
+        }
     }
 }
 

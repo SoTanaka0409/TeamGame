@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Character.h"
 #include "ColliderManager.h"
 #include "Scene.h"
@@ -18,7 +19,10 @@ Character::Character(ObjectTag tag, float startX, float startY, float rad)
     if (scene)
     {
         myColliderManager = scene->GetColliderManager();
-        myColliderManager->AddCollider(collider);
+        if (myColliderManager)
+        {
+            myColliderManager->AddCollider(collider);
+        }
     }
 }
 
@@ -46,6 +50,28 @@ void Character::Update()
 
     // 2. バフ・デバフ持続効果の更新
     UpdateActiveEffects();
+
+    // 3. 3Dモデル・アニメーションの更新
+    if (m_model)
+    {
+        m_model->Update();
+    }
+}
+
+void Character::SetModelPath(const std::string& path)
+{
+    if (path.empty())
+    {
+        m_modelPath.clear();
+        m_model.reset();
+        return;
+    }
+    if (m_model && m_modelPath == path)
+    {
+        return;
+    }
+    m_modelPath = path;
+    m_model = std::make_unique<Model>(path);
 }
 
 void Character::SetEquippedSkill(std::unique_ptr<Skill> skill)
@@ -65,21 +91,80 @@ void Character::SetEquippedSkillById(int skillId)
 
 void Character::AddActiveEffect(SkillMinorTag tag, int durationFrames, float value)
 {
-    activeEffects.push_back({ tag, durationFrames, value });
+    const int MAX_STACK_COUNT = 3;
 
-    // バフ効果の初期適用
-    if (tag == SkillMinorTag::AttackUp)
+    // 現在同種のタグが何個かかっているかカウント
+    int count = 0;
+    for (const auto& effect : activeEffects)
     {
-        status.SetSkillAttackBonus(static_cast<int>(value));
+        if (effect.tag == tag) count++;
     }
-    else if (tag == SkillMinorTag::SpeedUp)
+
+    if (count >= MAX_STACK_COUNT)
     {
-        status.SetSkillSpeedBonus(value);
+        // 最大3スタック到達時: 一番残りタイマーが少ない効果の時間を延長（タイマーリフレッシュ）
+        ActiveEffect* oldest = nullptr;
+        int minFrames = 999999;
+        for (auto& effect : activeEffects)
+        {
+            if (effect.tag == tag && effect.remainingFrames < minFrames)
+            {
+                minFrames = effect.remainingFrames;
+                oldest = &effect;
+            }
+        }
+        if (oldest)
+        {
+            oldest->remainingFrames = (std::max)(oldest->remainingFrames, durationFrames);
+            oldest->value = value;
+        }
     }
+    else
+    {
+        activeEffects.push_back({ tag, durationFrames, value });
+    }
+
+    RecalculateActiveEffects();
+}
+
+void Character::RecalculateActiveEffects()
+{
+    int attackBonus = 0;
+    float speedMultBonus = 0.0f; // +0.2f (+20%) や -0.3f (-30%)
+
+    for (const auto& effect : activeEffects)
+    {
+        switch (effect.tag)
+        {
+        case SkillMinorTag::AttackUp:
+            attackBonus += static_cast<int>(effect.value);
+            break;
+        case SkillMinorTag::AttackDown:
+            attackBonus -= static_cast<int>(effect.value);
+            break;
+        case SkillMinorTag::SpeedUp:
+            speedMultBonus += effect.value;
+            break;
+        case SkillMinorTag::SpeedDown:
+            speedMultBonus -= effect.value;
+            break;
+        default:
+            break;
+        }
+    }
+
+    // 攻撃力は固定値の加算・減算
+    status.SetSkillAttackBonus(attackBonus);
+
+    // 移動速度は％倍率（基本倍率1.0fに加減算、下限は0.1f）
+    float finalSpeedMult = 1.0f + speedMultBonus;
+    if (finalSpeedMult < 0.1f) finalSpeedMult = 0.1f;
+    status.SetSpeedMultiplier(finalSpeedMult);
 }
 
 void Character::UpdateActiveEffects()
 {
+    bool needsRecalc = false;
     for (auto it = activeEffects.begin(); it != activeEffects.end(); )
     {
         it->remainingFrames--;
@@ -89,16 +174,41 @@ void Character::UpdateActiveEffects()
         }
         else
         {
-            // 効果終了時の解除
-            if (it->tag == SkillMinorTag::AttackUp)
-            {
-                status.SetSkillAttackBonus(0);
-            }
-            else if (it->tag == SkillMinorTag::SpeedUp)
-            {
-                status.SetSkillSpeedBonus(0.0f);
-            }
             it = activeEffects.erase(it);
+            needsRecalc = true;
         }
     }
+
+    if (needsRecalc)
+    {
+        RecalculateActiveEffects();
+    }
+}
+
+bool Character::IsBlind() const
+{
+    for (const auto& effect : activeEffects)
+    {
+        if (effect.tag == SkillMinorTag::Blind && effect.remainingFrames > 0) return true;
+    }
+    return false;
+}
+
+bool Character::IsStunned() const
+{
+    for (const auto& effect : activeEffects)
+    {
+        if (effect.tag == SkillMinorTag::Stun && effect.remainingFrames > 0) return true;
+    }
+    return false;
+}
+
+bool Character::CanAction() const
+{
+    return !IsStunned() && !status.IsDead();
+}
+
+float Character::GetSightMultiplier() const
+{
+    return IsBlind() ? 0.3f : 1.0f;
 }

@@ -92,7 +92,7 @@ void Skill::ApplyDebuff(Character* user)
 
             if (distSq <= radiusSq)
             {
-                targetChar->AddActiveEffect(data->minorTag, data->duration, 0.0f);
+                targetChar->AddActiveEffect(data->minorTag, data->duration, data->effectValue);
                 hitCount++;
             }
         }

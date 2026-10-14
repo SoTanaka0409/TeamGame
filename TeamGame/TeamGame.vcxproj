@@ -110,7 +110,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;Source;Source\Core;Source\Managers;Source\Scenes;Source\Objects;Source\Characters;Source\Weapons;Source\Colliders;Source\Stage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;Source;Source\Core;Source\Managers;Source\Scenes;Source\Objects;Source\Characters;Source\Weapons;Source\Colliders;Source\Stage;Source\Graphics;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -128,7 +128,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;Source;Source\Core;Source\Managers;Source\Scenes;Source\Objects;Source\Characters;Source\Weapons;Source\Colliders;Source\Stage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;Source;Source\Core;Source\Managers;Source\Scenes;Source\Objects;Source\Characters;Source\Weapons;Source\Colliders;Source\Stage;Source\Graphics;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -200,6 +200,9 @@
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Managers\ItemManager.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\MatchManager.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Managers\NetworkManager.cpp">
@@ -289,6 +292,12 @@
     <ClCompile Include="Source\Weapons\Weapon.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\Animation.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Model.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Characters\Character.h" />
@@ -306,6 +315,7 @@
     <ClInclude Include="Source\Core\PlayerSelection.h" />
     <ClInclude Include="Source\Core\ScopedFontSize.h" />
     <ClInclude Include="Source\Core\Vector2.h" />
+    <ClInclude Include="Source\Graphics\Animation.h" />
     <ClInclude Include="Source\Graphics\Model.h" />
     <ClInclude Include="Source\Graphics\Texture.h" />
     <ClInclude Include="Source\Managers\CharacterManager.h" />
@@ -316,6 +326,7 @@
     <ClInclude Include="Source\Managers\GameBalanceManager.h" />
     <ClInclude Include="Source\Managers\InputManager.h" />
     <ClInclude Include="Source\Managers\ItemManager.h" />
+    <ClInclude Include="Source\Managers\MatchManager.h" />
     <ClInclude Include="Source\Managers\NetworkManager.h" />
     <ClInclude Include="Source\Managers\ObjectManager.h" />
     <ClInclude Include="Source\Managers\PacketTypes.h" />

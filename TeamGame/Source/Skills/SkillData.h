@@ -15,6 +15,8 @@ enum class SkillMinorTag {
     Heal,         // 回復
     AttackUp,     // 攻撃力アップ
     SpeedUp,      // 移動速度アップ
+    AttackDown,   // 攻撃力ダウン（デバフ）
+    SpeedDown,    // 移動速度ダウン（デバフ）
     Blind,        // 目くらまし
     Stun          // スタン（行動不能）
 };

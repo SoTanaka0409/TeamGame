@@ -1,8 +1,7 @@
 #pragma once
-
 #include "Scene.h"
-#include "../Core/PlayerSelection.h"
 #include <vector>
+#include "../Core/PlayerSelection.h"
 
 /**
  * @brief キャラクター選択画面シーン
@@ -10,7 +9,7 @@
 class CharacterSelectScene : public Scene {
 public:
     CharacterSelectScene();
-    ~CharacterSelectScene() override = default;
+    virtual ~CharacterSelectScene();
 
     void Init() override;
     void Update() override;
@@ -18,10 +17,8 @@ public:
     void Finalize() override;
 
 private:
-    std::vector<CharacterData> m_characters;
-    int m_selectedIndex = 0;
-
-    // キー入力判定用
-    char m_prevKeys[256]{};
-    bool IsKeyJustPressed(int keyCode);
+    int m_cursorIndex;
+    int m_selectedIndex;
+    std::vector<SelectionCharacterData> m_characters;
+    std::vector<int> m_previewHandles;
 };

@@ -6,7 +6,7 @@
 /**
  * @brief キャラクター定義データ
  */
-struct CharacterData {
+struct SelectionCharacterData {
     int id = 1;                         // キャラクターID
     std::string name;                   // キャラクター名
     std::string typeName;               // タイトル・タイプ
@@ -14,6 +14,8 @@ struct CharacterData {
     int maxHp = 100;                    // 最大HP
     float moveSpeed = 4.0f;             // 移動速度
     unsigned int themeColor = 0xFFFFFF; // UI上のテーマカラー
+    std::string modelPath;              // 3Dモデルファイルパス
+    std::string previewPath;            // プレビュー画像ファイルパス
 };
 
 /**
@@ -32,7 +34,7 @@ struct WeaponSelectData {
  * @brief プレイヤーが選択したキャラクターおよび武器データ
  */
 struct PlayerSelection {
-    CharacterData selectedCharacter;    // 選択したキャラクター
+    SelectionCharacterData selectedCharacter;    // 選択したキャラクター
     WeaponSelectData slot1Weapon;       // スロット1 (ハンドガン固定)
     WeaponSelectData slot2Weapon;       // スロット2 (自由選択武器)
 };
@@ -44,7 +46,7 @@ class PlayerSelectionManager {
 public:
     static PlayerSelectionManager& GetInstance();
 
-    void SetSelectedCharacter(const CharacterData& chara) { m_selection.selectedCharacter = chara; }
+    void SetSelectedCharacter(const SelectionCharacterData& chara) { m_selection.selectedCharacter = chara; }
     void SetSlot1Weapon(const WeaponSelectData& weapon) { m_selection.slot1Weapon = weapon; }
     void SetSlot2Weapon(const WeaponSelectData& weapon) { m_selection.slot2Weapon = weapon; }
 
@@ -54,7 +56,7 @@ public:
     /**
      * @brief 利用可能な全キャラクターリストを取得 (1~5番)
      */
-    static std::vector<CharacterData> GetAvailableCharacters();
+    static std::vector<SelectionCharacterData> GetAvailableCharacters();
 
     /**
      * @brief スロット1用の固定武器 (ハンドガン) を取得

@@ -41,10 +41,27 @@ Enemy::Enemy(float startX, float startY, int tId)
         radius = 35.0f;
     }
     collider->SetTag("Enemy");
+    SetModelPath("Resource/GreenCharacter/character.mv1");
 }
 
 Enemy::~Enemy()
 {
+    delete equippedWeapon;
+}
+
+void Enemy::SetEquippedWeapon(Weapon* w)
+{
+    if (equippedWeapon) delete equippedWeapon;
+    equippedWeapon = w;
+}
+
+float Enemy::GetEffectiveRange() const
+{
+    if (equippedWeapon && equippedWeapon->GetData())
+    {
+        return equippedWeapon->GetData()->range;
+    }
+    return effectiveRangeCells * cellSize;
 }
 
 void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness, int shooterTeamId)
@@ -120,7 +137,7 @@ bool Enemy::CheckLineOfSightToTarget(Character* target) const
     float dy = pPos.y - position.y;
     float dist = std::sqrt(dx * dx + dy * dy);
 
-    float maxSightDist = GetSightRange();
+    float maxSightDist = GetSightRange() * GetSightMultiplier();
     if (dist > maxSightDist)
     {
         return false;
@@ -194,7 +211,13 @@ bool Enemy::CheckLineOfSightToTarget(Character* target) const
 void Enemy::MoveSmart(const Vector2 &desiredDir)
 {
     float len = std::sqrt(desiredDir.x * desiredDir.x + desiredDir.y * desiredDir.y);
-    if (len < 0.0001f) return;
+    if (len < 0.0001f)
+    {
+        if (m_model) m_model->PlayIdle();
+        return;
+    }
+
+    if (m_model) m_model->PlayWalk();
 
     Vector2 normDir(desiredDir.x / len, desiredDir.y / len);
     float velX = normDir.x * status.GetSpeed();
@@ -207,7 +230,25 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
         return;
     }
 
-    // X軸の移動と壁衝突
+    // 接触判定対象（プレイヤーおよび他の敵キャラクター）の座標を取得
+    std::vector<Vector2> otherPositions;
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        for (auto obj : scene->GetObjectManager()->GetObjects())
+        {
+            if (obj && obj->IsActive() && obj != this)
+            {
+                if (obj->GetObjectTag() == ObjectTag::Player || obj->GetObjectTag() == ObjectTag::Enemy)
+                {
+                    otherPositions.push_back(obj->GetPosition());
+                }
+            }
+        }
+    }
+    float minDist = radius + 35.0f; // 70px
+
+    // X軸の移動と衝突判定（壁および他キャラクター接触）
     float nextX = position.x + velX;
     int gridX = static_cast<int>(nextX / cellSize);
     int gridY = static_cast<int>(position.y / cellSize);
@@ -215,10 +256,31 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
     if (!xBlocked)
     {
+        // 接触時に対象の方向（距離が縮まる方向）への移動をブロック
+        for (const auto &oPos : otherPositions)
+        {
+            float curDx = oPos.x - position.x;
+            float curDy = oPos.y - position.y;
+            float curDistSq = curDx * curDx + curDy * curDy;
+
+            float nextDx = oPos.x - nextX;
+            float nextDy = oPos.y - position.y;
+            float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+            if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+            {
+                xBlocked = true;
+                break;
+            }
+        }
+    }
+
+    if (!xBlocked)
+    {
         position.x = nextX;
     }
 
-    // Y軸の移動と壁衝突
+    // Y軸の移動と衝突判定（壁および他キャラクター接触）
     float nextY = position.y + velY;
     gridX = static_cast<int>(position.x / cellSize);
     gridY = static_cast<int>(nextY / cellSize);
@@ -226,31 +288,70 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
     if (!yBlocked)
     {
+        // 接触時に対象の方向（距離が縮まる方向）への移動をブロック
+        for (const auto &oPos : otherPositions)
+        {
+            float curDx = oPos.x - position.x;
+            float curDy = oPos.y - position.y;
+            float curDistSq = curDx * curDx + curDy * curDy;
+
+            float nextDx = oPos.x - position.x;
+            float nextDy = oPos.y - nextY;
+            float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+            if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+            {
+                yBlocked = true;
+                break;
+            }
+        }
+    }
+
+    if (!yBlocked)
+    {
         position.y = nextY;
     }
 
-    // 正面が壁で引っかかった場合、壁の角を回避するスライド移動を試みる
+    // 正面が壁やキャラクターで引っかかった場合、角を回避するスライド移動を試みる
     if (xBlocked || yBlocked)
     {
         Vector2 slideDir1(normDir.y, -normDir.x);
         Vector2 slideDir2(-normDir.y, normDir.x);
 
-        int slide1X = static_cast<int>((position.x + slideDir1.x * status.GetSpeed()) / cellSize);
-        int slide1Y = static_cast<int>((position.y + slideDir1.y * status.GetSpeed()) / cellSize);
-        if (!currentStage->IsSolidWall(slide1X, slide1Y))
+        auto checkSlideValid = [&](const Vector2 &sDir) -> bool {
+            float sNextX = position.x + sDir.x * (status.GetSpeed() * 0.7f);
+            float sNextY = position.y + sDir.y * (status.GetSpeed() * 0.7f);
+            int gx = static_cast<int>(sNextX / cellSize);
+            int gy = static_cast<int>(sNextY / cellSize);
+            if (currentStage->IsSolidWall(gx, gy)) return false;
+
+            for (const auto &oPos : otherPositions)
+            {
+                float curDx = oPos.x - position.x;
+                float curDy = oPos.y - position.y;
+                float curDistSq = curDx * curDx + curDy * curDy;
+
+                float nextDx = oPos.x - sNextX;
+                float nextDy = oPos.y - sNextY;
+                float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+                if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        if (checkSlideValid(slideDir1))
         {
             position.x += slideDir1.x * (status.GetSpeed() * 0.7f);
             position.y += slideDir1.y * (status.GetSpeed() * 0.7f);
         }
-        else
+        else if (checkSlideValid(slideDir2))
         {
-            int slide2X = static_cast<int>((position.x + slideDir2.x * status.GetSpeed()) / cellSize);
-            int slide2Y = static_cast<int>((position.y + slideDir2.y * status.GetSpeed()) / cellSize);
-            if (!currentStage->IsSolidWall(slide2X, slide2Y))
-            {
-                position.x += slideDir2.x * (status.GetSpeed() * 0.7f);
-                position.y += slideDir2.y * (status.GetSpeed() * 0.7f);
-            }
+            position.x += slideDir2.x * (status.GetSpeed() * 0.7f);
+            position.y += slideDir2.y * (status.GetSpeed() * 0.7f);
         }
     }
 
@@ -262,6 +363,17 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
 void Enemy::Update()
 {
+    float startPosX = position.x;
+    float startPosY = position.y;
+
+    Character::Update();
+    if (!CanAction()) return;
+
+    if (equippedWeapon)
+    {
+        equippedWeapon->Update();
+    }
+
     // 草むら潜伏チェック
     if (currentStage && cellSize > 0.0f)
     {
@@ -355,37 +467,51 @@ void Enemy::Update()
 
         if (shootCooldown <= 0 && aimDelayTimer <= 0 && canHitDirectly)
         {
-            float baseAngle = std::atan2(facingDir.y, facingDir.x);
-            float angleOffset = 0.0f;
+            Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f),
+                            position.y + facingDir.y * (radius + 5.0f));
 
-            if (rand() % 2 == 0)
+            if (equippedWeapon)
             {
-                float missDir = (rand() % 2 == 0) ? 1.0f : -1.0f;
-                float missDegree = 12.0f + (rand() % 14);
-                angleOffset = missDir * (missDegree * 3.14159265f / 180.0f);
+                if (equippedWeapon->CanFire())
+                {
+                    equippedWeapon->Fire(muzzlePos, facingDir, teamId);
+                    if (m_model) m_model->PlayShoot();
+                    int interval = (equippedWeapon->GetData()) ? equippedWeapon->GetData()->fireInterval : 75;
+                    shootCooldown = interval;
+                }
             }
             else
             {
-                angleOffset = ((rand() % 1000) / 1000.0f - 0.5f) * (6.0f * 3.14159265f / 180.0f);
+                float baseAngle = std::atan2(facingDir.y, facingDir.x);
+                float angleOffset = 0.0f;
+
+                if (rand() % 2 == 0)
+                {
+                    float missDir = (rand() % 2 == 0) ? 1.0f : -1.0f;
+                    float missDegree = 12.0f + (rand() % 14);
+                    angleOffset = missDir * (missDegree * 3.14159265f / 180.0f);
+                }
+                else
+                {
+                    angleOffset = ((rand() % 1000) / 1000.0f - 0.5f) * (6.0f * 3.14159265f / 180.0f);
+                }
+
+                float finalAngle = baseAngle + angleOffset;
+                Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
+
+                new Bullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange(), 6.0f, teamId);
+                if (m_model) m_model->PlayShoot();
+
+                auto scene = SceneManager::GetInstance().GetCurrentScene();
+                if (scene && scene->GetEffectManager())
+                {
+                    scene->GetEffectManager()->AddMuzzleFlashEffect(muzzlePos.x, muzzlePos.y, finalAngle, 16.0f);
+                }
+
+                SoundManager::GetInstance().Play3D("gunshot", position, 1000.0f, 1.0f, teamId);
+
+                shootCooldown = 75;
             }
-
-            float finalAngle = baseAngle + angleOffset;
-            Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
-
-            Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f),
-                            position.y + facingDir.y * (radius + 5.0f));
-            
-            new Bullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange(), 6.0f, teamId);
-
-            auto scene = SceneManager::GetInstance().GetCurrentScene();
-            if (scene && scene->GetEffectManager())
-            {
-                scene->GetEffectManager()->AddMuzzleFlashEffect(muzzlePos.x, muzzlePos.y, finalAngle, 16.0f);
-            }
-
-            SoundManager::GetInstance().Play3D("gunshot", position, 1000.0f, 1.0f, teamId);
-
-            shootCooldown = 75;
         }
     }
     else if (aiState == EnemyAIState::INVESTIGATE)
@@ -479,7 +605,23 @@ void Enemy::Update()
             }
 
             MoveSmart(moveDir);
-        }    }
+        }
+    }
+
+    if (m_model)
+    {
+        float dx = position.x - startPosX;
+        float dy = position.y - startPosY;
+        if (dx * dx + dy * dy > 0.01f)
+        {
+            m_model->PlayWalk();
+        }
+        else
+        {
+            m_model->PlayIdle();
+        }
+        m_model->Update(1.0f / 60.0f);
+    }
 }
 
 void Enemy::Draw()
@@ -507,10 +649,30 @@ void Enemy::Draw()
         else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(240, 40, 40);
         else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 140, 30);
     }
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(renderRadius), bodyColor, TRUE);
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+
+    // 3Dモデルが存在する場合はモデル描画と足元ガイド円を描画
+    if (m_model && m_model->IsLoaded())
+    {
+        // 足元にチームカラーのガイド円を描画（半透明）
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius), bodyColor, TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+
+        // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
+        m_model->SetScreenPosition(screenX, screenY);
+        m_model->SetFacingDir(facingDir);
+        m_model->Draw();
+    }
+    else
+    {
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius), bodyColor, TRUE);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+    }
 
     // 警戒（ALERT）状態のリング強調および有効射程ガイド円、【赤色でやや透明な弾道予測線】の描画
     if (aiState == EnemyAIState::ALERT)
@@ -626,6 +788,7 @@ void Enemy::Damage(int amount)
     if (status.IsDead())
     {
         SetActive(false);
+        if (m_model) m_model->PlayDie();
     }
 }
 
@@ -633,6 +796,7 @@ void Enemy::StealthKill()
 {
     status.TakeDamage(status.GetCurrentHp());
     SetActive(false);
+    if (m_model) m_model->PlayDie();
 
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetEffectManager())
@@ -643,40 +807,11 @@ void Enemy::StealthKill()
 
 void Enemy::OnCollisionEnter(Collider *otherCollider)
 {
-    OnCollisionStay(otherCollider);
 }
 
 void Enemy::OnCollisionStay(Collider *otherCollider)
 {
-    if (!otherCollider || !otherCollider->GetOwner() || !otherCollider->GetOwner()->IsActive()) return;
-
-    Object2D *otherObj = otherCollider->GetOwner();
-    if (otherObj->GetObjectTag() == ObjectTag::Player || otherObj->GetObjectTag() == ObjectTag::Enemy)
-    {
-        Vector2 otherPos = otherObj->GetPosition();
-        float dx = position.x - otherPos.x;
-        float dy = position.y - otherPos.y;
-        float dist = std::sqrt(dx * dx + dy * dy);
-        float otherRadius = 35.0f;
-        if (CircleCollider *c = dynamic_cast<CircleCollider *>(otherCollider))
-        {
-            otherRadius = c->GetRadius();
-        }
-        float minDist = collider->GetRadius() + otherRadius; // しっかり重なった時のみ判定
-
-        if (dist < minDist && dist > 0.0001f)
-        {
-            float overlap = minDist - dist;
-            Vector2 pushDir(dx / dist, dy / dist);
-            position.x += pushDir.x * (overlap * 0.5f);
-            position.y += pushDir.y * (overlap * 0.5f);
-
-            if (currentStage)
-            {
-                currentStage->ResolveCollision(position, radius, cellSize);
-            }
-        }
-    }
+    // 敵を押し出す処理は廃止（接触時に互いの移動方向を制限する方式に変更）
 }
 
 void Enemy::OnCollisionExit(Collider *otherCollider)

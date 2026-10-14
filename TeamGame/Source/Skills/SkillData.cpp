@@ -25,6 +25,8 @@ SkillMinorTag SkillDataManager::ParseMinorTag(const std::string& str) const
     if (str == "Heal") return SkillMinorTag::Heal;
     if (str == "AttackUp") return SkillMinorTag::AttackUp;
     if (str == "SpeedUp") return SkillMinorTag::SpeedUp;
+    if (str == "AttackDown") return SkillMinorTag::AttackDown;
+    if (str == "SpeedDown") return SkillMinorTag::SpeedDown;
     if (str == "Blind") return SkillMinorTag::Blind;
     if (str == "Stun") return SkillMinorTag::Stun;
     return SkillMinorTag::None;

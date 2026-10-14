@@ -16,6 +16,9 @@
     <Filter Include="ソース ファイル\Core">
       <UniqueIdentifier>{1BF5677B-7D92-5090-90B0-CC0428AAFBD6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Graphics">
+      <UniqueIdentifier>{1BF5677B-7D92-5090-90B0-CC0428AAFBD7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\Managers">
       <UniqueIdentifier>{5DA2F435-685F-5893-B888-DD209B0063A7}</UniqueIdentifier>
     </Filter>
@@ -219,6 +222,12 @@
     <ClCompile Include="Source\Weapons\Weapon.cpp">
       <Filter>ソース ファイル\Weapons</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\Animation.cpp">
+      <Filter>ソース ファイル\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Model.cpp">
+      <Filter>ソース ファイル\Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Characters\Character.h">
@@ -265,6 +274,9 @@
     </ClInclude>
     <ClInclude Include="Source\Core\Vector2.h">
       <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Animation.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\Model.h">
       <Filter>ヘッダー ファイル\Graphics</Filter>

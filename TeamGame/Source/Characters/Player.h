@@ -39,6 +39,18 @@ public:
     Vector2 GetFacingDir() const { return facingDir; }
 
     /**
+     * @brief 現在装備中の武器の取得
+     */
+    Weapon* GetCurrentWeapon() const
+    {
+        if (currentWeaponIndex >= 0 && currentWeaponIndex < static_cast<int>(weapons.size()))
+        {
+            return weapons[currentWeaponIndex];
+        }
+        return nullptr;
+    }
+
+    /**
      * @brief X座標の取得
      */
     float GetX() const { return position.x; }
@@ -157,6 +169,16 @@ public:
     void SetSkill(std::unique_ptr<Skill> skill) { SetEquippedSkill(std::move(skill)); }
     
     /**
+     * @brief 装備武器リストの設定
+     */
+    void SetWeapons(const std::vector<class Weapon*>& newWeapons);
+
+    /**
+     * @brief テーマカラーの設定
+     */
+    void SetThemeColor(unsigned int color) { m_themeColor = color; }
+    
+    /**
      * @brief 操作入力タイプの設定
      */
     void SetInputType(PlayerInputType type) { m_inputType = type; }
@@ -191,4 +213,6 @@ private:
 
     mutable int m_flickerTimer = 0;          ///< チラつきタイマー
     mutable bool m_isMoonlightFlicker = false; ///< 月光チラつきフラグ
+
+    unsigned int m_themeColor = 0x00FF88;     ///< キャラクターテーマカラー
 };
