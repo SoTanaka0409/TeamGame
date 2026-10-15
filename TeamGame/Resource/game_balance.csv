@@ -1,4 +1,4 @@
-Key,Value,Description
+﻿Key,Value,Description
 TargetKillCount,10,勝利に必要なキル数目標
 InitialEnemyCount,5,敵Botの初期スポーン数
 BrightEventDurationFrames,900,エリア明るい時間帯の持続フレーム数(15秒)

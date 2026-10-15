@@ -1,6 +1,7 @@
-﻿#include "TitleScene.h"
+#include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
+#include "CharacterSelectScene.h"
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "GameSettings.h"
@@ -58,7 +59,7 @@ void TitleScene::Update()
             if (cursor == 0) // Solo
             {
                 NetworkManager::GetInstance().Disconnect();
-                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::SOLO));
+                SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
             }
             else if (cursor == 1) // Local Coop
             {

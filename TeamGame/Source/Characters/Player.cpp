@@ -16,11 +16,12 @@
 #include "GameBalanceManager.h"
 #include "../Skills/Skill.h"
 #include "../Skills/SkillData.h"
+#include "../Managers/SkillManager.h"
 #include <cmath>
 #include <algorithm>
 
 Player::Player(float startX, float startY)
-    : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
+    : Character(ObjectTag::Player, startX, startY, 20.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     teamId = 0;
@@ -37,6 +38,8 @@ Player::Player(float startX, float startY)
     else
     {
         status.Init(10, 1.5f, 1);
+        if (collider) collider->SetRadius(20.0f);
+        radius = 20.0f;
     }
 
     collider->SetTag("Player");
@@ -44,12 +47,9 @@ Player::Player(float startX, float startY)
     weapons.push_back(new Shotgun());
     weapons.push_back(new SniperRifle());
     currentWeaponIndex = 0;
-    const SkillData* defaultSkillData = SkillDataManager::GetInstance().GetSkillData(1);
-    if (defaultSkillData) {
-        currentSkill = new Skill(defaultSkillData);
-    } else {
-        currentSkill = nullptr;
-    }
+    SetEquippedSkillById(1);
+    SetModelPath("Resource/GreenCharacter/character.mv1");
+    
 }
 
 Player::~Player()
@@ -57,23 +57,25 @@ Player::~Player()
     for (auto w : weapons)
         delete w;
     weapons.clear();
-    
-    if (currentSkill) {
-        delete currentSkill;
-    }
 }
+
+void Player::SetWeapons(const std::vector<Weapon*>& newWeapons)
+{
+    for (auto w : weapons)
+        delete w;
+    weapons.clear();
+
+    weapons = newWeapons;
+    currentWeaponIndex = 0;
+}
+
 
 void Player::Update()
 {
-    if (invincibleTimer > 0) invincibleTimer--;
-    
-    // 追加: バフ・デバフのタイマー更新
-    UpdateActiveEffects();
+    Character::Update();
+    if (!CanAction()) return;
 
-    // 追加: スキルのクールダウンタイマー更新
-    if (currentSkill) {
-        currentSkill->Update();
-    }
+    if (invincibleTimer > 0) invincibleTimer--;
 
     if (!isRemote)
     {
@@ -154,31 +156,94 @@ void Player::Update()
         {
             float velX = (moveDir.x / length) * status.GetSpeed();
             float velY = (moveDir.y / length) * status.GetSpeed();
-            
-            // X軸の移動と衝突判定
-            if (currentStage)
+
+            // 周囲の敵キャラクターの座標を取得
+            std::vector<Vector2> enemyPositions;
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetObjectManager())
             {
-                float nextX = position.x + velX;
-                int gridX = static_cast<int>(nextX / cellSize);
-                int gridY = static_cast<int>(position.y / cellSize);
-                if (!currentStage->IsSolidWall(gridX, gridY))
+                for (auto obj : scene->GetObjectManager()->GetObjects())
                 {
-                    position.x = nextX;
-                }
-                
-                // Y軸の移動と衝突判定
-                float nextY = position.y + velY;
-                gridX = static_cast<int>(position.x / cellSize);
-                gridY = static_cast<int>(nextY / cellSize);
-                if (!currentStage->IsSolidWall(gridX, gridY))
-                {
-                    position.y = nextY;
+                    if (obj && obj->IsActive() && obj->GetObjectTag() == ObjectTag::Enemy)
+                    {
+                        enemyPositions.push_back(obj->GetPosition());
+                    }
                 }
             }
-            else
+            float minDist = radius * 2.0f; // プレイヤー半径(20) + 敵半径(20) = 40px
+
+            // X軸の移動と衝突判定（壁および敵接触）
+            float nextX = position.x + velX;
+            bool blockedX = false;
+            if (currentStage)
             {
-                position.x += velX;
-                position.y += velY;
+                int gridX = static_cast<int>(nextX / cellSize);
+                int gridY = static_cast<int>(position.y / cellSize);
+                if (currentStage->IsSolidWall(gridX, gridY))
+                {
+                    blockedX = true;
+                }
+            }
+            if (!blockedX)
+            {
+                // 敵に触れている場合、敵の方向（距離が縮まる方向）への移動をブロック
+                for (const auto &ePos : enemyPositions)
+                {
+                    float curDx = ePos.x - position.x;
+                    float curDy = ePos.y - position.y;
+                    float curDistSq = curDx * curDx + curDy * curDy;
+
+                    float nextDx = ePos.x - nextX;
+                    float nextDy = ePos.y - position.y;
+                    float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+                    if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+                    {
+                        blockedX = true;
+                        break;
+                    }
+                }
+            }
+            if (!blockedX)
+            {
+                position.x = nextX;
+            }
+
+            // Y軸の移動と衝突判定（壁および敵接触）
+            float nextY = position.y + velY;
+            bool blockedY = false;
+            if (currentStage)
+            {
+                int gridX = static_cast<int>(position.x / cellSize);
+                int gridY = static_cast<int>(nextY / cellSize);
+                if (currentStage->IsSolidWall(gridX, gridY))
+                {
+                    blockedY = true;
+                }
+            }
+            if (!blockedY)
+            {
+                // 敵に触れている場合、敵の方向（距離が縮まる方向）への移動をブロック
+                for (const auto &ePos : enemyPositions)
+                {
+                    float curDx = ePos.x - position.x;
+                    float curDy = ePos.y - position.y;
+                    float curDistSq = curDx * curDx + curDy * curDy;
+
+                    float nextDx = ePos.x - position.x;
+                    float nextDy = ePos.y - nextY;
+                    float nextDistSq = nextDx * nextDx + nextDy * nextDy;
+
+                    if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
+                    {
+                        blockedY = true;
+                        break;
+                    }
+                }
+            }
+            if (!blockedY)
+            {
+                position.y = nextY;
             }
         }
     }
@@ -187,6 +252,21 @@ void Player::Update()
     {
         damageColorTimer--;
     }
+
+    // 3Dモデルのモーション制御（歩行・待機）
+    if (m_model)
+    {
+        if (m_isMoving)
+        {
+            m_model->PlayWalk();
+        }
+        else
+        {
+            m_model->PlayIdle();
+        }
+        m_model->Update(1.0f / 60.0f);
+    }
+
 
     if (!weapons.empty())
     {
@@ -262,14 +342,13 @@ void Player::Update()
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_Z) || (GetMouseInput() & MOUSE_INPUT_LEFT))
             {
                 if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
+                if (m_model) m_model->PlayShoot();
             }
             
             // スキル（ガジェット）の発動 (Fキー)
             if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F))
             {
-                if (currentSkill && currentSkill->CanUse(this)) {
-                    currentSkill->Use(this);
-                }
+                SkillManager::GetInstance().TriggerSkill(this);
             }
         }
         else if (m_inputType == PlayerInputType::GAMEPAD_1)
@@ -302,14 +381,14 @@ void Player::Update()
             
             if (padState & PAD_INPUT_1) // Button A (or R1)
             {
-                if (!weapons.empty()) weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
+                if (!weapons.empty() && currentWeaponIndex >= 0 && currentWeaponIndex < static_cast<int>(weapons.size()) && weapons[currentWeaponIndex]) 
+                    weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
+                if (m_model) m_model->PlayShoot();
             }
             
             if (padState & PAD_INPUT_3) // Button X
             {
-                if (currentSkill && currentSkill->CanUse(this)) {
-                    currentSkill->Use(this);
-                }
+                SkillManager::GetInstance().TriggerSkill(this);
             }
             
             prevPadState = padState;
@@ -404,9 +483,30 @@ void Player::Draw()
     }
 
     unsigned int color =
-        (damageColorTimer > 0) ? GetColor(255, 255, 0) : GetColor(0, 255, 0);
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(radius), color, TRUE);
+        (damageColorTimer > 0) ? GetColor(255, 255, 0) : m_themeColor;
+
+    // 3Dモデルが存在する場合はモデル描画と足元ガイド円を描画
+    if (m_model && m_model->IsLoaded())
+    {
+        // 足元にチームカラーのガイド円を描画（半透明）
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(radius), color, TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(radius), GetColor(255, 255, 255), FALSE);
+
+        // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
+        m_model->SetScreenPosition(screenX, screenY);
+        m_model->SetFacingDir(facingDir);
+        m_model->Draw();
+    }
+    else
+    {
+        // 3Dモデルがない場合の2Dフォールバック描画
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(radius), color, TRUE);
+    }
 
     // 向いている方角を線で描画
     float lineLen = 50.0f; // 線の長さ
@@ -623,6 +723,7 @@ void Player::TakeDamage(int amount)
     if (status.IsDead())
     {
         SetActive(false);
+        if (m_model) m_model->PlayDie();
         // ここに将来的にゲームオーバー画面（ResultScene）への遷移を追加します
     }
 }
@@ -651,8 +752,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float zoomCellSize = 75.0f;
     float zoomScale = zoomCellSize / cellSize;
 
-    float maxSpotDist = zoomCellSize * m_maxSpotDistCells;
-    float closeRadius = zoomCellSize * m_closeRadiusCells;
+    float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
+    float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
 
     int stageWidth = currentStage->GetWidth();
     int stageHeight = currentStage->GetHeight();
@@ -756,57 +857,127 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 void Player::DrawUI(int screenX, int screenY)
 {
     if (weapons.empty()) return;
-    
-    // UI背景の半透明黒ボックスを描画（視認性を向上させて文字の重なりを解消）
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-    DrawBox(screenX - 10, screenY - 10, screenX + 220, screenY + 130, GetColor(0, 0, 0), TRUE);
+
+    // 広々と見やすいUIパネルパラメータ (横幅320px, 高さ190px)
+    const int panelW = 320;
+    const int panelH = 190;
+    const int marginX = 16;
+
+    // 画面下端からはみ出さないよう座標補正
+    if (screenY + panelH > 1060) {
+        screenY = 1060 - panelH;
+    }
+
+    // 1. UI背景パネル（ダークブルー半透明）
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+    DrawBox(screenX, screenY, screenX + panelW, screenY + panelH, GetColor(12, 16, 26), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(screenX - 10, screenY - 10, screenX + 220, screenY + 130, GetColor(100, 100, 100), FALSE);
+
+    // 外枠ボーダーと立体アクセント
+    DrawBox(screenX, screenY, screenX + panelW, screenY + panelH, GetColor(45, 75, 110), FALSE);
+    DrawBox(screenX + 1, screenY + 1, screenX + panelW - 1, screenY + panelH - 1, GetColor(20, 35, 55), FALSE);
+    // 左端の青色シアンアクセントライン
+    DrawBox(screenX, screenY, screenX + 5, screenY + panelH, GetColor(0, 180, 240), TRUE);
 
     Weapon* currentWeapon = weapons[currentWeaponIndex];
-    if (currentWeapon)
+    if (!currentWeapon) return;
+
+    int curY = screenY + 14;
+
+    // 2. 武器ヘッダー表示
+    const WeaponData* data = currentWeapon->GetData();
+    if (data && data->uiImageHandle != -1)
     {
-        const WeaponData* data = currentWeapon->GetData();
-        if (data && data->uiImageHandle != -1)
-        {
-            DrawGraph(screenX, screenY, data->uiImageHandle, TRUE);
-        }
-        else
-        {
-            char weaponTitle[64];
-            snprintf(weaponTitle, sizeof(weaponTitle), "[%d] %s", currentWeaponIndex + 1, currentWeapon->GetName().c_str());
-            DrawBox(screenX, screenY, screenX + 140, screenY + 35, GetColor(40, 40, 60), TRUE);
-            DrawBox(screenX, screenY, screenX + 140, screenY + 35, GetColor(0, 200, 255), FALSE);
-            DrawString(screenX + 8, screenY + 8, weaponTitle, GetColor(255, 255, 255));
-        }
+        DrawGraph(screenX + marginX, curY, data->uiImageHandle, TRUE);
+        curY += 45;
+    }
+    else
+    {
+        // 武器タイトル用背景枠
+        DrawBox(screenX + marginX, curY, screenX + panelW - marginX, curY + 34, GetColor(25, 40, 65), TRUE);
+        DrawBox(screenX + marginX, curY, screenX + panelW - marginX, curY + 34, GetColor(0, 160, 230), FALSE);
 
-        int currentAmmo = currentWeapon->GetCurrentAmmo();
-        int maxAmmo = currentWeapon->GetMaxAmmo();
+        char weaponTitle[64];
+        snprintf(weaponTitle, sizeof(weaponTitle), "SLOT [%d]  %s", currentWeaponIndex + 1, currentWeapon->GetName().c_str());
+
+        SetFontSize(18);
+        DrawString(screenX + marginX + 10, curY + 7, weaponTitle, GetColor(240, 245, 255));
+        SetFontSize(16);
+        curY += 44;
+    }
+
+    // 3. 弾薬 (AMMO) 表示
+    int currentAmmo = currentWeapon->GetCurrentAmmo();
+    int maxAmmo = currentWeapon->GetMaxAmmo();
+
+    SetFontSize(15);
+    DrawString(screenX + marginX, curY, "AMMO", GetColor(180, 190, 210));
+    SetFontSize(16);
+
+    if (currentWeapon->IsReloading()) {
+        SetFontSize(18);
+        DrawString(screenX + marginX + 70, curY - 1, "RELOADING...", GetColor(255, 200, 50));
+        SetFontSize(16);
+    } else {
         char ammoText[64];
-        if (currentWeapon->IsReloading()) {
-            sprintf_s(ammoText, sizeof(ammoText), "Reloading...");
+        snprintf(ammoText, sizeof(ammoText), "%d", currentAmmo);
+        char maxAmmoText[64];
+        snprintf(maxAmmoText, sizeof(maxAmmoText), " / %d", maxAmmo);
+
+        unsigned int ammoColor = (currentAmmo == 0) ? GetColor(255, 60, 60) : GetColor(255, 220, 40);
+
+        SetFontSize(22);
+        DrawString(screenX + marginX + 70, curY - 5, ammoText, ammoColor);
+        int numW = GetDrawStringWidth(ammoText, static_cast<int>(strlen(ammoText)));
+        SetFontSize(16);
+        DrawString(screenX + marginX + 70 + numW, curY, maxAmmoText, GetColor(160, 170, 180));
+    }
+    curY += 34;
+
+    // 4. 体力 (HP) 表示 & ゲージバー
+    int curHp = status.GetCurrentHp();
+    int maxHp = status.GetMaxHp();
+    float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / maxHp : 0.0f;
+    if (hpRatio < 0.0f) hpRatio = 0.0f;
+    if (hpRatio > 1.0f) hpRatio = 1.0f;
+
+    SetFontSize(15);
+    char hpStr[32];
+    snprintf(hpStr, sizeof(hpStr), "HP  %d / %d", curHp, maxHp);
+    DrawString(screenX + marginX, curY, hpStr, GetColor(200, 220, 240));
+    SetFontSize(16);
+
+    curY += 20;
+    int barW = panelW - marginX * 2 - 10;
+    int barH = 10;
+    DrawBox(screenX + marginX, curY, screenX + marginX + barW, curY + barH, GetColor(30, 40, 50), TRUE);
+    DrawBox(screenX + marginX, curY, screenX + marginX + barW, curY + barH, GetColor(70, 90, 110), FALSE);
+
+    unsigned int hpBarColor = GetColor(50, 220, 100);
+    if (hpRatio <= 0.3f) hpBarColor = GetColor(255, 60, 60);
+    else if (hpRatio <= 0.6f) hpBarColor = GetColor(255, 200, 40);
+
+    int fillW = static_cast<int>(barW * hpRatio);
+    if (fillW > 0) {
+        DrawBox(screenX + marginX + 1, curY + 1, screenX + marginX + fillW - 1, curY + barH - 1, hpBarColor, TRUE);
+    }
+    curY += 22;
+
+    // 5. スキル (SKILL) 表示
+    Skill* skill = GetEquippedSkill();
+    if (skill)
+    {
+        SetFontSize(15);
+        DrawString(screenX + marginX, curY, "SKILL", GetColor(180, 190, 210));
+        SetFontSize(16);
+
+        int ct = skill->GetCoolTimeTimer();
+        if (ct > 0) {
+            char ctText[32];
+            snprintf(ctText, sizeof(ctText), "CT %d.%.1fs", ct / 60, (ct % 60) / 6.0f);
+            DrawString(screenX + marginX + 70, curY, ctText, GetColor(170, 180, 190));
         } else {
-            sprintf_s(ammoText, sizeof(ammoText), "Ammo: %d / %d", currentAmmo, maxAmmo);
-        }
-        DrawString(screenX + 10, screenY + 50, ammoText, GetColor(255, 255, 0));
-
-        // HP表示
-        char hpText[64];
-        snprintf(hpText, sizeof(hpText), "HP: %d / %d", status.GetCurrentHp(), status.GetMaxHp());
-        DrawString(screenX + 10, screenY + 75, hpText, GetColor(100, 255, 100));
-
-        // スキルUI表示
-        if (currentSkill)
-        {
-            char skillText[64];
-            int ct = currentSkill->GetCoolTimeTimer();
-            if (ct > 0) {
-                snprintf(skillText, sizeof(skillText), "Skill: CT %d.%.1fs", ct / 60, (ct % 60) / 6.0f);
-                DrawString(screenX + 10, screenY + 100, skillText, GetColor(200, 200, 200));
-            } else {
-                snprintf(skillText, sizeof(skillText), "Skill: READY");
-                DrawString(screenX + 10, screenY + 100, skillText, GetColor(0, 220, 255));
-            }
+            DrawString(screenX + marginX + 70, curY, "[ READY ]", GetColor(0, 230, 255));
         }
     }
 }

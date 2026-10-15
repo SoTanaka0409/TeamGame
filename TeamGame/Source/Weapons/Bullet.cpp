@@ -32,7 +32,10 @@ Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, floa
     if (scene)
     {
         myColliderManager = scene->GetColliderManager();
-        myColliderManager->AddCollider(collider);
+        if (myColliderManager)
+        {
+            myColliderManager->AddCollider(collider);
+        }
     }
 }
 
@@ -136,10 +139,30 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
                 if (player) player->TakeDamage(this->damage);
             }
             
+            // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す
+            float hitX = position.x;
+            float hitY = position.y;
+            CircleCollider *circleCol = dynamic_cast<CircleCollider *>(otherCollider);
+            if (circleCol)
+            {
+                float targetRadius = circleCol->GetRadius();
+                float cx = circleCol->GetWorldX();
+                float cy = circleCol->GetWorldY();
+                float dx = position.x - cx;
+                float dy = position.y - cy;
+                float dist = std::sqrt(dx * dx + dy * dy);
+                if (targetRadius > 0.0f && dist > 0.001f && dist < targetRadius)
+                {
+                    // 弾がフレーム間の移動で敵内部に入り込んだ場合、敵表面（被弾地点）に補正
+                    hitX = cx + (dx / dist) * targetRadius;
+                    hitY = cy + (dy / dist) * targetRadius;
+                }
+            }
+
             auto scene = SceneManager::GetInstance().GetCurrentScene();
             if (scene && scene->GetEffectManager())
             {
-                scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 10);
+                scene->GetEffectManager()->AddBloodEffect(hitX, hitY, 16);
             }
             SetActive(false);
         }

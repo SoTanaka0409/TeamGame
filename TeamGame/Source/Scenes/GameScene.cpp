@@ -17,6 +17,12 @@
 #include "NetworkManager.h"
 #include "PacketTypes.h"
 #include "GameSettings.h"
+#include "../Weapons/Handgun.h"
+#include "../Weapons/Shotgun.h"
+#include "../Weapons/SniperRifle.h"
+#include "../Core/PlayerSelection.h"
+#include "../Core/CharacterFactory.h"
+#include "../Managers/MatchManager.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -58,8 +64,6 @@ void GameScene::ClearEnemies()
     enemies.clear();
 }
 
-
-
 void GameScene::SpawnEnemiesRandomly(int count)
 {
     ClearEnemies();
@@ -70,38 +74,16 @@ void GameScene::SpawnEnemiesRandomly(int count)
     float cellH = 1080.0f / stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
 
-    int midX = stage.GetWidth() / 2;
-    int team0Y = stage.GetHeight() - 4;
-    int team1Y = 3;
-
-    // Player position
-    if (player) {
-        player->SetPosition(Vector2((midX + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize));
-    }
-
-    // Ally bots (Team 0)
-    int allyOffsets[] = {-3, 3};
-    for (int i = 0; i < 2; ++i)
-    {
-        Enemy* allyBot = new Enemy((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0);
-        allyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        enemies.push_back(allyBot);
-    }
-    
-    // Enemy bots (Team 1)
-    int enemyOffsets[] = {-3, 0, 3};
-    for (int i = 0; i < 3; ++i)
-    {
-        Enemy* enemyBot = new Enemy((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1);
-        enemyBot->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-        enemies.push_back(enemyBot);
-    }
+    // ボットの出現および武器配分処理を CharacterFactory に移譲
+    CharacterFactory::SpawnMatchBots(stage, cellSize, player, objectManager, enemies);
 }
+
 void GameScene::Init()
 {
     Scene::Init();
     gameTimer = 0.0f;
     isCleared = false;
+    MatchManager::GetInstance().Reset();
     brightTimer = 0.0f;
     int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
     int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
@@ -124,21 +106,23 @@ void GameScene::Init()
     float startX = (startGrid.x + 0.5f) * cellSize;
     float startY = (startGrid.y + 0.5f) * cellSize;
     
-    player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
-    player->SetStage(stagePtr, cellSize);
+    player = CharacterFactory::CreatePlayer(startX, startY, stagePtr, cellSize, 0);
+    if (objectManager) objectManager->AddObject(player);
 
     if (currentPlayMode == PlayMode::LOCAL_COOP)
     {
         remotePlayer = new Player(startX + 50.0f, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        if (objectManager) objectManager->AddObject(remotePlayer);
     }
     else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
     {
         remotePlayer = new Player(startX, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetRemote(true);
+        if (objectManager) objectManager->AddObject(remotePlayer);
     }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
@@ -232,69 +216,25 @@ void GameScene::Update()
                 SoundManager::GetInstance().Play3D("gunshot", player ? player->GetPosition() : Vector2(960, 540), 1000.0f, 0.4f, 0);
             }
 
-            // Respawn and kill count logic
-            if (objectManager)
-            {
-                for (auto obj : objectManager->GetObjects())
-                {
-                    Character* ch = dynamic_cast<Character*>(obj);
-                    if (ch && !ch->IsActive())
-                    {
-                        if (!ch->isDeadProcessed)
-                        {
-                            if (ch->teamId == 0) team1Kills++;
-                            else if (ch->teamId == 1) team0Kills++;
-                            
-                            ch->isDeadProcessed = true;
-                            ch->respawnTimer = GameBalanceManager::GetInstance().GetInt("RespawnTimeFrames", 180);
-                        }
-                        
-                        if (ch->respawnTimer > 0)
-                        {
-                            ch->respawnTimer--;
-                        }
-                        
-                        if (ch->respawnTimer <= 0)
-                        {
-                            ch->isDeadProcessed = false;
-                            
-                            // リスポーン（固定の自陣付近に復活）
-                            const Stage& stage = stageManager.GetCurrentStage();
-                            float cellW = 1920.0f / stage.GetWidth();
-                            float cellH = 1080.0f / stage.GetHeight();
-                            float cellSize = (cellW < cellH) ? cellW : cellH;
-                            
-                            int midX = stage.GetWidth() / 2;
-                            int spawnY = (ch->teamId == 0) ? (stage.GetHeight() - 4) : 3;
-                            int spawnX = midX + (std::rand() % 7 - 3); // -3 to +3
-                            
-                            while (stage.IsSolidWall(spawnX, spawnY)) {
-                                spawnX = midX + (std::rand() % 7 - 3);
-                            }
+            // リスポーン処理およびキル数カウントをMatchManagerに移譲
+            const Stage& stage = stageManager.GetCurrentStage();
+            float cellW = 1920.0f / stage.GetWidth();
+            float cellH = 1080.0f / stage.GetHeight();
+            float cellSize = (cellW < cellH) ? cellW : cellH;
 
-                            ch->SetPosition(Vector2((spawnX + 0.5f) * cellSize, (spawnY + 0.5f) * cellSize));
-                            ch->status.Heal(ch->status.GetMaxHp());
-                            ch->SetActive(true);
-                            ch->invincibleTimer = 180;
-                            Enemy* e = dynamic_cast<Enemy*>(ch);
-                            if (e) { e->ResetMoveToCenter(); }
-                        }
-                    }
-                }
-            }
+            MatchManager::GetInstance().UpdateRespawns(objectManager, stage, cellSize);
 
-            // 勝敗判定 (目標キル数先取)
-            int targetKills = GameBalanceManager::GetInstance().GetInt("TargetKillCount", 10);
-            if (!isCleared && (team0Kills >= targetKills || team1Kills >= targetKills))
+            // 勝敗判定 (MatchManagerの判定を使用)
+            MatchResult result = MatchManager::GetInstance().CheckMatchResult();
+            if (!isCleared && result != MatchResult::IN_PROGRESS)
             {
                 isCleared = true;
-                
-                if (team0Kills >= targetKills) {
+                if (result == MatchResult::TEAM0_WIN) {
                     ClearStats stats;
                     stats.clearTimeSec = gameTimer;
-                    stats.defeatedEnemies = team0Kills;
-                    stats.totalEnemies = targetKills;
-                    
+                    stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                    stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
+
                     int baseScore = 5000;
                     int timePenalty = static_cast<int>(gameTimer * 10.0f);
                     stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
@@ -433,8 +373,10 @@ void GameScene::Draw()
     {
         // 画面分割 (1P - 左半分)
         SetDrawArea(0, 0, 1920 / 2, 1080);
-        Camera::TargetWorldX = playerWorldX;
-        Camera::TargetWorldY = playerWorldY;
+        Vector2 aimDir1P = (player && player->IsActive()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
+        float offsetDist1P = (player && player->GetCurrentWeapon() && player->GetCurrentWeapon()->GetName() == "SniperRifle") ? 150.0f : 50.0f;
+        Camera::TargetWorldX = playerWorldX + aimDir1P.x * offsetDist1P;
+        Camera::TargetWorldY = playerWorldY + aimDir1P.y * offsetDist1P;
         Camera::ScreenCenterX = 1920.0f / 4.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
@@ -444,8 +386,10 @@ void GameScene::Draw()
         // 画面分割 (2P - 右半分)
         SetDrawArea(1920 / 2, 0, 1920, 1080);
         Vector2 p2Pos = remotePlayer->GetPosition();
-        Camera::TargetWorldX = p2Pos.x;
-        Camera::TargetWorldY = p2Pos.y;
+        Vector2 aimDir2P = (remotePlayer && remotePlayer->IsActive()) ? remotePlayer->GetFacingDir() : Vector2(0.0f, 0.0f);
+        float offsetDist2P = (remotePlayer && remotePlayer->GetCurrentWeapon() && remotePlayer->GetCurrentWeapon()->GetName() == "SniperRifle") ? 150.0f : 50.0f;
+        Camera::TargetWorldX = p2Pos.x + aimDir2P.x * offsetDist2P;
+        Camera::TargetWorldY = p2Pos.y + aimDir2P.y * offsetDist2P;
         Camera::ScreenCenterX = 1920.0f * 0.75f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
@@ -478,8 +422,24 @@ void GameScene::Draw()
         }
         else
         {
-            Camera::TargetWorldX = playerWorldX;
-            Camera::TargetWorldY = playerWorldY;
+            // 動的エイムカメラオフセット（武器ごとの視界拡張）
+            Vector2 aimDir = (player && player->IsActive()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
+            float maxOffsetDist = 70.0f;
+            if (player && player->GetCurrentWeapon())
+            {
+                if (player->GetCurrentWeapon()->GetName() == "SniperRifle")
+                {
+                    maxOffsetDist = 200.0f;
+                }
+            }
+            Vector2 targetOffset = aimDir * maxOffsetDist;
+
+            // 滑らかに追従補間（lerp: 毎フレーム10%）
+            m_cameraOffset.x += (targetOffset.x - m_cameraOffset.x) * 0.1f;
+            m_cameraOffset.y += (targetOffset.y - m_cameraOffset.y) * 0.1f;
+
+            Camera::TargetWorldX = playerWorldX + m_cameraOffset.x;
+            Camera::TargetWorldY = playerWorldY + m_cameraOffset.y;
         }
         
         Camera::ScreenCenterX = 1920.0f / 2.0f;
@@ -544,10 +504,10 @@ void GameScene::Draw()
 
     // 画面左下にプレイヤーのHP・武器UIを表示
     if (player && player->IsActive()) {
-        player->DrawUI(20, 920);
+        player->DrawUI(25, 850);
     }
     if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
-        remotePlayer->DrawUI(1920 / 2 + 20, 920);
+        remotePlayer->DrawUI(1920 / 2 + 25, 850);
     }
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
@@ -634,6 +594,9 @@ void GameScene::Draw()
     // 背景バー
     DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
     DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
+
+    int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
+    int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
 
     // 自チーム（味方）のキル数バー (青: 味方チームが敵を倒すと増える)
     int allyBarW = (int)((float)team0Kills / maxKills * barWidth);

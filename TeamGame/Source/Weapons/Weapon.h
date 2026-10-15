@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 #include "Vector2.h"
+#include "../Managers/WeaponManager.h"
 #include <string>
-#include "WeaponManager.h"
 
 class Weapon
 {
-  protected:
+protected:
     int coolTimeTimer;
     std::string weaponName;
     const WeaponData* data;
@@ -13,73 +13,22 @@ class Weapon
     bool isReloading;
     int reloadTimer;
 
-  public:
-    Weapon(const std::string &name)
-        : weaponName(name), coolTimeTimer(0), isReloading(false), reloadTimer(0)
-    {
-        data = WeaponManager::GetInstance().GetWeaponData(name);
-        if (data) {
-            currentAmmo = data->maxAmmo;
-        } else {
-            currentAmmo = 0;
-        }
-    }
-    virtual ~Weapon() {}
+public:
+    explicit Weapon(const std::string &name);
+    virtual ~Weapon() = default;
 
-    virtual void Update()
-    {
-        if (isReloading) {
-            if (reloadTimer > 0) reloadTimer--;
-            if (reloadTimer <= 0) {
-                isReloading = false;
-                if (data) currentAmmo = data->maxAmmo;
-            }
-        }
-        else {
-            if (coolTimeTimer > 0)
-                coolTimeTimer--;
-        }
-    }
-
+    virtual void Update();
     virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, bool isMoving = false) = 0;
-    
-    virtual void Reload()
-    {
-        if (!isReloading && data && currentAmmo < data->maxAmmo) {
-            isReloading = true;
-            reloadTimer = data->reloadTime;
-        }
-    }
+    virtual void Reload();
 
-    bool CanFire() const
-    {
-        return !isReloading && coolTimeTimer <= 0 && currentAmmo > 0;
-    }
-    
-    void UseAmmo(int amount = 1)
-    {
-        currentAmmo -= amount;
-        if (currentAmmo <= 0) currentAmmo = 0;
-    }
-
-    void AddAmmo(int amount)
-    {
-        if (data) {
-            currentAmmo += amount;
-            if (currentAmmo > data->maxAmmo) {
-                currentAmmo = data->maxAmmo;
-            }
-        }
-    }
-
-    void ResetCoolTime()
-    {
-        if (data) coolTimeTimer = data->fireInterval;
-    }
+    bool CanFire() const;
+    void UseAmmo(int amount = 1);
+    void AddAmmo(int amount);
+    void ResetCoolTime();
 
     std::string GetName() const { return weaponName; }
     int GetCurrentAmmo() const { return currentAmmo; }
-    int GetMaxAmmo() const { return data ? data->maxAmmo : 0; }
+    int GetMaxAmmo() const;
     bool IsReloading() const { return isReloading; }
     const WeaponData* GetData() const { return data; }
     virtual float GetMoveSpreadPenalty() const { return 0.0f; }

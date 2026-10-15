@@ -1,4 +1,4 @@
-Name,Type,Amount,Radius,SoundEffect,Description
+﻿Name,Type,Amount,Radius,SoundEffect,Description
 Health,Health,5,15.0,item_get,HPを回復する救急キット
 Ammo,Ammo,15,15.0,item_get,弾薬を全回復する弾薬箱
 HorrorTrap,HorrorTrap,1,15.0,trap_scare,敵全員を引き寄せるホラートラップ

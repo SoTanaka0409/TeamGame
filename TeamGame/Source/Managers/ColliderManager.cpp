@@ -1,4 +1,4 @@
-﻿#include "ColliderManager.h"
+#include "ColliderManager.h"
 #include "Object2D.h"
 
 ColliderManager::ColliderManager()
@@ -17,6 +17,8 @@ void ColliderManager::AddCollider(Collider *collider)
 
 void ColliderManager::RemoveCollider(Collider *collider)
 {
+    if (!collider) return;
+
     auto it = colliders.begin();
     while (it != colliders.end())
     {
@@ -51,8 +53,10 @@ void ColliderManager::CheckAllCollisions()
 
     for (size_t i = 0; i < colliders.size(); ++i)
     {
+        if (!colliders[i]) continue;
         for (size_t j = i + 1; j < colliders.size(); ++j)
         {
+            if (!colliders[j]) continue;
             Object2D *ownerA = colliders[i]->GetOwner();
             Object2D *ownerB = colliders[j]->GetOwner();
 

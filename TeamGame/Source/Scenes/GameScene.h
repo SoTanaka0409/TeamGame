@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "StageManager.h"
 #include "DebugManager.h"
+#include "../Core/Vector2.h"
 #include <vector>
 
 class Enemy;
@@ -63,9 +64,8 @@ class GameScene : public Scene
     int itemSpawnTimer = 0;              ///< アイテムスポーン用タイマー
     int trapSpawnTimer = 0;              ///< トラップスポーン用タイマー
     int horrorEffectTimer = 0;           ///< ホラー演出用のタイマー
-    int team0Kills = 0;                  ///< チーム0（味方）のキル数
-    int team1Kills = 0;                  ///< チーム1（敵）のキル数
     bool isCleared = false;              ///< クリア済みフラグ
+    Vector2 m_cameraOffset = Vector2(0.0f, 0.0f); ///< エイム方向に応じた動的カメラオフセット
 
     /**
      * @brief ネットワークパケットの処理

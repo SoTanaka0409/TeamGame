@@ -41,6 +41,7 @@ private:
     int strafeTimer;                  ///< かに歩き切り替えタイマー
     float effectiveRangeCells = 10.0f;///< 攻撃有効射程（10セル）
     float sightRangeCells = 14.0f;    ///< 索敵視界（14セル: プレイヤーのライト照射範囲14セルに統一）
+    class Weapon* equippedWeapon = nullptr; ///< 装備武器
 
 public:
     /**
@@ -55,6 +56,16 @@ public:
      * @brief デストラクタ
      */
     ~Enemy();
+
+    /**
+     * @brief 装備武器の設定
+     */
+    void SetEquippedWeapon(class Weapon* w);
+
+    /**
+     * @brief 装備武器の取得
+     */
+    class Weapon* GetEquippedWeapon() const { return equippedWeapon; }
 
     /**
      * @brief フレーム更新処理（AI意思決定・移動・攻撃）
@@ -100,7 +111,7 @@ public:
     /**
      * @brief 攻撃有効射程（ワールド距離）の取得
      */
-    float GetEffectiveRange() const { return effectiveRangeCells * cellSize; }
+    float GetEffectiveRange() const;
 
     /**
      * @brief 攻撃有効射程（セル数）の取得
