@@ -144,3 +144,73 @@
 640:	フォントの初期化は正常に終了しました
 715:	文字コードバッファの初期化を行います... 完了しました
 733:ＤＸライブラリの初期化処理終了
+222915:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\OuterWall.png がありません
+222916:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\OuterWall.png がありません
+222916:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\OuterWall.png がありません
+222917:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\OuterWall.png がありません
+222917:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\OuterWall.png がありません
+222917:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\OuterWall.png がありません
+222918:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\OuterWall.png がありません
+222918:画像ファイル c:\Users\student\Desktop\team\Resource\OuterWall.png がありません
+222918:画像ファイル c:\Users\student\Desktop\team\Resouce\OuterWall.png がありません
+222920:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\OuterWall1.png がありません
+222920:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
+222921:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\OuterWall1.png がありません
+222921:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\OuterWall1.png がありません
+222921:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
+222922:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\OuterWall1.png がありません
+222922:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
+222922:画像ファイル c:\Users\student\Desktop\team\Resource\OuterWall1.png がありません
+222923:画像ファイル c:\Users\student\Desktop\team\Resouce\OuterWall1.png がありません
+222923:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\outerwall.png がありません
+222924:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\outerwall.png がありません
+222924:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\outerwall.png がありません
+222924:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\outerwall.png がありません
+222925:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\outerwall.png がありません
+222925:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\outerwall.png がありません
+222926:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\outerwall.png がありません
+222926:画像ファイル c:\Users\student\Desktop\team\Resource\outerwall.png がありません
+222926:画像ファイル c:\Users\student\Desktop\team\Resouce\outerwall.png がありません
+223011:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Star.png がありません
+223012:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\Star.png がありません
+223012:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Star.png がありません
+223013:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Star.png がありません
+223013:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\Star.png がありません
+223014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Star.png がありません
+223014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\Star.png がありません
+223014:画像ファイル c:\Users\student\Desktop\team\Resource\Star.png がありません
+223015:画像ファイル c:\Users\student\Desktop\team\Resouce\Star.png がありません
+223015:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Star1.png がありません
+223016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\Star1.png がありません
+223016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Star1.png がありません
+223016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Star1.png がありません
+223017:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\Star1.png がありません
+223017:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Star1.png がありません
+223018:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\Star1.png がありません
+223018:画像ファイル c:\Users\student\Desktop\team\Resource\Star1.png がありません
+223018:画像ファイル c:\Users\student\Desktop\team\Resouce\Star1.png がありません
+223018:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\star.png がありません
+223020:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\star.png がありません
+223020:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\star.png がありません
+223021:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\star.png がありません
+223021:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\star.png がありません
+223022:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\star.png がありません
+223022:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\star.png がありません
+223022:画像ファイル c:\Users\student\Desktop\team\Resource\star.png がありません
+223023:画像ファイル c:\Users\student\Desktop\team\Resouce\star.png がありません
+231272:フォントの初期化を行います
+231273:フォントの初期化は正常に終了しました
+231349:d3d11.dll の解放 1
+231351:dxgi.dll の解放 1
+231351:Direct3D11 のオブジェクト数を出力
+231352:Direct3D11 のオブジェクト合計数 : 0
+231355:DirectInput 関連の終了処理... 完了
+231355:サウンド関連の終了処理... 完了
+231362:ウィンドウ関連の終了処理... 完了
+231425:ＣＯＭを終了... 完了
+231430:ウインドウが破棄されようとしています
+231430:ソフトを終了する準備が整いました
+231541:
+231541:Alloc memory dump
+231541:	Total size:0(0.000kb)  Alloc num:0
+231542:
