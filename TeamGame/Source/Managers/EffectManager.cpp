@@ -1,8 +1,6 @@
 #include "Camera.h"
 #include "EffectManager.h"
 #include "DxLib.h"
-#include "ObjectManager.h"
-#include "Player.h"
 #include "Scene.h"
 #include "SceneManager.h"
 #include <cmath>
@@ -19,24 +17,8 @@ void BloodParticle::Update()
 
 void BloodParticle::Draw()
 {
-    float screenX = x;
-    float screenY = y;
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
-    {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
-        {
-            Player *player = dynamic_cast<Player *>(obj);
-            if (player && player->IsActive())
-            {
-                float zoomScale = 75.0f / 40.0f;
-                Vector2 pPos = player->GetPosition();
-                screenX = 960.0f + (x - pPos.x) * zoomScale;
-                screenY = 540.0f + (y - pPos.y) * zoomScale;
-                break;
-            }
-        }
-    }
+    float screenX = Camera::WorldToScreenX(x);
+    float screenY = Camera::WorldToScreenY(y);
 
     if (screenX < -50.0f || screenX > 1970.0f || screenY < -50.0f || screenY > 1130.0f)
         return;
@@ -45,32 +27,18 @@ void BloodParticle::Draw()
     if (alpha <= 0) return;
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), static_cast<int>(size), color, TRUE);
+    int drawRadius = static_cast<int>(size * Camera::ZoomScale);
+    if (drawRadius < 1) drawRadius = 1;
+    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), drawRadius, color, TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
 void KnifeSlashEffect::Draw()
 {
-    float screenX = x;
-    float screenY = y;
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
-    {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
-        {
-            Player *player = dynamic_cast<Player *>(obj);
-            if (player && player->IsActive())
-            {
-                float zoomScale = 75.0f / 40.0f;
-                Vector2 pPos = player->GetPosition();
-                screenX = 960.0f + (x - pPos.x) * zoomScale;
-                screenY = 540.0f + (y - pPos.y) * zoomScale;
-                break;
-            }
-        }
-    }
+    float screenX = Camera::WorldToScreenX(x);
+    float screenY = Camera::WorldToScreenY(y);
 
-    float arcLength = 40.0f;
+    float arcLength = 40.0f * Camera::ZoomScale;
     float cosA = std::cos(angle);
     float sinA = std::sin(angle);
     float perpX = -sinA * arcLength;

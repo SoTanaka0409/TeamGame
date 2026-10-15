@@ -21,7 +21,7 @@
 #include <algorithm>
 
 Player::Player(float startX, float startY)
-    : Character(ObjectTag::Player, startX, startY, 35.0f), damageColorTimer(0),
+    : Character(ObjectTag::Player, startX, startY, 20.0f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     teamId = 0;
@@ -38,6 +38,8 @@ Player::Player(float startX, float startY)
     else
     {
         status.Init(10, 1.5f, 1);
+        if (collider) collider->SetRadius(20.0f);
+        radius = 20.0f;
     }
 
     collider->SetTag("Player");
@@ -47,6 +49,7 @@ Player::Player(float startX, float startY)
     currentWeaponIndex = 0;
     SetEquippedSkillById(1);
     SetModelPath("Resource/GreenCharacter/character.mv1");
+    
 }
 
 Player::~Player()
@@ -167,7 +170,7 @@ void Player::Update()
                     }
                 }
             }
-            float minDist = radius + 35.0f; // プレイヤー半径(35) + 敵半径(35) = 70px
+            float minDist = radius * 2.0f; // プレイヤー半径(20) + 敵半径(20) = 40px
 
             // X軸の移動と衝突判定（壁および敵接触）
             float nextX = position.x + velX;

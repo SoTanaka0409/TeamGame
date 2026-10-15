@@ -25,6 +25,8 @@ private:
     void UpdateMatrix();                        ///< スケール・向き・2.5Dチルト・位置の行列合成更新
 
 public:
+    static constexpr float DEFAULT_SCALE = 0.3f; ///< 3Dモデルの共通標準スケール
+
     /**
      * @brief ファイルパスから直接ロードするコンストラクタ
      */
