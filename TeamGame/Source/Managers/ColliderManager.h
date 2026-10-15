@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Collider.h"
 #include <set>
 #include <utility>
@@ -52,4 +52,10 @@ class ColliderManager
      * @details 全てのコライダーと履歴をリストから削除する。
      */
     void Clear();
+
+    /**
+     * @brief デバッグ用当たり判定の可視化描画
+     * @details 登録された全コライダーをスクリーン座標に変換してワイヤーフレーム・半透明円で描画する。
+     */
+    void DrawDebug();
 };

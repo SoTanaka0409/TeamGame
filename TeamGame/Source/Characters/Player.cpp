@@ -21,7 +21,7 @@
 #include <algorithm>
 
 Player::Player(float startX, float startY)
-    : Character(ObjectTag::Player, startX, startY, 20.0f), damageColorTimer(0),
+    : Character(ObjectTag::Player, startX, startY, 8.9f), damageColorTimer(0),
       facingDir(0.0f, -1.0f)
 {
     teamId = 0;
@@ -38,8 +38,8 @@ Player::Player(float startX, float startY)
     else
     {
         status.Init(10, 1.5f, 1);
-        if (collider) collider->SetRadius(20.0f);
-        radius = 20.0f;
+        if (collider) collider->SetRadius(8.9f);
+        radius = 8.9f;
     }
 
     collider->SetTag("Player");
@@ -157,8 +157,8 @@ void Player::Update()
             float velX = (moveDir.x / length) * status.GetSpeed();
             float velY = (moveDir.y / length) * status.GetSpeed();
 
-            // 周囲の敵キャラクターの座標を取得
-            std::vector<Vector2> enemyPositions;
+            // 周囲の敵キャラクターの座標と当たり判定半径を取得
+            std::vector<std::pair<Vector2, float>> enemyInfos;
             auto scene = SceneManager::GetInstance().GetCurrentScene();
             if (scene && scene->GetObjectManager())
             {
@@ -166,11 +166,12 @@ void Player::Update()
                 {
                     if (obj && obj->IsActive() && obj->GetObjectTag() == ObjectTag::Enemy)
                     {
-                        enemyPositions.push_back(obj->GetPosition());
+                        Character *enemyChara = dynamic_cast<Character *>(obj);
+                        float eRad = enemyChara ? enemyChara->GetRadius() : radius;
+                        enemyInfos.push_back({obj->GetPosition(), eRad});
                     }
                 }
             }
-            float minDist = radius * 2.0f; // プレイヤー半径(20) + 敵半径(20) = 40px
 
             // X軸の移動と衝突判定（壁および敵接触）
             float nextX = position.x + velX;
@@ -187,14 +188,15 @@ void Player::Update()
             if (!blockedX)
             {
                 // 敵に触れている場合、敵の方向（距離が縮まる方向）への移動をブロック
-                for (const auto &ePos : enemyPositions)
+                for (const auto &info : enemyInfos)
                 {
-                    float curDx = ePos.x - position.x;
-                    float curDy = ePos.y - position.y;
+                    float minDist = radius + info.second;
+                    float curDx = info.first.x - position.x;
+                    float curDy = info.first.y - position.y;
                     float curDistSq = curDx * curDx + curDy * curDy;
 
-                    float nextDx = ePos.x - nextX;
-                    float nextDy = ePos.y - position.y;
+                    float nextDx = info.first.x - nextX;
+                    float nextDy = info.first.y - position.y;
                     float nextDistSq = nextDx * nextDx + nextDy * nextDy;
 
                     if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
@@ -224,14 +226,15 @@ void Player::Update()
             if (!blockedY)
             {
                 // 敵に触れている場合、敵の方向（距離が縮まる方向）への移動をブロック
-                for (const auto &ePos : enemyPositions)
+                for (const auto &info : enemyInfos)
                 {
-                    float curDx = ePos.x - position.x;
-                    float curDy = ePos.y - position.y;
+                    float minDist = radius + info.second;
+                    float curDx = info.first.x - position.x;
+                    float curDy = info.first.y - position.y;
                     float curDistSq = curDx * curDx + curDy * curDy;
 
-                    float nextDx = ePos.x - position.x;
-                    float nextDy = ePos.y - nextY;
+                    float nextDx = info.first.x - position.x;
+                    float nextDy = info.first.y - nextY;
                     float nextDistSq = nextDx * nextDx + nextDy * nextDy;
 
                     if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
@@ -485,16 +488,18 @@ void Player::Draw()
     unsigned int color =
         (damageColorTimer > 0) ? GetColor(255, 255, 0) : m_themeColor;
 
+    float renderRadius = radius * Camera::ZoomScale;
+
     // 3Dモデルが存在する場合はモデル描画と足元ガイド円を描画
     if (m_model && m_model->IsLoaded())
     {
         // 足元にチームカラーのガイド円を描画（半透明）
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(radius), color, TRUE);
+                   static_cast<int>(renderRadius), color, TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(radius), GetColor(255, 255, 255), FALSE);
+                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
 
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
@@ -505,7 +510,7 @@ void Player::Draw()
     {
         // 3Dモデルがない場合の2Dフォールバック描画
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(radius), color, TRUE);
+                   static_cast<int>(renderRadius), color, TRUE);
     }
 
     // 向いている方角を線で描画
@@ -533,7 +538,7 @@ void Player::Draw()
     if (!weapons.empty() && weapons[currentWeaponIndex]) {
         std::string wName = weapons[currentWeaponIndex]->GetName();
         if (isAimLocked) wName += " [視点固定]";
-        DrawString(static_cast<int>(screenX) - 35, static_cast<int>(screenY) - static_cast<int>(radius) - 22, wName.c_str(), isAimLocked ? GetColor(255, 220, 0) : GetColor(200, 220, 255));
+        DrawString(static_cast<int>(screenX) - 35, static_cast<int>(screenY) - static_cast<int>(renderRadius) - 22, wName.c_str(), isAimLocked ? GetColor(255, 220, 0) : GetColor(200, 220, 255));
     }
 
     // 【サーチ的な感じでブレ幅（予測線）を描画】

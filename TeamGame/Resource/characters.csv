@@ -1,6 +1,6 @@
-﻿Id,Name,Type,MaxHp,MoveSpeed,AttackPower,SkillId,Description
-1,Assault,Assault,100,4.2,25,2,攻守のバランスに優れた標準型アタッカー (攻撃バフ所持)
-2,Speed,Speed,80,5.2,15,1,高い機動力を誇るスカウト (即時HP回復所持)
-3,Heavy,Heavy,150,3.4,30,4,高い耐久力を誇る重装タンク (周囲スタンパルス所持)
-4,Sniper,Sniper,90,4.0,45,3,遠距離からの精密射撃が得意な狙撃手 (視界奪取フラッシュバン所持)
-5,Tactical,Tactical,110,4.5,20,1,特殊戦術に長けたサポート兵 (即時HP回復所持)
+Id,Name,Type,MaxHp,MoveSpeed,AttackPower,SkillId,ColliderRadius,ModelScale,Description
+1,Assault,Assault,100,4.2,25,2,8.9,0.30,攻守のバランスに優れた標準型アタッカー (攻撃バフ所持)
+2,Speed,Speed,80,5.2,15,1,8.0,0.27,高い機動力を誇るスカウト (即時HP回復所持)
+3,Heavy,Heavy,150,3.4,30,4,10.7,0.35,高い耐久力を誇る重装タンク (周囲スタンパルス所持)
+4,Sniper,Sniper,90,4.0,45,3,8.5,0.29,遠距離からの精密射撃が得意な狙撃手 (視界奪取フラッシュバン所持)
+5,Tactical,Tactical,110,4.5,20,1,8.9,0.30,特殊戦術に長けたサポート兵 (即時HP回復所持)

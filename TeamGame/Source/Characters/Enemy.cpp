@@ -14,7 +14,7 @@
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY, int tId)
-    : Character(ObjectTag::Enemy, startX, startY, 20.0f), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 8.9f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0),
@@ -37,8 +37,8 @@ Enemy::Enemy(float startX, float startY, int tId)
     else
     {
         status.Init(3, 1.5f, 1);
-        collider->SetRadius(20.0f);
-        radius = 20.0f;
+        collider->SetRadius(8.9f);
+        radius = 8.9f;
     }
     collider->SetTag("Enemy");
     SetModelPath("Resource/GreenCharacter/character.mv1");
@@ -230,8 +230,8 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
         return;
     }
 
-    // 接触判定対象（プレイヤーおよび他の敵キャラクター）の座標を取得
-    std::vector<Vector2> otherPositions;
+    // 接触判定対象（プレイヤーおよび他の敵キャラクター）の座標と当たり判定半径を取得
+    std::vector<std::pair<Vector2, float>> otherInfos;
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetObjectManager())
     {
@@ -241,12 +241,13 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
             {
                 if (obj->GetObjectTag() == ObjectTag::Player || obj->GetObjectTag() == ObjectTag::Enemy)
                 {
-                    otherPositions.push_back(obj->GetPosition());
+                    Character *c = dynamic_cast<Character *>(obj);
+                    float oRad = c ? c->GetRadius() : radius;
+                    otherInfos.push_back({obj->GetPosition(), oRad});
                 }
             }
         }
     }
-    float minDist = radius * 2.0f; // 40px
 
     // X軸の移動と衝突判定（壁および他キャラクター接触）
     float nextX = position.x + velX;
@@ -257,14 +258,15 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
     if (!xBlocked)
     {
         // 接触時に対象の方向（距離が縮まる方向）への移動をブロック
-        for (const auto &oPos : otherPositions)
+        for (const auto &info : otherInfos)
         {
-            float curDx = oPos.x - position.x;
-            float curDy = oPos.y - position.y;
+            float minDist = radius + info.second;
+            float curDx = info.first.x - position.x;
+            float curDy = info.first.y - position.y;
             float curDistSq = curDx * curDx + curDy * curDy;
 
-            float nextDx = oPos.x - nextX;
-            float nextDy = oPos.y - position.y;
+            float nextDx = info.first.x - nextX;
+            float nextDy = info.first.y - position.y;
             float nextDistSq = nextDx * nextDx + nextDy * nextDy;
 
             if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
@@ -289,14 +291,15 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
     if (!yBlocked)
     {
         // 接触時に対象の方向（距離が縮まる方向）への移動をブロック
-        for (const auto &oPos : otherPositions)
+        for (const auto &info : otherInfos)
         {
-            float curDx = oPos.x - position.x;
-            float curDy = oPos.y - position.y;
+            float minDist = radius + info.second;
+            float curDx = info.first.x - position.x;
+            float curDy = info.first.y - position.y;
             float curDistSq = curDx * curDx + curDy * curDy;
 
-            float nextDx = oPos.x - position.x;
-            float nextDy = oPos.y - nextY;
+            float nextDx = info.first.x - position.x;
+            float nextDy = info.first.y - nextY;
             float nextDistSq = nextDx * nextDx + nextDy * nextDy;
 
             if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
@@ -325,14 +328,15 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
             int gy = static_cast<int>(sNextY / cellSize);
             if (currentStage->IsSolidWall(gx, gy)) return false;
 
-            for (const auto &oPos : otherPositions)
+            for (const auto &info : otherInfos)
             {
-                float curDx = oPos.x - position.x;
-                float curDy = oPos.y - position.y;
+                float minDist = radius + info.second;
+                float curDx = info.first.x - position.x;
+                float curDy = info.first.y - position.y;
                 float curDistSq = curDx * curDx + curDy * curDy;
 
-                float nextDx = oPos.x - sNextX;
-                float nextDy = oPos.y - sNextY;
+                float nextDx = info.first.x - sNextX;
+                float nextDy = info.first.y - sNextY;
                 float nextDistSq = nextDx * nextDx + nextDy * nextDy;
 
                 if (nextDistSq < minDist * minDist && nextDistSq < curDistSq)
@@ -628,7 +632,7 @@ void Enemy::Draw()
 {
     float screenX = Camera::WorldToScreenX(position.x);
     float screenY = Camera::WorldToScreenY(position.y);
-    float renderRadius = radius;
+    float renderRadius = radius * Camera::ZoomScale;
 
     // カメラ範囲外のカリング
     if (screenX < -100.0f || screenX > 2020.0f || screenY < -100.0f || screenY > 1180.0f)

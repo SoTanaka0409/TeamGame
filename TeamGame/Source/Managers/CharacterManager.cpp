@@ -56,7 +56,22 @@ bool CharacterManager::LoadFromCSV(const std::string& filePath)
                 if (tokens.size() >= 5) data.moveSpeed = std::stof(tokens[4]);
                 if (tokens.size() >= 6) data.attackPower = std::stoi(tokens[5]);
                 if (tokens.size() >= 7) data.skillId = std::stoi(tokens[6]);
-                if (tokens.size() >= 8) data.description = tokens[7];
+
+                if (tokens.size() >= 10)
+                {
+                    // 10列形式: Id,Name,Type,MaxHp,MoveSpeed,AttackPower,SkillId,ColliderRadius,ModelScale,Description
+                    data.colliderRadius = std::stof(tokens[7]);
+                    data.modelScale = std::stof(tokens[8]);
+                    data.description = tokens[9];
+                }
+                else if (tokens.size() >= 8)
+                {
+                    data.description = tokens[7];
+                }
+
+                // 安全フォールバック
+                if (data.colliderRadius <= 1.0f) data.colliderRadius = 8.9f;
+                if (data.modelScale <= 0.001f) data.modelScale = 0.3f;
             }
             else // 旧形式 (Typeスタート)
             {

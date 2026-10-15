@@ -16,6 +16,8 @@ struct SelectionCharacterData {
     unsigned int themeColor = 0xFFFFFF; // UI上のテーマカラー
     std::string modelPath;              // 3Dモデルファイルパス
     std::string previewPath;            // プレビュー画像ファイルパス
+    float colliderRadius = 8.9f;        // 当たり判定半径 (px)
+    float modelScale = 0.3f;            // 3Dモデルスケール倍率
 };
 
 /**

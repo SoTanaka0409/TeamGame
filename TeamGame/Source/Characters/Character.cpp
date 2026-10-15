@@ -58,6 +58,28 @@ void Character::Update()
     }
 }
 
+void Character::SetColliderRadius(float rad)
+{
+    if (rad <= 1.0f) rad = 8.9f;
+    radius = rad;
+    width = rad * 2.0f;
+    height = rad * 2.0f;
+    if (collider)
+    {
+        collider->SetRadius(rad);
+    }
+}
+
+void Character::SetModelScale(float scale)
+{
+    if (scale <= 0.001f) scale = 0.3f;
+    m_modelScale = scale;
+    if (m_model)
+    {
+        m_model->SetScaleUniform(scale);
+    }
+}
+
 void Character::SetModelPath(const std::string& path)
 {
     if (path.empty())
@@ -72,6 +94,10 @@ void Character::SetModelPath(const std::string& path)
     }
     m_modelPath = path;
     m_model = std::make_unique<Model>(path);
+    if (m_model && m_modelScale > 0.0f)
+    {
+        m_model->SetScaleUniform(m_modelScale);
+    }
 }
 
 void Character::SetEquippedSkill(std::unique_ptr<Skill> skill)

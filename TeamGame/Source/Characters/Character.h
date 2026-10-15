@@ -30,6 +30,7 @@ protected:
     std::unique_ptr<Skill> equippedSkill;      ///< キャラクター自身が保持・所有するスキル実体
     std::string m_modelPath;                   ///< 3Dモデルのリソースパス
     std::unique_ptr<Model> m_model;            ///< 3Dキャラクターモデル・アニメーション管理実体
+    float m_modelScale = 0.3f;                 ///< 3Dモデルのスケール倍率
 
 public:
     Status status;                ///< キャラクターのステータス
@@ -38,6 +39,11 @@ public:
     bool isDeadProcessed = false;  ///< 死亡処理フラグ
     int respawnTimer = 0;         ///< リスポーンタイマー
     int invincibleTimer = 0;      ///< 無敵時間タイマー
+
+    float GetRadius() const { return radius; }
+    void SetColliderRadius(float rad);
+    float GetModelScale() const { return m_modelScale; }
+    void SetModelScale(float scale);
 
     bool IsInBush() const { return m_isInBush; }
     void SetInBush(bool val) { m_isInBush = val; }

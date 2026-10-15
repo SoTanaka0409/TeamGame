@@ -20,6 +20,8 @@ Player* CharacterFactory::CreatePlayer(float startX, float startY, Stage* stage,
 
     player->status.Init(charaData.maxHp, charaData.moveSpeed, 10);
     player->SetThemeColor(charaData.themeColor);
+    player->SetColliderRadius(charaData.colliderRadius);
+    player->SetModelScale(charaData.modelScale);
     player->SetModelPath(charaData.modelPath.empty() ? "Resource/GreenCharacter/character.mv1" : charaData.modelPath);
 
     // 選択された武器 (スロット1: 固定ハンドガン, スロット2: 自由選択武器) を装備
@@ -40,6 +42,8 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
     for (const auto& chara : availableCharas) {
         if (chara.id == characterId) {
             bot->status.Init(chara.maxHp, chara.moveSpeed, 10);
+            bot->SetColliderRadius(chara.colliderRadius);
+            bot->SetModelScale(chara.modelScale);
             if (!chara.modelPath.empty()) {
                 bot->SetModelPath(chara.modelPath);
             }

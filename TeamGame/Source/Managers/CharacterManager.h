@@ -17,8 +17,9 @@ struct CharacterData
     int skillId = 1;                ///< 所持するスキルのID (skills.csvのIDに対応)
     std::string description;        ///< 特徴・説明文
 
-    // 互換パラメータ
-    float colliderRadius = 20.0f;
+    // 互換・モデル関連パラメータ
+    float colliderRadius = 8.9f;    ///< 当たり判定半径 (px)
+    float modelScale = 0.3f;        ///< 3Dモデルスケール倍率
     float sightRangeCells = 14.0f;
     float effectiveRangeCells = 10.0f;
     int shootCooldown = 75;
