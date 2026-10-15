@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <memory>
 #include "DxLib.h"
@@ -155,4 +155,9 @@ public:
      * @brief 3Dモデルを描画
      */
     void Draw() const;
+
+    /**
+     * @brief 透明度を指定して3Dモデルを描画 (0.0f: 完全透明, 1.0f: 通常)
+     */
+    void DrawWithOpacity(float opacity) const;
 };

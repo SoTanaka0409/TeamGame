@@ -1,4 +1,4 @@
-#include "SkillData.h"
+﻿#include "SkillData.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -29,6 +29,11 @@ SkillMinorTag SkillDataManager::ParseMinorTag(const std::string& str) const
     if (str == "SpeedDown") return SkillMinorTag::SpeedDown;
     if (str == "Blind") return SkillMinorTag::Blind;
     if (str == "Stun") return SkillMinorTag::Stun;
+    if (str == "HomingKill") return SkillMinorTag::HomingKill;
+    if (str == "Transparency") return SkillMinorTag::Transparency;
+    if (str == "PanicShoot") return SkillMinorTag::PanicShoot;
+    if (str == "CleanTime") return SkillMinorTag::CleanTime;
+    if (str == "HighRisk") return SkillMinorTag::HighRisk;
     return SkillMinorTag::None;
 }
 

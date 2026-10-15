@@ -1,4 +1,4 @@
-#include "CharacterFactory.h"
+﻿#include "CharacterFactory.h"
 #include "../Characters/Player.h"
 #include "../Characters/Enemy.h"
 #include "../Weapons/Handgun.h"
@@ -21,6 +21,7 @@ Player* CharacterFactory::CreatePlayer(float startX, float startY, Stage* stage,
     player->status.Init(charaData.maxHp, charaData.moveSpeed, 10);
     player->SetThemeColor(charaData.themeColor);
     player->SetModelPath(charaData.modelPath.empty() ? "Resource/GreenCharacter/character.mv1" : charaData.modelPath);
+    player->SetEquippedSkillById(charaData.skillId);
 
     // 選択された武器 (スロット1: 固定ハンドガン, スロット2: 自由選択武器) を装備
     std::vector<Weapon*> playerWeapons;

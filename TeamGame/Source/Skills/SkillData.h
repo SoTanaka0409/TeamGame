@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 
@@ -18,7 +18,12 @@ enum class SkillMinorTag {
     AttackDown,   // 攻撃力ダウン（デバフ）
     SpeedDown,    // 移動速度ダウン（デバフ）
     Blind,        // 目くらまし
-    Stun          // スタン（行動不能）
+    Stun,         // スタン（行動不能）
+    HomingKill,   // 味方Bot特攻自爆
+    Transparency, // ステルス透明化
+    PanicShoot,   // パニック射撃（錯乱/同士討ち）
+    CleanTime,    // 衝撃波（吹き飛ばし）
+    HighRisk      // 強制音発生＆敵位置探知
 };
 
 // CSVから読み込むデータ構造

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Character.h"
 #include "PathfindingComponent.h"
 #include "Vector2.h"
@@ -179,9 +179,19 @@ public:
      */
     bool CheckLineOfSightToPlayer() const { return CheckLineOfSightToTarget(); }
 
-    /**
-     * @brief 障害物壁滑り付き移動処理
-     * @param desiredDir 移動希望ベクトル
-     */
     void MoveSmart(const Vector2 &desiredDir);
+
+    /**
+     * @brief HomingKillスキルによる特攻状態を開始
+     */
+    void StartHomingSuicide(Character* enemyTarget, float speedMultiplier = 1.6f);
+
+    /**
+     * @brief 特攻状態中かどうか
+     */
+    bool IsHomingSuicide() const { return isHomingSuicide; }
+
+private:
+    bool isHomingSuicide = false;
+    int suicideTimer = 0;
 };

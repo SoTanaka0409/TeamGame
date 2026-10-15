@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -13,6 +13,8 @@ struct SelectionCharacterData {
     std::string description;            // 特徴・説明
     int maxHp = 100;                    // 最大HP
     float moveSpeed = 4.0f;             // 移動速度
+    int skillId = 1;                    // スキルID
+    std::string skillName;              // スキル名
     unsigned int themeColor = 0xFFFFFF; // UI上のテーマカラー
     std::string modelPath;              // 3Dモデルファイルパス
     std::string previewPath;            // プレビュー画像ファイルパス
