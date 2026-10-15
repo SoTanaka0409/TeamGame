@@ -1,5 +1,4 @@
-#include "PlayerSelection.h"
-#include "../Managers/CharacterManager.h"
+﻿#include "PlayerSelection.h"
 
 PlayerSelectionManager& PlayerSelectionManager::GetInstance() {
     static PlayerSelectionManager instance;
@@ -15,37 +14,12 @@ PlayerSelectionManager::PlayerSelectionManager() {
 }
 
 std::vector<SelectionCharacterData> PlayerSelectionManager::GetAvailableCharacters() {
-    static const unsigned int colors[5] = { 0x00FF88, 0x00A2FF, 0xFF4444, 0xFFBB00, 0xAA44FF };
-
-    // CharacterManager(characters.csv)にロードされたデータがあれば同期
-    const auto& csvList = CharacterManager::GetInstance().GetAllCharacters();
-    if (!csvList.empty()) {
-        std::vector<SelectionCharacterData> list;
-        for (size_t i = 0; i < csvList.size(); ++i) {
-            const auto& c = csvList[i];
-            SelectionCharacterData d;
-            d.id = c.id;
-            d.name = c.name;
-            d.typeName = c.type;
-            d.description = c.description;
-            d.maxHp = c.maxHp;
-            d.moveSpeed = c.moveSpeed;
-            d.themeColor = (i < 5) ? colors[i] : 0xFFFFFF;
-            d.modelPath = "Resource/GreenCharacter/character.mv1";
-            d.previewPath = "Resource/GreenCharacter/preview.png";
-            d.colliderRadius = c.colliderRadius;
-            d.modelScale = c.modelScale;
-            list.push_back(d);
-        }
-        return list;
-    }
-
     return {
-        { 1, "Character 1", "Assault", "Standard balanced character (Green)", 100, 4.2f, 0x00FF88, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f },
-        { 2, "Character 2", "Speed", "High mobility", 80, 5.2f, 0x00A2FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.0f, 0.27f },
-        { 3, "Character 3", "Heavy", "Tank role with high HP", 150, 3.4f, 0xFF4444, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 10.7f, 0.35f },
-        { 4, "Character 4", "Sniper", "Long range specialist", 90, 4.0f, 0xFFBB00, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.5f, 0.29f },
-        { 5, "Character 5", "Tactical", "High turn rate with skills", 110, 4.5f, 0xAA44FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f }
+        { 1, "指揮者", "Tactical", "味方Botを敵の手前で爆発させる [Homing Kill] を操る冷徹な指揮者", 110, 4.2f, 1, "Homing Kill", 0xAA44FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png" },
+        { 2, "反逆者", "Speed",    "敵味方双方から姿を消す [Transparency] を持つ神出鬼没な反逆者",   85, 5.2f, 2, "Transparency", 0x00A2FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png" },
+        { 3, "バカ",   "Assault",  "周囲を錯乱させ同士討ちを起こす [Panic shoot] を放つ暴走アタッカー", 100, 4.4f, 3, "Panic shoot", 0x00FF88, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png" },
+        { 4, "主婦",   "Heavy",    "周囲の物や弾を綺麗サッパリ吹き飛ばす [Clean time] を持つ最強の主婦", 160, 3.2f, 4, "Clean time", 0xFF4444, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png" },
+        { 5, "悪魔",   "Sniper",   "敵の位置を暴くが自身も音を放つ [High risk, high return] を宿した悪魔", 90, 3.8f, 5, "High risk", 0xFFBB00, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png" }
     };
 }
 

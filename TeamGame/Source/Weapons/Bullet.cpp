@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include "Bullet.h"
 #include "Character.h"
 #include "ColliderManager.h"
@@ -129,7 +129,21 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
     if (otherCollider->GetOwner())
     {
         Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
-        if (target && target->teamId != this->teamId && target->teamId != -1)
+        bool canHit = false;
+        if (target && target->teamId != -1)
+        {
+            if (target->teamId != this->teamId)
+            {
+                canHit = true;
+            }
+            else if (target->IsPanic())
+            {
+                // パニック（錯乱）状態のキャラクターは味方の弾にも被弾する
+                canHit = true;
+            }
+        }
+
+        if (canHit)
         {
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);

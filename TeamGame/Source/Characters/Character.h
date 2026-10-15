@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Status.h"
@@ -39,6 +39,8 @@ public:
     bool isDeadProcessed = false;  ///< 死亡処理フラグ
     int respawnTimer = 0;         ///< リスポーンタイマー
     int invincibleTimer = 0;      ///< 無敵時間タイマー
+    int highRiskSoundTimer = 0;   ///< HighRiskスキル時の定期発音タイマー
+    Vector2 knockbackVelocity = Vector2(0.0f, 0.0f); ///< 吹き飛ばし減衰速度ベクトル
 
     float GetRadius() const { return radius; }
     void SetColliderRadius(float rad);
@@ -47,6 +49,14 @@ public:
 
     bool IsInBush() const { return m_isInBush; }
     void SetInBush(bool val) { m_isInBush = val; }
+
+    /**
+     * @brief 吹き飛ばし衝撃力を受ける
+     */
+    void ApplyKnockback(const Vector2& impulse) {
+        knockbackVelocity.x += impulse.x;
+        knockbackVelocity.y += impulse.y;
+    }
 
     Character(ObjectTag tag, float startX, float startY, float radius);
     virtual ~Character();
@@ -111,4 +121,29 @@ public:
      * @brief 有効視界倍率（目くらまし中なら 0.3倍）
      */
     float GetSightMultiplier() const;
+
+    /**
+     * @brief ステルス透明化状態か
+     */
+    bool IsTransparent() const;
+
+    /**
+     * @brief パニック（錯乱）状態か
+     */
+    bool IsPanic() const;
+
+    /**
+     * @brief ハイリスク（位置探知＆強制発音）状態か
+     */
+    bool IsHighRisk() const;
+
+    /**
+     * @brief 指定タグのアクティブエフェクトの残りフレーム数を取得（無ければ0）
+     */
+    int GetEffectRemainingFrames(SkillMinorTag tag) const;
+
+    /**
+     * @brief 現在のアクティブエフェクト一覧を取得
+     */
+    const std::vector<ActiveEffect>& GetActiveEffects() const { return activeEffects; }
 };

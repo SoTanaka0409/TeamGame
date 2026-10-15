@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -71,6 +71,26 @@ void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness, int shooterTe
         return;
     }
 
+    // 発砲者が透明化(Transparency)中の場合は音も消滅・敵に察知されない
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetObjectManager())
+    {
+        for (auto* obj : scene->GetObjectManager()->GetObjects())
+        {
+            Character* c = dynamic_cast<Character*>(obj);
+            if (c && c->IsActive() && c->IsTransparent())
+            {
+                float sx = soundPos.x - c->GetPosition().x;
+                float sy = soundPos.y - c->GetPosition().y;
+                if (sx * sx + sy * sy < 40.0f * 40.0f)
+                {
+                    // 透明化中のキャラクター自身が発生させた音なので無音化
+                    return;
+                }
+            }
+        }
+    }
+
     if (aiState == EnemyAIState::ALERT) return;
 
     float dx = soundPos.x - position.x;
@@ -102,18 +122,26 @@ void Enemy::UpdateTarget()
     float minDist = 999999.0f;
     Character* visibleEnemy = nullptr;
 
+    bool selfPanic = this->IsPanic();
     for (auto obj : scene->GetObjectManager()->GetObjects())
     {
         Character* c = dynamic_cast<Character*>(obj);
-        if (c && c != this && c->IsActive() && c->teamId != this->teamId && c->teamId != -1)
+        if (c && c != this && c->IsActive() && c->teamId != -1)
         {
-            if (CheckLineOfSightToTarget(c)) {
-                float dx = c->GetPosition().x - position.x;
-                float dy = c->GetPosition().y - position.y;
-                float dist = dx * dx + dy * dy;
-                if (dist < minDist) {
-                    minDist = dist;
-                    visibleEnemy = c;
+            // 透明化中のキャラは敵・味方問わず視界外・不可視として扱う
+            if (c->IsTransparent()) continue;
+
+            // パニック中なら敵味方関係なく最寄りを攻撃、通常は敵チームのみターゲット
+            if (selfPanic || (c->teamId != this->teamId))
+            {
+                if (CheckLineOfSightToTarget(c)) {
+                    float dx = c->GetPosition().x - position.x;
+                    float dy = c->GetPosition().y - position.y;
+                    float dist = dx * dx + dy * dy;
+                    if (dist < minDist) {
+                        minDist = dist;
+                        visibleEnemy = c;
+                    }
                 }
             }
         }
@@ -393,6 +421,76 @@ void Enemy::Update()
         }
     }
 
+    // HomingKill 特攻自爆処理
+    if (isHomingSuicide)
+    {
+        suicideTimer--;
+        auto scene = SceneManager::GetInstance().GetCurrentScene();
+        if (targetCharacter && targetCharacter->IsActive() && !targetCharacter->status.IsDead())
+        {
+            Vector2 tPos = targetCharacter->GetPosition();
+            float dx = tPos.x - position.x;
+            float dy = tPos.y - position.y;
+            float dist = std::sqrt(dx * dx + dy * dy);
+
+            // 敵の手前（110px：約1.5マス離れた位置）に到達した段階、または時間切れで爆発
+            // 爆発半径は90pxとし、「敵の目の前で爆発するが、確実に当たるわけではない（敵の移動等で回避可能）」ようにする
+            if (dist <= 110.0f || suicideTimer <= 0)
+            {
+                if (scene && scene->GetEffectManager())
+                {
+                    scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 45);
+                    scene->GetEffectManager()->AddMuzzleFlashEffect(position.x, position.y, 0.0f, 90.0f);
+                    scene->GetEffectManager()->AddSonarWaveEffect(position.x, position.y, GetColor(255, 80, 0));
+                }
+
+                // 周囲の敵キャラクターにダメージ判定（半径90px。手前110pxで止まるため、動いている敵には外れることもある）
+                if (scene && scene->GetObjectManager())
+                {
+                    float blastRadiusSq = 90.0f * 90.0f;
+                    for (auto* obj : scene->GetObjectManager()->GetObjects())
+                    {
+                        Character* c = dynamic_cast<Character*>(obj);
+                        if (c && c != this && c->IsActive() && c->teamId != this->teamId)
+                        {
+                            float cdx = c->GetPosition().x - position.x;
+                            float cdy = c->GetPosition().y - position.y;
+                            if (cdx * cdx + cdy * cdy <= blastRadiusSq)
+                            {
+                                c->status.TakeDamage(100);
+                            }
+                        }
+                    }
+                }
+
+                Damage(status.GetMaxHp()); // 自分自身も爆散・死亡
+                return;
+            }
+
+            // 標的に向かって最短ルートで急行
+            if (currentStage && cellSize > 0.0f)
+            {
+                pathfinder.CalculatePath(position, tPos, currentStage, cellSize);
+                Vector2 moveDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+                if (moveDir.x != 0 || moveDir.y != 0) {
+                    facingDir = moveDir;
+                    MoveSmart(moveDir);
+                } else {
+                    Vector2 directDir(dx / (dist > 0.001f ? dist : 1.0f), dy / (dist > 0.001f ? dist : 1.0f));
+                    facingDir = directDir;
+                    MoveSmart(directDir);
+                }
+            }
+            return;
+        }
+        else
+        {
+            // 標的が既に死亡していたらその場で爆発
+            Damage(status.GetMaxHp());
+            return;
+        }
+    }
+
     UpdateTarget();
     if (damageColorTimer > 0)
     {
@@ -481,6 +579,8 @@ void Enemy::Update()
                     equippedWeapon->Fire(muzzlePos, facingDir, teamId);
                     if (m_model) m_model->PlayShoot();
                     int interval = (equippedWeapon->GetData()) ? equippedWeapon->GetData()->fireInterval : 75;
+                    // パニック乱戦中は連射速度が激化（クールダウン半減）
+                    if (IsPanic()) interval = (interval > 15) ? (interval / 2) : interval;
                     shootCooldown = interval;
                 }
             }
@@ -514,7 +614,7 @@ void Enemy::Update()
 
                 SoundManager::GetInstance().Play3D("gunshot", position, 1000.0f, 1.0f, teamId);
 
-                shootCooldown = 75;
+                shootCooldown = IsPanic() ? 25 : 75; // パニック中は通常75→25フレームの超連射乱戦
             }
         }
     }
@@ -654,6 +754,14 @@ void Enemy::Draw()
         else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 140, 30);
     }
 
+    // 透明化中の描画制御（完全非表示、または味方なら極薄く表示）
+    float opacity = 1.0f;
+    if (IsTransparent())
+    {
+        // 敵側からは完全非表示 (0.0f)
+        return;
+    }
+
     // 3Dモデルが存在する場合はモデル描画と足元ガイド円を描画
     if (m_model && m_model->IsLoaded())
     {
@@ -668,7 +776,7 @@ void Enemy::Draw()
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
         m_model->SetFacingDir(facingDir);
-        m_model->Draw();
+        m_model->DrawWithOpacity(opacity);
     }
     else
     {
@@ -815,3 +923,13 @@ void Enemy::OnCollisionStay(Collider *otherCollider)
 void Enemy::OnCollisionExit(Collider *otherCollider)
 {
 }
+
+void Enemy::StartHomingSuicide(Character* enemyTarget, float speedMultiplier)
+{
+    isHomingSuicide = true;
+    suicideTimer = 300; // 最長5秒間追尾
+    targetCharacter = enemyTarget;
+    aiState = EnemyAIState::ALERT;
+    status.SetSpeedMultiplier(speedMultiplier);
+}
+

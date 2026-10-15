@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -504,7 +504,32 @@ void Player::Draw()
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
         m_model->SetFacingDir(facingDir);
-        m_model->Draw();
+        float playerOpacity = IsTransparent() ? 0.35f : 1.0f;
+        m_model->DrawWithOpacity(playerOpacity);
+
+        // HighRisk（悪魔）発動中: 「ロウソクで縁取られている」演出（揺らめく赤・橙・黄色の炎の輪とロウソクの火の粉）
+        if (IsHighRisk())
+        {
+            float timeSec = GetNowCount() / 1000.0f;
+            for (int k = 0; k < 8; ++k)
+            {
+                float ang = (k / 8.0f) * 6.283185f + timeSec * 1.5f;
+                float flicker = std::sin(timeSec * 10.0f + k * 1.3f) * 4.0f;
+                float rDist = radius + 14.0f + flicker;
+                float fx = screenX + std::cos(ang) * rDist;
+                float fy = screenY + std::sin(ang) * rDist;
+
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+                DrawCircle(static_cast<int>(fx), static_cast<int>(fy), 7, GetColor(255, 80, 20), TRUE);  // 炎外縁（赤橙）
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+                DrawCircle(static_cast<int>(fx), static_cast<int>(fy), 4, GetColor(255, 220, 50), TRUE); // 炎中心核（黄・白）
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            }
+            // プレイヤー外周のロウソク光彩リング
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(80 + std::sin(timeSec * 8.0f) * 30));
+            DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY), static_cast<int>(radius + 20), GetColor(255, 120, 30), FALSE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
     }
     else
     {
@@ -668,6 +693,80 @@ void Player::Draw()
             DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(20, 20, 20), TRUE);
             DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(255, 200, 0), FALSE);
             DrawStringF(eScreenX - 65.0f, eScreenY - 50.0f, "[SPACE] KNIFE KILL", GetColor(255, 230, 0));
+        }
+
+        // HighRiskスキル発動中: 全敵キャラクターの位置を壁透過でハイライト表示 ＋ 画面端/至近距離での矢印＆距離表示
+        if (IsHighRisk())
+        {
+            for (auto obj : scene->GetObjectManager()->GetObjects())
+            {
+                Enemy* enemy = dynamic_cast<Enemy*>(obj);
+                if (enemy && enemy->IsActive() && enemy->teamId != this->teamId)
+                {
+                    Vector2 ePos = enemy->GetPosition();
+                    float eScreenX = Camera::WorldToScreenX(ePos.x);
+                    float eScreenY = Camera::WorldToScreenY(ePos.y);
+
+                    float dx = ePos.x - position.x;
+                    float dy = ePos.y - position.y;
+                    float distPx = std::sqrt(dx * dx + dy * dy);
+                    float distMeter = distPx / 40.0f; // 40px = 1m換算
+
+                    // 敵が画面外にある場合は画面端に追跡矢印を配置、画面内なら敵の直上に表示
+                    float arrowScreenX = eScreenX;
+                    float arrowScreenY = eScreenY;
+                    bool isOffScreen = false;
+
+                    float margin = 80.0f;
+                    if (arrowScreenX < margin || arrowScreenX > 1920.0f - margin ||
+                        arrowScreenY < margin || arrowScreenY > 1080.0f - margin)
+                    {
+                        isOffScreen = true;
+                        float dirX = dx / (distPx > 0.001f ? distPx : 1.0f);
+                        float dirY = dy / (distPx > 0.001f ? distPx : 1.0f);
+                        // 画面中心から画面端へ投影
+                        float cScreenX = 1920.0f / 2.0f;
+                        float cScreenY = 1080.0f / 2.0f;
+                        arrowScreenX = cScreenX + dirX * 420.0f;
+                        arrowScreenY = cScreenY + dirY * 420.0f;
+                    }
+
+                    // 1. 敵頭上/画面端インジケータ（矢印 ＋ 「あと〇m」テキスト）
+                    float angleToEnemy = std::atan2(dy, dx);
+                    float tipX = arrowScreenX;
+                    float tipY = isOffScreen ? arrowScreenY : (eScreenY - 35.0f);
+
+                    // 矢印（三角形）の描画
+                    float arrowLen = 14.0f;
+                    float p1X = tipX + std::cos(angleToEnemy) * arrowLen;
+                    float p1Y = tipY + std::sin(angleToEnemy) * arrowLen;
+                    float p2X = tipX + std::cos(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
+                    float p2Y = tipY + std::sin(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
+                    float p3X = tipX + std::cos(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
+                    float p3Y = tipY + std::sin(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
+
+                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+                    DrawTriangle(static_cast<int>(p1X), static_cast<int>(p1Y),
+                                 static_cast<int>(p2X), static_cast<int>(p2Y),
+                                 static_cast<int>(p3X), static_cast<int>(p3Y),
+                                 GetColor(255, 50, 50), TRUE);
+                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+                    // 距離表示「あと 〇.〇m」
+                    char distText[32];
+                    snprintf(distText, sizeof(distText), "あと %.1fm", distMeter);
+                    DrawString(static_cast<int>(tipX) - 30, static_cast<int>(tipY) - 22, distText, GetColor(255, 230, 40));
+
+                    // 2. 敵自体の強調サークル
+                    if (!isOffScreen)
+                    {
+                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+                        DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 24, GetColor(255, 40, 40), FALSE);
+                        DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 22, GetColor(255, 200, 0), FALSE);
+                        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                    }
+                }
+            }
         }
     }
 
@@ -977,12 +1076,42 @@ void Player::DrawUI(int screenX, int screenY)
         SetFontSize(16);
 
         int ct = skill->GetCoolTimeTimer();
-        if (ct > 0) {
+        int activeFrames = 0;
+        int maxDuration = 300;
+        if (skill->GetData()) maxDuration = skill->GetData()->duration;
+        if (maxDuration <= 0) maxDuration = 300;
+
+        // 透明化 (Transparency) の持続中判定
+        if (IsTransparent()) {
+            activeFrames = GetEffectRemainingFrames(SkillMinorTag::Transparency);
+        } else if (IsHighRisk()) {
+            activeFrames = GetEffectRemainingFrames(SkillMinorTag::HighRisk);
+        }
+
+        if (activeFrames > 0) {
+            char activeText[32];
+            snprintf(activeText, sizeof(activeText), "ACTIVE %.1fs", activeFrames / 60.0f);
+            DrawString(screenX + marginX + 70, curY, activeText, GetColor(0, 255, 180));
+
+            curY += 18;
+            int actBarW = panelW - marginX * 2 - 10;
+            int actBarH = 6;
+            float actRatio = static_cast<float>(activeFrames) / static_cast<float>(maxDuration);
+            if (actRatio < 0.0f) actRatio = 0.0f;
+            if (actRatio > 1.0f) actRatio = 1.0f;
+
+            DrawBox(screenX + marginX, curY, screenX + marginX + actBarW, curY + actBarH, GetColor(20, 40, 30), TRUE);
+            DrawBox(screenX + marginX, curY, screenX + marginX + actBarW, curY + actBarH, GetColor(0, 200, 140), FALSE);
+            int fillActW = static_cast<int>(actBarW * actRatio);
+            if (fillActW > 0) {
+                DrawBox(screenX + marginX + 1, curY + 1, screenX + marginX + fillActW - 1, curY + actBarH - 1, GetColor(0, 255, 180), TRUE);
+            }
+        } else if (ct > 0) {
             char ctText[32];
             snprintf(ctText, sizeof(ctText), "CT %d.%.1fs", ct / 60, (ct % 60) / 6.0f);
             DrawString(screenX + marginX + 70, curY, ctText, GetColor(170, 180, 190));
         } else {
-            DrawString(screenX + marginX + 70, curY, "[ READY ]", GetColor(0, 230, 255));
+            DrawString(screenX + marginX + 70, curY, "[ READY ] (F)", GetColor(0, 230, 255));
         }
     }
 }

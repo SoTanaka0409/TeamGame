@@ -1,4 +1,4 @@
-#include "Model.h"
+﻿#include "Model.h"
 #include <cmath>
 #include <vector>
 
@@ -240,7 +240,12 @@ void Model::Update(float deltaTime)
 
 void Model::Draw() const
 {
-    if (m_handle != -1)
+    DrawWithOpacity(1.0f);
+}
+
+void Model::DrawWithOpacity(float opacity) const
+{
+    if (m_handle != -1 && opacity > 0.001f)
     {
         int sw = 1920, sh = 1080;
         GetDrawScreenSize(&sw, &sh);
@@ -248,8 +253,6 @@ void Model::Draw() const
         float centerY = static_cast<float>(sh) / 2.0f;
 
         // 地面(X-Z平面)に対して直立したキャラクターを真上(+Y)から見下ろす正射影（Ortho）カメラ
-        // UpVec=(0,0,1) により、画面上方向(+Y)が3D+Z、画面右方向(+X)が3D+Xに対応し、
-        // 2Dスクリーン座標系 (0,0)〜(sw,sh) と 3D (0,0,sh)〜(sw,0,0) がピクセル単位で1:1対応
         SetCameraPositionAndTargetAndUpVec(
             VGet(centerX, 2000.0f, centerY),
             VGet(centerX, 0.0f, centerY),
@@ -259,8 +262,11 @@ void Model::Draw() const
 
         SetUseLighting(TRUE);
         SetGlobalAmbientLight(GetColorF(0.75f, 0.75f, 0.75f, 1.0f));
-        // 斜め手前上からのディレクショナルライト（顔・肩・バイザーに陰影とハイライト）
         ChangeLightTypeDir(VGet(0.3f, -0.8f, -0.5f));
+
+        MV1SetOpacityRate(m_handle, opacity);
         MV1DrawModel(m_handle);
+        MV1SetOpacityRate(m_handle, 1.0f);
     }
 }
+

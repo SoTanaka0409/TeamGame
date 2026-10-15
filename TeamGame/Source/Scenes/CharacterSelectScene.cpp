@@ -1,4 +1,4 @@
-#include "CharacterSelectScene.h"
+﻿#include "CharacterSelectScene.h"
 #include "WeaponSelectScene.h"
 #include "../Managers/SceneManager.h"
 #include "../Managers/FontManager.h"
@@ -107,7 +107,9 @@ void CharacterSelectScene::Draw() {
         FontManager::GetInstance().DrawFormatString(cardX + 25, textY, GetColor(100, 255, 100), 16, "HP      : %d", chara.maxHp);
         textY += 24;
         FontManager::GetInstance().DrawFormatString(cardX + 25, textY, GetColor(100, 200, 255), 16, "SPEED   : %.1f", chara.moveSpeed);
-        textY += 35;
+        textY += 24;
+        FontManager::GetInstance().DrawFormatString(cardX + 25, textY, GetColor(255, 215, 0), 16, "SKILL   : %s", chara.skillName.c_str());
+        textY += 28;
 
         // 選択案内
         if (isSelected) {
