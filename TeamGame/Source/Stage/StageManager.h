@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Stage.h"
 #include "StageGenerator.h"
@@ -44,6 +44,13 @@ private:
     int m_currentVariation = 0;
     unsigned int m_currentSeed = 0;
 
-    int m_hGrassGraph = -1; // Grass1.png 画像ハンドル
+    int m_hFloorGraph = -1;     // 床画像
+    int m_hWallBlockGraph = -1; // 壁・木箱画像
+    int m_hOuterWallGraph = -1; // 外枠壁画像
+    int m_hGrassGraph = -1;     // 草むら画像
+    int m_hWaterGraph = -1;     // 水場画像
+    int m_hCactusGraph = -1;    // サボテン・岩画像
+    int m_hStarGraph = -1;      // 中央スター画像
+
     std::random_device m_rd;
 };

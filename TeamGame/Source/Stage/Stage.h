@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <vector>
 #include "Vector2.h"
@@ -64,7 +64,13 @@ public:
     // キャラクターの壁めり込み防止・押し出し補正
     void ResolveCollision(Vector2& pos, float margin, float cellSize) const;
 
+    void SetFloorGraph(int handle) { m_hFloorGraph = handle; }
+    void SetWallBlockGraph(int handle) { m_hWallBlockGraph = handle; }
+    void SetOuterWallGraph(int handle) { m_hOuterWallGraph = handle; }
     void SetGrassGraph(int handle) { m_hGrassGraph = handle; }
+    void SetWaterGraph(int handle) { m_hWaterGraph = handle; }
+    void SetCactusGraph(int handle) { m_hCactusGraph = handle; }
+    void SetStarGraph(int handle) { m_hStarGraph = handle; }
 
     // 1920x1080 フィッティング描画
     void DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDebugMode, float playerX, float playerY, float lightAngle = 0.0f, const char* patternName = "", int hGrass = -1) const;
@@ -78,5 +84,12 @@ private:
     std::vector<CellType> m_grid;
     std::vector<SpawnPoint> m_spawnPoints;
     Point2D m_playerStartPos{ 3, 13 };
-    int m_hGrassGraph = -1;
+    int m_hFloorGraph = -1;      // 床タイル画像
+    int m_hWallBlockGraph = -1;  // 木箱・壁ブロック画像
+    int m_hOuterWallGraph = -1;  // 外周封鎖壁画像
+    int m_hGrassGraph = -1;      // 草むら画像
+    int m_hWaterGraph = -1;      // 水場画像
+    int m_hCactusGraph = -1;     // サボテン・岩障害物画像
+    int m_hStarGraph = -1;       // 中央スター画像
 };
+
