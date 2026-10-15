@@ -18,7 +18,7 @@ struct CharacterData
     std::string description;        ///< 特徴・説明文
 
     // 互換パラメータ
-    float colliderRadius = 25.0f;
+    float colliderRadius = 20.0f;
     float sightRangeCells = 14.0f;
     float effectiveRangeCells = 10.0f;
     int shootCooldown = 75;

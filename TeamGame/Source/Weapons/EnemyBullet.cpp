@@ -123,7 +123,32 @@ void EnemyBullet::OnCollisionEnter(Collider *otherCollider)
         if (player)
         {
             player->TakeDamage();
+
+            float hitX = position.x;
+            float hitY = position.y;
+            CircleCollider *circleCol = dynamic_cast<CircleCollider *>(otherCollider);
+            if (circleCol)
+            {
+                float targetRadius = circleCol->GetRadius();
+                float cx = circleCol->GetWorldX();
+                float cy = circleCol->GetWorldY();
+                float dx = position.x - cx;
+                float dy = position.y - cy;
+                float dist = std::sqrt(dx * dx + dy * dy);
+                if (targetRadius > 0.0f && dist > 0.001f && dist < targetRadius)
+                {
+                    hitX = cx + (dx / dist) * targetRadius;
+                    hitY = cy + (dy / dist) * targetRadius;
+                }
+            }
+
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetEffectManager())
+            {
+                scene->GetEffectManager()->AddBloodEffect(hitX, hitY, 16);
+            }
         }
+
         SetActive(false);
     }
 }

@@ -14,7 +14,7 @@
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY, int tId)
-    : Character(ObjectTag::Enemy, startX, startY, 35.0f), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 20.0f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0),
@@ -37,8 +37,8 @@ Enemy::Enemy(float startX, float startY, int tId)
     else
     {
         status.Init(3, 1.5f, 1);
-        collider->SetRadius(35.0f);
-        radius = 35.0f;
+        collider->SetRadius(20.0f);
+        radius = 20.0f;
     }
     collider->SetTag("Enemy");
     SetModelPath("Resource/GreenCharacter/character.mv1");
@@ -246,7 +246,7 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
             }
         }
     }
-    float minDist = radius + 35.0f; // 70px
+    float minDist = radius * 2.0f; // 40px
 
     // X軸の移動と衝突判定（壁および他キャラクター接触）
     float nextX = position.x + velX;
@@ -778,12 +778,6 @@ void Enemy::Damage(int amount)
     status.TakeDamage(amount);
     damageColorTimer = 15;
     aiState = EnemyAIState::ALERT; // 被弾したら即警戒状態
-
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetEffectManager())
-    {
-        scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 14);
-    }
 
     if (status.IsDead())
     {
