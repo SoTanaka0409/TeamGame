@@ -1,19 +1,33 @@
 #include "GameScene.h"
+#include "Camera.h"
+#include "DebugManager.h"
+#include "EffectManager.h"
+#include "SoundManager.h"
+#include "GameBalanceManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
+#include "../Objects/Item.h"
 #include "InputManager.h"
 #include "Player.h"
 #include "ResultScene.h"
+#include "ClearScene.h"
+#include "GameOverScene.h"
 #include "TitleScene.h"
 #include "SceneManager.h"
 #include "NetworkManager.h"
 #include "PacketTypes.h"
 #include "GameSettings.h"
+#include "../Weapons/Handgun.h"
+#include "../Weapons/Shotgun.h"
+#include "../Weapons/SniperRifle.h"
+#include "../Core/PlayerSelection.h"
+#include "../Core/CharacterFactory.h"
+#include "../Managers/MatchManager.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
 
-GameScene::GameScene() : player(nullptr), isDebugView(false)
+GameScene::GameScene(PlayMode mode) : player(nullptr), currentPlayMode(mode)
 {
 }
 
@@ -21,13 +35,30 @@ GameScene::~GameScene()
 {
 }
 
+int GameScene::GetActiveEnemyCount() const
+{
+    if (!objectManager) return 0;
+    int count = 0;
+    for (auto obj : objectManager->GetObjects())
+    {
+        if (obj && obj->GetObjectTag() == ObjectTag::Enemy && obj->IsActive())
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 void GameScene::ClearEnemies()
 {
-    for (auto e : enemies)
+    if (objectManager)
     {
-        if (e)
+        for (auto obj : objectManager->GetObjects())
         {
-            e->SetActive(false);
+            if (obj && obj->GetObjectTag() == ObjectTag::Enemy)
+            {
+                obj->DestroyPermanently();
+            }
         }
     }
     enemies.clear();
@@ -36,63 +67,33 @@ void GameScene::ClearEnemies()
 void GameScene::SpawnEnemiesRandomly(int count)
 {
     ClearEnemies();
+    totalEnemiesSpawned = count;
 
     const Stage& stage = stageManager.GetCurrentStage();
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
-    Point2D pStart = stage.GetPlayerStartPos();
 
-    std::vector<Point2D> validCells;
-    for (int y = 1; y < stage.GetHeight() - 1; ++y)
-    {
-        for (int x = 1; x < stage.GetWidth() - 1; ++x)
-        {
-            CellType cell = stage.GetCell(x, y);
-            // 水(WATER)、障害物壁(WALL_BLOCK, CACTUS)、外枠(OUTER_WALL)を除外し、床と草むらのみ対象
-            if (cell == CellType::EMPTY_FLOOR || cell == CellType::BUSH)
-            {
-                if (!stage.IsSolidWall(x, y) && cell != CellType::WATER)
-                {
-                    // プレイヤー初期位置から一定距離(5マス以上)を離してスポーン
-                    int dx = x - pStart.x;
-                    int dy = y - pStart.y;
-                    if ((dx * dx + dy * dy) >= 25)
-                    {
-                        validCells.push_back({ x, y });
-                    }
-                }
-            }
-        }
-    }
-
-    if (validCells.empty()) return;
-
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(validCells.begin(), validCells.end(), rng);
-
-    Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
-    int numToSpawn = (std::min)(count, static_cast<int>(validCells.size()));
-
-    for (int i = 0; i < numToSpawn; ++i)
-    {
-        float ex = (validCells[i].x + 0.5f) * cellSize;
-        float ey = (validCells[i].y + 0.5f) * cellSize;
-        Enemy* enemy = new Enemy(ex, ey);
-        enemy->SetStage(stagePtr, cellSize);
-        enemy->SetTargetPlayer(player);
-        enemies.push_back(enemy);
-    }
+    // ボットの出現および武器配分処理を CharacterFactory に移譲
+    CharacterFactory::SpawnMatchBots(stage, cellSize, player, objectManager, enemies);
 }
 
 void GameScene::Init()
 {
     Scene::Init();
+    gameTimer = 0.0f;
+    isCleared = false;
+    MatchManager::GetInstance().Reset();
+    brightTimer = 0.0f;
+    int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
+    int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
+    int brightRange = (brightMax > brightMin) ? (brightMax - brightMin) : 900;
+    nextBrightInterval = static_cast<float>(brightMin + (std::rand() % brightRange));
+    sonarPingTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarPingIntervalFrames", 900));
+    sonarNotificationTimer = 0.0f;
     
     // StageManagerの初期化
     stageManager.Initialize(48, 27);
-    isDebugView = false; // 最初から暗闇モード
     
     const Stage& stage = stageManager.GetCurrentStage();
     
@@ -105,12 +106,36 @@ void GameScene::Init()
     float startX = (startGrid.x + 0.5f) * cellSize;
     float startY = (startGrid.y + 0.5f) * cellSize;
     
-    player = new Player(startX, startY);
     Stage* stagePtr = const_cast<Stage*>(&stageManager.GetCurrentStage());
-    player->SetStage(stagePtr, cellSize);
+    player = CharacterFactory::CreatePlayer(startX, startY, stagePtr, cellSize, 0);
+    if (objectManager) objectManager->AddObject(player);
+
+    if (currentPlayMode == PlayMode::LOCAL_COOP)
+    {
+        remotePlayer = new Player(startX + 50.0f, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        if (objectManager) objectManager->AddObject(remotePlayer);
+    }
+    else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
+    {
+        remotePlayer = new Player(startX, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetRemote(true);
+        if (objectManager) objectManager->AddObject(remotePlayer);
+
+        if (currentPlayMode == PlayMode::NETWORK_HOST && NetworkManager::GetInstance().IsConnected())
+        {
+            PacketStageInit packet;
+            packet.header.type = PacketType::STAGE_INIT;
+            packet.seed = stageManager.GetCurrentSeed();
+            NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+        }
+    }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
-    SpawnEnemiesRandomly(5);
+    introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+    SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
 }
 
 void GameScene::Update()
@@ -118,6 +143,8 @@ void GameScene::Update()
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
+    bool currLeft = (CheckHitKey(KEY_INPUT_LEFT) != 0 || CheckHitKey(KEY_INPUT_A) != 0);
+    bool currRight = (CheckHitKey(KEY_INPUT_RIGHT) != 0 || CheckHitKey(KEY_INPUT_D) != 0);
     bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0 || (GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
 
     if (state == GameState::PLAYING)
@@ -129,43 +156,152 @@ void GameScene::Update()
         }
         else
         {
-            Scene::Update(); 
+            gameTimer += 0.016f;
 
-            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
-                InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
+            if (introTimer > 0.0f)
             {
-                isDebugView = !isDebugView;
+                introTimer -= 1.0f;
+                // Skip Scene::Update to pause the game during intro
+                
+                // ホスト側はイントロ中にステージ初期化情報を定期送信して同期を確実にする
+                if (currentPlayMode == PlayMode::NETWORK_HOST && NetworkManager::GetInstance().IsConnected() && (static_cast<int>(introTimer) % 30 == 0))
+                {
+                    PacketStageInit packet;
+                    packet.header.type = PacketType::STAGE_INIT;
+                    packet.seed = stageManager.GetCurrentSeed();
+                    NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+                }
+            }
+            else
+            {
+                Scene::Update();
             }
 
-            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R))
+            // ランダムな時間帯に（15秒間）全エリアが明るくなる処理
+            if (brightTimer > 0.0f)
             {
-                stageManager.NextVariation();
-                if (player)
+                brightTimer -= 1.0f;
+            }
+            else
+            {
+                nextBrightInterval -= 1.0f;
+                if (nextBrightInterval <= 0.0f)
                 {
-                    const Stage& stage = stageManager.GetCurrentStage();
-                    float cellW = 1920.0f / stage.GetWidth();
-                    float cellH = 1080.0f / stage.GetHeight();
-                    float cellSize = (cellW < cellH) ? cellW : cellH;
-                    Point2D startGrid = stage.GetPlayerStartPos();
-                    player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-                    player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-                    SpawnEnemiesRandomly(5);
+                    brightTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("BrightEventDurationFrames", 900));
+                    int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
+                    int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
+                    int brightRange = (brightMax > brightMin) ? (brightMax - brightMin) : 900;
+                    nextBrightInterval = static_cast<float>(brightMin + (std::rand() % brightRange));
                 }
             }
 
-            if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
+            // 15秒周期で双方が音波を発して互いの位置を探知する処理
+            sonarPingTimer -= 1.0f;
+            if (sonarNotificationTimer > 0.0f) sonarNotificationTimer -= 1.0f;
+
+            if (sonarPingTimer <= 0.0f)
             {
-                stageManager.NextTheme();
-                if (player)
+                sonarPingTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarPingIntervalFrames", 900));
+                sonarNotificationTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarNotificationFrames", 180));
+
+                if (objectManager)
                 {
-                    const Stage& stage = stageManager.GetCurrentStage();
-                    float cellW = 1920.0f / stage.GetWidth();
-                    float cellH = 1080.0f / stage.GetHeight();
-                    float cellSize = (cellW < cellH) ? cellW : cellH;
-                    Point2D startGrid = stage.GetPlayerStartPos();
-                    player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-                    player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-                    SpawnEnemiesRandomly(5);
+                    for (auto obj : objectManager->GetObjects())
+                    {
+                        Character* ch = dynamic_cast<Character*>(obj);
+                        if (ch && ch->IsActive())
+                        {
+                            Vector2 pos = ch->GetPosition();
+                            unsigned int waveCol = (ch->teamId == 0) ? GetColor(0, 220, 255) : GetColor(255, 100, 50);
+                            if (effectManager)
+                            {
+                                effectManager->AddSonarWaveEffect(pos.x, pos.y, waveCol);
+                            }
+
+                            // 音波により相手チームに位置を伝達
+                            for (auto otherObj : objectManager->GetObjects())
+                            {
+                                Enemy* e = dynamic_cast<Enemy*>(otherObj);
+                                if (e && e->IsActive() && e->teamId != ch->teamId && e->teamId != -1)
+                                {
+                                    e->OnHearGunshot(pos, 99999.0f, ch->teamId);
+                                }
+                            }
+                        }
+                    }
+                }
+                SoundManager::GetInstance().Play3D("gunshot", player ? player->GetPosition() : Vector2(960, 540), 1000.0f, 0.4f, 0);
+            }
+
+            // リスポーン処理およびキル数カウントをMatchManagerに移譲
+            const Stage& stage = stageManager.GetCurrentStage();
+            float cellW = 1920.0f / stage.GetWidth();
+            float cellH = 1080.0f / stage.GetHeight();
+            float cellSize = (cellW < cellH) ? cellW : cellH;
+
+            MatchManager::GetInstance().UpdateRespawns(objectManager, stage, cellSize);
+
+            // 勝敗判定 (MatchManagerの判定を使用)
+            MatchResult result = MatchManager::GetInstance().CheckMatchResult();
+            if (!isCleared && result != MatchResult::IN_PROGRESS)
+            {
+                isCleared = true;
+                if (result == MatchResult::TEAM0_WIN) {
+                    ClearStats stats;
+                    stats.clearTimeSec = gameTimer;
+                    stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                    stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
+
+                    int baseScore = 5000;
+                    int timePenalty = static_cast<int>(gameTimer * 10.0f);
+                    stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
+
+                    if (stats.rankScore >= 4500) stats.rankName = "S";
+                    else if (stats.rankScore >= 3500) stats.rankName = "A";
+                    else if (stats.rankScore >= 2500) stats.rankName = "B";
+                    else stats.rankName = "C";
+
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                } else {
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
+                }
+                return;
+            }
+
+            DebugManager::GetInstance().Update();
+
+            if (DebugManager::GetInstance().IsDebugMode())
+            {
+                if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_L))
+                {
+                    stageManager.NextVariation();
+                    if (player)
+                    {
+                        const Stage& stage = stageManager.GetCurrentStage();
+                        float cellW = 1920.0f / stage.GetWidth();
+                        float cellH = 1080.0f / stage.GetHeight();
+                        float cellSize = (cellW < cellH) ? cellW : cellH;
+                        Point2D startGrid = stage.GetPlayerStartPos();
+                        player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+                        player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+                        SpawnEnemiesRandomly(5);
+                    }
+                }
+
+                if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
+                {
+                    stageManager.NextTheme();
+                    if (player)
+                    {
+                        const Stage& stage = stageManager.GetCurrentStage();
+                        float cellW = 1920.0f / stage.GetWidth();
+                        float cellH = 1080.0f / stage.GetHeight();
+                        float cellSize = (cellW < cellH) ? cellW : cellH;
+                        Point2D startGrid = stage.GetPlayerStartPos();
+                        player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+                        player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+                        SpawnEnemiesRandomly(5);
+                    }
                 }
             }
 
@@ -208,27 +344,33 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PAUSED;
         if (currUp && !prevUp) settingsMenuCursor--;
         if (currDown && !prevDown) settingsMenuCursor++;
-        if (settingsMenuCursor < 0) settingsMenuCursor = 4;
-        if (settingsMenuCursor > 4) settingsMenuCursor = 0;
+        if (settingsMenuCursor < 0) settingsMenuCursor = 5;
+        if (settingsMenuCursor > 5) settingsMenuCursor = 0;
 
-        if (currEnter && !prevEnter)
+        bool actionTriggered = (currEnter && !prevEnter) || (currLeft && !prevLeft) || (currRight && !prevRight);
+
+        if (actionTriggered)
         {
             if (settingsMenuCursor == 0) GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
-            else if (settingsMenuCursor == 1) isDebugView = !isDebugView;
-            else if (settingsMenuCursor == 2) { stageManager.NextTheme(); }
-            else if (settingsMenuCursor == 3) { stageManager.NextVariation(); }
-            else if (settingsMenuCursor == 4) state = GameState::PAUSED;
+            else if (settingsMenuCursor == 1) DebugManager::GetInstance().ToggleDebugMode();
+            else if (settingsMenuCursor == 2) GameSettings::GetInstance().isBloodSplatterEnabled = !GameSettings::GetInstance().isBloodSplatterEnabled;
+            else if (settingsMenuCursor == 3) { stageManager.NextTheme(); }
+            else if (settingsMenuCursor == 4) { stageManager.NextVariation(); }
+            else if (settingsMenuCursor == 5) state = GameState::PAUSED;
         }
     }
 
     prevEsc = currEsc;
     prevUp = currUp;
     prevDown = currDown;
+    prevLeft = currLeft;
+    prevRight = currRight;
     prevEnter = currEnter;
 }
 
 void GameScene::Draw()
 {
+    bool isDebugView = DebugManager::GetInstance().IsDebugMode();
     const Stage& stage = stageManager.GetCurrentStage();
     std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
@@ -244,17 +386,146 @@ void GameScene::Draw()
         playerWorldY = pos.y;
     }
 
-    stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
-    Scene::Draw();
-
-    if (!isDebugView && player && player->IsActive())
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive())
     {
-        player->RenderLightMask(0, 0, 1920, 1080, 0, 0);
+        // 画面分割 (1P - 左半分)
+        SetDrawArea(0, 0, 1920 / 2, 1080);
+        Vector2 aimDir1P = (player && player->IsActive()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
+        float offsetDist1P = (player && player->GetCurrentWeapon() && player->GetCurrentWeapon()->GetName() == "SniperRifle") ? 150.0f : 50.0f;
+        Camera::TargetWorldX = playerWorldX + aimDir1P.x * offsetDist1P;
+        Camera::TargetWorldY = playerWorldY + aimDir1P.y * offsetDist1P;
+        Camera::ScreenCenterX = 1920.0f / 4.0f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
+
+        // 画面分割 (2P - 右半分)
+        SetDrawArea(1920 / 2, 0, 1920, 1080);
+        Vector2 p2Pos = remotePlayer->GetPosition();
+        Vector2 aimDir2P = (remotePlayer && remotePlayer->IsActive()) ? remotePlayer->GetFacingDir() : Vector2(0.0f, 0.0f);
+        float offsetDist2P = (remotePlayer && remotePlayer->GetCurrentWeapon() && remotePlayer->GetCurrentWeapon()->GetName() == "SniperRifle") ? 150.0f : 50.0f;
+        Camera::TargetWorldX = p2Pos.x + aimDir2P.x * offsetDist2P;
+        Camera::TargetWorldY = p2Pos.y + aimDir2P.y * offsetDist2P;
+        Camera::ScreenCenterX = 1920.0f * 0.75f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        Scene::Draw();
+        
+        // 描画エリアリセット
+        SetDrawArea(0, 0, 1920, 1080);
+        
+        // 分割線
+        DrawLine(1920 / 2, 0, 1920 / 2, 1080, GetColor(255, 255, 255), 3);
+    }
+    else
+    {
+        // 1画面
+
+        float enemySpawnY = 3 * worldCellSize;
+        float playerSpawnY = (stage.GetHeight() - 4) * worldCellSize;
+        
+        if (introTimer > 0.0f)
+        {
+            // イントロカメラ: プレイヤーに連動せず、マップ中心X・カメラ単体でYスクロール
+            float t = 1.0f - (introTimer / 300.0f);
+            // smoothstep easing
+            t = t * t * (3.0f - 2.0f * t);
+            
+            float midWorldX = (stage.GetWidth() / 2.0f) * worldCellSize;
+            Camera::TargetWorldX = midWorldX;
+            Camera::TargetWorldY = enemySpawnY + (playerSpawnY - enemySpawnY) * t;
+        }
+        else
+        {
+            // 動的エイムカメラオフセット（武器ごとの視界拡張）
+            Vector2 aimDir = (player && player->IsActive()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
+            float maxOffsetDist = 70.0f;
+            if (player && player->GetCurrentWeapon())
+            {
+                if (player->GetCurrentWeapon()->GetName() == "SniperRifle")
+                {
+                    maxOffsetDist = 200.0f;
+                }
+            }
+            Vector2 targetOffset = aimDir * maxOffsetDist;
+
+            // 滑らかに追従補間（lerp: 毎フレーム10%）
+            m_cameraOffset.x += (targetOffset.x - m_cameraOffset.x) * 0.1f;
+            m_cameraOffset.y += (targetOffset.y - m_cameraOffset.y) * 0.1f;
+
+            Camera::TargetWorldX = playerWorldX + m_cameraOffset.x;
+            Camera::TargetWorldY = playerWorldY + m_cameraOffset.y;
+        }
+        
+        Camera::ScreenCenterX = 1920.0f / 2.0f;
+        Camera::ScreenCenterY = 1080.0f / 2.0f;
+        Camera::ZoomScale = zoomCellSize / worldCellSize;
+        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+
+        Scene::Draw();
+    }
+
+    float brightRatio = 0.0f;
+    if (brightTimer > 0.0f)
+    {
+        if (brightTimer > 780.0f) {
+            // 最初の2秒間（120フレーム）で滑らかに月明かりが射し込む
+            brightRatio = (900.0f - brightTimer) / 120.0f;
+        } else if (brightTimer < 120.0f) {
+            // 最後の2秒間（120フレーム）で滑らかに元の暗闇に戻る
+            brightRatio = brightTimer / 120.0f;
+        } else {
+            brightRatio = 1.0f;
+        }
+    }
+
+    if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
+    {
+        if (introTimer <= 0.0f) 
+        {
+            player->RenderLightMask(0, 0, 1920, 1080, 0, 0, brightRatio);
+        }
+    }
+
+    // 体力3以下で画面枠上に血しぶきデンジャーエフェクトを描画
+    if (GameSettings::GetInstance().isBloodSplatterEnabled && player && player->IsActive())
+    {
+        player->RenderBloodSplatterOverlay(1920, 1080);
     }
     
-    DrawString(10, 10, "[ESC]キーでポーズ", GetColor(255, 255, 255));
-    DrawString(10, 30, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(150, 150, 150));
-    DrawString(10, 50, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(150, 150, 150));
+    DrawString(15, 15, "[ESC]キーでポーズ", GetColor(255, 255, 255));
+    DrawString(15, 45, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(200, 200, 200));
+    DrawString(15, 70, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(200, 200, 200));
+
+    // 薄明時間帯（月光照射）のUIバナー表示
+    if (brightTimer > 0.0f)
+    {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
+        DrawBox(1920 / 2 - 250, 65, 1920 / 2 + 250, 105, GetColor(250, 200, 50), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(1920 / 2 - 250, 65, 1920 / 2 + 250, 105, GetColor(255, 255, 255), FALSE);
+        DrawFormatString(1920 / 2 - 230, 75, GetColor(0, 0, 0), "【薄明・月光時間帯】 月明かり照射中 (残り %.1f秒)", brightTimer / 60.0f);
+    }
+
+    // 15秒周期の相互音波ピン探知通知バナー表示
+    if (sonarNotificationTimer > 0.0f)
+    {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+        DrawBox(1920 / 2 - 260, 115, 1920 / 2 + 260, 155, GetColor(0, 150, 255), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(1920 / 2 - 260, 115, 1920 / 2 + 260, 155, GetColor(255, 255, 255), FALSE);
+        DrawString(1920 / 2 - 240, 125, "【音波探知発信】 全員の互いの位置をソナー探知！", GetColor(255, 255, 255));
+    }
+
+    // 画面左下にプレイヤーのHP・武器UIを表示
+    if (player && player->IsActive()) {
+        player->DrawUI(25, 850);
+    }
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
+        remotePlayer->DrawUI(1920 / 2 + 25, 850);
+    }
 
     if (state == GameState::PAUSED || state == GameState::SETTINGS)
     {
@@ -266,8 +537,19 @@ void GameScene::Draw()
 
         const int menuStartX = 1920 / 2 - 100;
         const int menuStartY = 400;
-        const int menuSpacing = 60;
-        
+        const int menuSpacing = 55;
+
+        if (state == GameState::PLAYING && introTimer > 0.0f)
+        {
+            SetFontSize(80);
+            if (introTimer > 60.0f) {
+                DrawString(1920/2 - 150, 1080/2 - 100, "READY...", GetColor(255, 200, 50));
+            } else {
+                DrawString(1920/2 - 180, 1080/2 - 100, "BRAWL!", GetColor(255, 50, 50));
+            }
+            SetFontSize(32);
+        }
+
         if (state == GameState::PAUSED)
         {
             const char* items[] = { "ゲームに戻る", "設定", "タイトルへ戻る", "ゲーム終了" };
@@ -283,11 +565,12 @@ void GameScene::Draw()
             std::string items[] = { 
                 std::string("視点固定モード (Eキー) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (ON)" : "切り替え (OFF)"),
                 std::string("デバッグ表示 : ") + (isDebugView ? "ON" : "OFF"), 
+                std::string("血しぶき枠表示 : ") + (GameSettings::GetInstance().isBloodSplatterEnabled ? "ON" : "OFF"), 
                 "テーマ変更", 
                 "マップ変更", 
                 "戻る" 
             };
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 unsigned int color = (i == settingsMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
                 if (i == settingsMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -300,18 +583,51 @@ void GameScene::Draw()
         DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(30, 30, 40), TRUE);
         DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(100, 100, 100), FALSE);
         DrawString(ruleX, ruleY, "【遊び方・操作】", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 40, "W A S D : 移動", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 80, "マウス : 視点移動 / 狙う", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 120, "左クリック : 撃つ (または Z キー)", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 160, "右クリック : 懐中電灯ON/OFF", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 200, "Q キー : 武器切り替え", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 240, "E キー : 視点固定", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 35, "W A S D : 移動", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 70, "マウス : 視点移動 / 狙う", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 105, "左クリック : 撃つ (または Z キー)", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 140, "右クリック : 懐中電灯ON/OFF", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 175, "R キー : リロード", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 210, "SPACE キー : ナイフ暗殺", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 245, "Q / 1,2,3 / ホイール : 武器切り替え", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 280, "E キー : 視点固定", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 315, "0 キー : デバッグモードON/OFF", GetColor(255, 255, 255));
         
-        DrawString(ruleX, ruleY + 300, "[ ルール ]", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 340, "- 敵の攻撃を避けながら進む", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 380, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 420, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 330, "[ ルール ]", GetColor(255, 200, 0));
+        DrawString(ruleX, ruleY + 365, "- 敵の攻撃を避けながら進む", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 400, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 435, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
     }
+
+    int activeEnemyCount = GetActiveEnemyCount();
+    
+    // キルカウントバーUI（画面中央上部に配置して右上のデバッグ表示との重なりを完全解消）
+    int maxKills = GameBalanceManager::GetInstance().GetInt("TargetKillCount", 10);
+    int barWidth = 260;
+    int barHeight = 22;
+    int startX = 860;
+    int startY = 20;
+
+    // 背景バー
+    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
+    DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
+
+    int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
+    int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
+
+    // 自チーム（味方）のキル数バー (青: 味方チームが敵を倒すと増える)
+    int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
+    DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
+    SetFontSize(20);
+    DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+
+    // 敵チームのキル数バー (赤: 敵チームが味方を倒すと増える)
+    int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
+    DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
+    DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+    SetFontSize(32); // デフォルトフォントサイズに戻す
+
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }
 
 void GameScene::ProcessNetworkPackets()

@@ -1,4 +1,4 @@
-#if 0 // Conflict disabled
+﻿#if 0 // Conflict disabled
 #include "DxLib.h"
 #include "StageManager.h"
 #include "Player.h"
