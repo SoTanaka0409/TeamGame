@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 class GameSettings
 {
 private:
-    GameSettings() : isAimLockHoldMode(true) {}
+    GameSettings() : isAimLockHoldMode(true), isBloodSplatterEnabled(true) {}
     ~GameSettings() = default;
 
 public:
@@ -14,4 +14,5 @@ public:
     }
 
     bool isAimLockHoldMode;
+    bool isBloodSplatterEnabled;
 };

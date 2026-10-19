@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Collider.h"
 
 class RectCollider : public Collider

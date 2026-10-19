@@ -1,12 +1,25 @@
+﻿#include "Camera.h"
 #include "Bullet.h"
+#include "Character.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "Scene.h"
 #include "SceneManager.h"
 
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed)
-    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(5.0f)
+/**
+ * @brief Bulletのコンストラクタ
+ * @param startX 初期位置X
+ * @param startY 初期位置Y
+ * @param dir 進行方向
+ * @param speed 弾の速度
+ * @param range 最大射程距離
+ * @param bulletRadius 当たり判定の半径
+ * @param tId チームID
+ * @details 初期位置、速度などの設定を行い、コライダーマネージャーに円形コライダーを登録する
+ */
+Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId, int dmg)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId), damage(dmg)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -19,10 +32,17 @@ Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed)
     if (scene)
     {
         myColliderManager = scene->GetColliderManager();
-        myColliderManager->AddCollider(collider);
+        if (myColliderManager)
+        {
+            myColliderManager->AddCollider(collider);
+        }
     }
 }
 
+/**
+ * @brief Bulletのデストラクタ
+ * @details 登録したコライダーをコライダーマネージャーから削除し、メモリを解放する
+ */
 Bullet::~Bullet()
 {
     if (myColliderManager)
@@ -34,12 +54,24 @@ Bullet::~Bullet()
 
 #include "Stage.h"
 
+/**
+ * @brief 毎フレームの弾の更新処理
+ * @details 弾を移動させ、最大射程距離の超過、画面外への退出、およびステージ上の障害物との衝突判定を行い、該当すれば自身を非アクティブにする
+ */
 void Bullet::Update()
 {
     position.x += velocity.x;
     position.y += velocity.y;
 
-    // 画面外に出たら消滅
+    float dx = position.x - startPos.x;
+    float dy = position.y - startPos.y;
+    if (dx * dx + dy * dy > maxRange * maxRange)
+    {
+        SetActive(false);
+        return;
+    }
+
+    // 画面外に出たら消去
     if (position.x < -200 || position.x > 2100 || position.y < -200 ||
         position.y > 1300)
     {
@@ -66,42 +98,87 @@ void Bullet::Update()
 #include "ObjectManager.h"
 #include "Player.h"
 
+/**
+ * @brief 弾の描画処理
+ * @details カメラ座標に合わせて描画位置を計算し、チームIDに応じた色で弾のコアとグロー（半透明）を描画する
+ */
 void Bullet::Draw()
 {
-    float screenX = position.x;
-    float screenY = position.y;
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
 
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetObjectManager())
-    {
-        for (auto obj : scene->GetObjectManager()->GetObjects())
-        {
-            Player *player = dynamic_cast<Player *>(obj);
-            if (player && player->IsActive())
-            {
-                float zoomScale = 75.0f / 40.0f;
-                Vector2 pPos = player->GetPosition();
-                screenX = 960.0f + (position.x - pPos.x) * zoomScale;
-                screenY = 540.0f + (position.y - pPos.y) * zoomScale;
-                break;
-            }
-        }
-    }
+    unsigned int colorCore = GetColor(255, 255, 255);
+    unsigned int colorGlow = (teamId == 0) ? GetColor(0, 150, 255) : GetColor(255, 50, 50);
+
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160);
+    DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+               static_cast<int>(radius + 4.0f), colorGlow, TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(radius), GetColor(0, 255, 255), TRUE);
+               static_cast<int>(radius), colorCore, TRUE);
 }
 
+/**
+ * @brief 他のコライダーと衝突したときの処理
+ * @param otherCollider 衝突相手のコライダー
+ * @details 衝突相手が敵またはプレイヤーで、かつ別チームであればダメージを与え、血しぶきエフェクトを発生させて自身は消滅する
+ */
 void Bullet::OnCollisionEnter(Collider *otherCollider)
 {
-    // 敵に当たったらダメージを与えて自身も消滅
-    if (otherCollider->GetOwner() && otherCollider->GetOwner()->GetObjectTag() == ObjectTag::Enemy)
+    if (otherCollider->GetOwner())
     {
-        Enemy *enemy = dynamic_cast<Enemy *>(otherCollider->GetOwner());
-        if (enemy)
+        Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
+        bool canHit = false;
+        if (target && target->teamId != -1)
         {
-            enemy->Damage();
+            if (target->teamId != this->teamId)
+            {
+                canHit = true;
+            }
+            else if (target->IsPanic())
+            {
+                // パニック（錯乱）状態のキャラクターは味方の弾にも被弾する
+                canHit = true;
+            }
         }
-        SetActive(false);
+
+        if (canHit)
+        {
+            if (target->GetObjectTag() == ObjectTag::Enemy) {
+                Enemy *enemy = dynamic_cast<Enemy *>(target);
+                if (enemy) enemy->Damage(this->damage);
+            } else if (target->GetObjectTag() == ObjectTag::Player) {
+                Player *player = dynamic_cast<Player *>(target);
+                if (player) player->TakeDamage(this->damage);
+            }
+            
+            // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す
+            float hitX = position.x;
+            float hitY = position.y;
+            CircleCollider *circleCol = dynamic_cast<CircleCollider *>(otherCollider);
+            if (circleCol)
+            {
+                float targetRadius = circleCol->GetRadius();
+                float cx = circleCol->GetWorldX();
+                float cy = circleCol->GetWorldY();
+                float dx = position.x - cx;
+                float dy = position.y - cy;
+                float dist = std::sqrt(dx * dx + dy * dy);
+                if (targetRadius > 0.0f && dist > 0.001f && dist < targetRadius)
+                {
+                    // 弾がフレーム間の移動で敵内部に入り込んだ場合、敵表面（被弾地点）に補正
+                    hitX = cx + (dx / dist) * targetRadius;
+                    hitY = cy + (dy / dist) * targetRadius;
+                }
+            }
+
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            if (scene && scene->GetEffectManager())
+            {
+                scene->GetEffectManager()->AddBloodEffect(hitX, hitY, 16);
+            }
+            SetActive(false);
+        }
     }
 }

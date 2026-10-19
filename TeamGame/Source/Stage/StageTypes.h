@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // 2D位置ベクトル・点構造体
 struct Vector2D
