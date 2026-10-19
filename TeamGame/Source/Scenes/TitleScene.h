@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
+#include <string>
 
 /**
  * @brief タイトルシーンを管理するクラス
@@ -38,11 +39,17 @@ class TitleScene : public Scene
     int waitTimer = 0;                   ///< 待機時間計測用のタイマー
     
     int udpHandle = -1;                  ///< UDP通信用のハンドル
-    char ipBuffer[64] = "192.168.1.";    ///< 入力するIPアドレスのバッファ
+    char ipBuffer[64] = "";              ///< 入力するIPアドレスのバッファ（初期値は空）
+    
+    std::string statusMessage = "";      ///< 通知・エラーメッセージ
+    int statusMessageTimer = 0;          ///< 通知メッセージの表示タイマー
+    int copyNotifyTimer = 0;             ///< コピー完了通知タイマー
+    std::string copiedIP = "";           ///< コピーしたIPアドレス
     
     bool prevUp = false;                 ///< 前フレームでの上入力状態
     bool prevDown = false;               ///< 前フレームでの下入力状態
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
+    bool prevC = false;                  ///< 前フレームでのCキー入力状態
 
     /**
      * @brief タイトルシーンの更新処理
