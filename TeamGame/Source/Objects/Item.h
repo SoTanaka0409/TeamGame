@@ -4,7 +4,8 @@
 
 enum class ItemType {
     Health,
-    Ammo
+    Ammo,
+    HorrorTrap
 };
 
 class Item : public Object2D
@@ -17,7 +18,7 @@ private:
     float time;
 
 public:
-    Item(float startX, float startY, ItemType itemType, int amountValue);
+    Item(float startX, float startY, ItemType itemType, int amountValue = -1);
     ~Item();
 
     void Update() override;

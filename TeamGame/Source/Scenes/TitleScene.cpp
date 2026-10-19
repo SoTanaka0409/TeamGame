@@ -1,6 +1,7 @@
 #include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
+#include "CharacterSelectScene.h"
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "GameSettings.h"
@@ -29,8 +30,11 @@ void TitleScene::Update()
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
     bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0 || (GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
+    bool currC = (CheckHitKey(KEY_INPUT_C) != 0);
 
     waitTimer++;
+    if (copyNotifyTimer > 0) copyNotifyTimer--;
+    if (statusMessageTimer > 0) statusMessageTimer--;
 
     if (state == TitleState::MAIN)
     {
@@ -58,7 +62,7 @@ void TitleScene::Update()
             if (cursor == 0) // Solo
             {
                 NetworkManager::GetInstance().Disconnect();
-                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::SOLO));
+                SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
             }
             else if (cursor == 1) // Local Coop
             {
@@ -89,8 +93,8 @@ void TitleScene::Update()
     {
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 2;
-        if (cursor > 2) cursor = 0;
+        if (cursor < 0) cursor = 3;
+        if (cursor > 3) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -100,20 +104,82 @@ void TitleScene::Update()
                 state = TitleState::JOINING_LAN;
                 waitTimer = 0;
             }
-            else if (cursor == 1) // Join LAN Manual
+            else if (cursor == 1) // Paste IP & Connect (クリップボードから接続)
             {
-                DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
-                DrawString(1920 / 2 - 200, 1080 / 2 - 30, "IP Address", GetColor(255, 255, 255));
-                ScreenFlip();
-                
-                KeyInputString(1920 / 2 - 200, 1080 / 2 + 10, 15, ipBuffer, FALSE);
-
-                if (NetworkManager::GetInstance().Connect(ipBuffer, 9876))
+                char clipBuf[256] = { 0 };
+                if (GetClipboardText(clipBuf) > 0)
                 {
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
+                    std::string targetIP = clipBuf;
+                    size_t first = targetIP.find_first_not_of(" \t\r\n");
+                    size_t last = targetIP.find_last_not_of(" \t\r\n");
+                    if (first != std::string::npos && last != std::string::npos)
+                    {
+                        targetIP = targetIP.substr(first, last - first + 1);
+                    }
+                    else
+                    {
+                        targetIP = "";
+                    }
+
+                    if (!targetIP.empty())
+                    {
+                        DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
+                        DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
+                        DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", targetIP.c_str());
+                        ScreenFlip();
+
+                        if (NetworkManager::GetInstance().Connect(targetIP.c_str(), 9876))
+                        {
+                            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
+                            return;
+                        }
+                        else
+                        {
+                            statusMessage = "接続失敗: " + targetIP + " に接続できませんでした";
+                            statusMessageTimer = 300;
+                        }
+                    }
+                    else
+                    {
+                        statusMessage = "クリップボードが空です";
+                        statusMessageTimer = 180;
+                    }
+                }
+                else
+                {
+                    statusMessage = "クリップボードにテキストがありません";
+                    statusMessageTimer = 180;
                 }
             }
-            else if (cursor == 2) // Back
+            else if (cursor == 2) // Join LAN Manual
+            {
+                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(0, 0, 0), TRUE);
+                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(200, 200, 200), FALSE);
+                DrawString(1920 / 2 - 280, 1080 / 2 - 40, "IP Address (Ctrl+V で貼付け可能):", GetColor(255, 255, 255));
+                ScreenFlip();
+                
+                KeyInputString(1920 / 2 - 280, 1080 / 2 + 10, 63, ipBuffer, FALSE);
+
+                if (strlen(ipBuffer) > 0)
+                {
+                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
+                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
+                    DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", ipBuffer);
+                    ScreenFlip();
+
+                    if (NetworkManager::GetInstance().Connect(ipBuffer, 9876))
+                    {
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
+                        return;
+                    }
+                    else
+                    {
+                        statusMessage = std::string("接続失敗: ") + ipBuffer + " に接続できませんでした";
+                        statusMessageTimer = 300;
+                    }
+                }
+            }
+            else if (cursor == 3) // Back
             {
                 state = TitleState::MODE_SELECT;
                 cursor = 3;
@@ -148,9 +214,25 @@ void TitleScene::Update()
         if (NetworkManager::GetInstance().IsConnected())
         {
             SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_HOST));
+            return;
+        }
+
+        // Cキーで自分のIPアドレスをクリップボードにコピー
+        if (currC && !prevC)
+        {
+            IPDATA myip[10];
+            int num = 0;
+            if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
+            {
+                char ipStr[64];
+                sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[0].d1, myip[0].d2, myip[0].d3, myip[0].d4);
+                SetClipboardText(ipStr);
+                copiedIP = ipStr;
+                copyNotifyTimer = 180;
+            }
         }
         
-        if (currEsc) // �L�����Z��
+        if (currEsc) // キャンセル
         {
             NetworkManager::GetInstance().Disconnect();
             if (udpHandle != -1) { DeleteUDPSocket(udpHandle); udpHandle = -1; }
@@ -203,6 +285,7 @@ void TitleScene::Update()
                     DeleteUDPSocket(udpHandle);
                     udpHandle = -1;
                     SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
+                    return;
                 }
             }
         }
@@ -211,6 +294,7 @@ void TitleScene::Update()
     prevUp = currUp;
     prevDown = currDown;
     prevEnter = currEnter;
+    prevC = currC;
 }
 
 void TitleScene::Draw()
@@ -244,8 +328,13 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::JOIN_SELECT)
     {
-        const char* items[] = { "Join LAN (Auto Search)", "Join LAN (Manual IP)", "Back" };
-        for (int i = 0; i < 3; i++)
+        const char* items[] = { 
+            "Join LAN (Auto Search)", 
+            "Paste IP & Connect (クリップボードから接続)", 
+            "Enter IP Manually (手動入力)", 
+            "Back" 
+        };
+        for (int i = 0; i < 4; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
             if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -277,13 +366,21 @@ void TitleScene::Draw()
             {
                 char ipStr[64];
                 sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
-                DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (i * 20), (std::string("Your IP: ") + ipStr).c_str(), GetColor(255, 255, 255));
+                DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (i * 25), (std::string("Your IP: ") + ipStr).c_str(), GetColor(255, 255, 255));
             }
+            DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 15, "[C] キー: 自分のIPアドレスをクリップボードにコピー", GetColor(100, 255, 100));
+        }
+
+        if (copyNotifyTimer > 0)
+        {
+            DrawBox(1920 / 2 - 250, 1080 / 2 - 90, 1920 / 2 + 250, 1080 / 2 - 50, GetColor(0, 100, 0), TRUE);
+            DrawBox(1920 / 2 - 250, 1080 / 2 - 90, 1920 / 2 + 250, 1080 / 2 - 50, GetColor(100, 255, 100), FALSE);
+            DrawFormatString(1920 / 2 - 230, 1080 / 2 - 75, GetColor(255, 255, 255), "★ IPアドレスをコピーしました! (%s)", copiedIP.c_str());
         }
         
         if ((waitTimer / 30) % 2 == 0)
         {
-            DrawString(1920 / 2 - 150, 1080 / 2 - 50, "Searching for guests...", GetColor(200, 200, 200));
+            DrawString(1920 / 2 - 150, 1080 / 2 - 40, "Searching for guests...", GetColor(200, 200, 200));
         }
     }
     else if (state == TitleState::JOINING_LAN)
@@ -294,5 +391,12 @@ void TitleScene::Draw()
         {
             DrawString(1920 / 2 - 150, 1080 / 2 - 50, "Searching...", GetColor(200, 200, 200));
         }
+    }
+
+    if (statusMessageTimer > 0 && !statusMessage.empty())
+    {
+        DrawBox(1920 / 2 - 350, 1080 - 100, 1920 / 2 + 350, 1080 - 50, GetColor(160, 30, 30), TRUE);
+        DrawBox(1920 / 2 - 350, 1080 - 100, 1920 / 2 + 350, 1080 - 50, GetColor(255, 150, 150), FALSE);
+        DrawString(1920 / 2 - 330, 1080 - 80, statusMessage.c_str(), GetColor(255, 255, 255));
     }
 }

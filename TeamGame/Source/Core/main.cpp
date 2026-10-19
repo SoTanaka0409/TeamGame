@@ -3,7 +3,11 @@
 #include "SceneManager.h"
 #include "TitleScene.h"
 #include "WeaponManager.h"
+#include "CharacterManager.h"
 #include "SoundManager.h"
+#include "GameBalanceManager.h"
+#include "ItemManager.h"
+#include "../Skills/SkillData.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow)
@@ -22,7 +26,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // ウィンドウタイトルの設定
     SetMainWindowText("TeamGame");
 
-    // DXライブラリの文字列処理をUTF-8に設定
+    // DXライブラリの文字列処理をUTF-8に設定6
     SetUseCharCodeFormat(DX_CHARCODEFORMAT_UTF8);
 
     // DXライブラリの初期化
@@ -33,6 +37,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     // 武器データのロード
     WeaponManager::GetInstance().LoadFromCSV("weapons.csv");
+
+    // キャラクターデータのロード
+    CharacterManager::GetInstance().LoadFromCSV("characters.csv");
+
+    // ゲームバランスデータのロード
+    GameBalanceManager::GetInstance().LoadFromCSV("game_balance.csv");
+
+    // スキルデータのロード
+    SkillDataManager::GetInstance().LoadFromCSV("skills.csv");
+
+    // アイテムデータのロード
+    ItemManager::GetInstance().LoadFromCSV("items.csv");
 
     // 描画先を裏画面に設定
     SetDrawScreen(DX_SCREEN_BACK);

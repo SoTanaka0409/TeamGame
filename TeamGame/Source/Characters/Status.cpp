@@ -1,4 +1,4 @@
-#include "Status.h"
+ï»¿#include "Status.h"
 #include <algorithm>
 
 Status::Status()
@@ -11,7 +11,7 @@ void Status::Init(int hp, float speed, int attack)
     baseMaxHp = hp;
     itemMaxHpBonus = 0;
     skillMaxHpBonus = 0;
-    currentHp = GetMaxHp(); // ƒ{[ƒiƒX”½‰fŒã‚ÌÅ‘åHP‚ð–žƒ^ƒ“‚É‚·‚é
+    currentHp = GetMaxHp(); // ãƒœãƒ¼ãƒŠã‚¹åæ˜ å¾Œã®æœ€å¤§HPã‚’æº€ã‚¿ãƒ³ã«ã™ã‚‹
 
     baseSpeed = speed;
     itemSpeedBonus = 0.0f;
@@ -61,7 +61,7 @@ bool Status::IsDead() const
 void Status::SetItemMaxHpBonus(int bonus)
 {
     itemMaxHpBonus = bonus;
-    // Å‘åHP‚ª•Ï‚í‚é‚Ì‚ÅŒ»ÝHP‚à•â³iÅ‘å‚ð’´‚¦‚È‚¢‚æ‚¤‚Éj
+    // æœ€å¤§HPãŒå¤‰ã‚ã‚‹ã®ã§ç¾åœ¨HPã‚‚è£œæ­£ï¼ˆæœ€å¤§ã‚’è¶…ãˆãªã„ã‚ˆã†ã«ï¼‰
     if (currentHp > GetMaxHp()) {
         currentHp = GetMaxHp();
     }

@@ -1,4 +1,4 @@
-#include "NetworkManager.h"
+﻿#include "NetworkManager.h"
 
 NetworkManager::NetworkManager() : m_netHandle(-1), m_isConnected(false), m_isHost(false), m_isListening(false)
 {

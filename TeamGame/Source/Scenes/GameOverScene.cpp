@@ -1,4 +1,4 @@
-#include "GameOverScene.h"
+﻿#include "GameOverScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "DebugManager.h"

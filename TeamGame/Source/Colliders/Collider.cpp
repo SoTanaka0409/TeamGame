@@ -1,4 +1,4 @@
-#include "Collider.h"
+﻿#include "Collider.h"
 #include "Object2D.h"
 
 Collider::Collider(Object2D *owner, const std::string &tag)

@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "DebugManager.h"
 
 Scene::Scene()
 {
@@ -30,4 +31,9 @@ void Scene::Draw()
 {
     objectManager->Draw();
     effectManager->Draw();
+    if (DebugManager::GetInstance().IsDebugMode() && colliderManager)
+    {
+        colliderManager->DrawDebug();
+    }
 }
+

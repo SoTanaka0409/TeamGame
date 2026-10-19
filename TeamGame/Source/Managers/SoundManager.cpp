@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "SoundManager.h"
 #include "SceneManager.h"
 #include "Scene.h"
