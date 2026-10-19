@@ -466,3 +466,7 @@ title.txt
 TeamGame/Log.txt
 Log.txt
 
+# Relay server files for multiplayer
+!relay_server.py
+!server_config.ini
+
