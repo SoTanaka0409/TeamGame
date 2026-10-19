@@ -123,6 +123,14 @@ void GameScene::Init()
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetRemote(true);
         if (objectManager) objectManager->AddObject(remotePlayer);
+
+        if (currentPlayMode == PlayMode::NETWORK_HOST && NetworkManager::GetInstance().IsConnected())
+        {
+            PacketStageInit packet;
+            packet.header.type = PacketType::STAGE_INIT;
+            packet.seed = stageManager.GetCurrentSeed();
+            NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+        }
     }
     
     // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
@@ -154,6 +162,15 @@ void GameScene::Update()
             {
                 introTimer -= 1.0f;
                 // Skip Scene::Update to pause the game during intro
+                
+                // ホスト側はイントロ中にステージ初期化情報を定期送信して同期を確実にする
+                if (currentPlayMode == PlayMode::NETWORK_HOST && NetworkManager::GetInstance().IsConnected() && (static_cast<int>(introTimer) % 30 == 0))
+                {
+                    PacketStageInit packet;
+                    packet.header.type = PacketType::STAGE_INIT;
+                    packet.seed = stageManager.GetCurrentSeed();
+                    NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+                }
             }
             else
             {
