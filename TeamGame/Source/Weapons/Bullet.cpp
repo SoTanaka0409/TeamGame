@@ -18,8 +18,8 @@
  * @param tId チームID
  * @details 初期位置、速度などの設定を行い、コライダーマネージャーに円形コライダーを登録する
  */
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId, int dmg)
-    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId), damage(dmg)
+Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId, int dmg, const std::string& sName, bool isPanic)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId), damage(dmg), shooterName(sName), isPanicBullet(isPanic)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -136,9 +136,9 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
             {
                 canHit = true;
             }
-            else if (target->IsPanic())
+            else if (target->IsPanic() || this->isPanicBullet)
             {
-                // パニック（錯乱）状態のキャラクターは味方の弾にも被弾する
+                // パニック（錯乱）状態のキャラクターは味方の弾にも被弾し、パニック中の射撃者の弾は味方にも当たる
                 canHit = true;
             }
         }
@@ -147,10 +147,10 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
         {
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage(this->damage);
+                if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
             } else if (target->GetObjectTag() == ObjectTag::Player) {
                 Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage(this->damage);
+                if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
             }
             
             // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す

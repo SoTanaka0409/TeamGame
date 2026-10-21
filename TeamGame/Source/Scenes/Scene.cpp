@@ -29,11 +29,18 @@ void Scene::Update()
 
 void Scene::Draw()
 {
+    if (effectManager)
+    {
+        effectManager->DrawGround();
+    }
     objectManager->Draw();
     effectManager->Draw();
     if (DebugManager::GetInstance().IsDebugMode() && colliderManager)
     {
         colliderManager->DrawDebug();
     }
+    if (effectManager)
+    {
+        effectManager->DrawForeground();
+    }
 }
-

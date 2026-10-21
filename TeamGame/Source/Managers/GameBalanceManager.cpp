@@ -1,4 +1,4 @@
-#include "GameBalanceManager.h"
+﻿#include "GameBalanceManager.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
