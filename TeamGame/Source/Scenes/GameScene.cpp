@@ -1,4 +1,4 @@
-#include "GameScene.h"
+﻿#include "GameScene.h"
 #include "Camera.h"
 #include "DebugManager.h"
 #include "EffectManager.h"
@@ -74,8 +74,17 @@ void GameScene::SpawnEnemiesRandomly(int count)
     float cellH = 1080.0f / stage.GetHeight();
     float cellSize = (cellW < cellH) ? cellW : cellH;
 
-    // ボットの出現および武器配分処理を CharacterFactory に移譲
-    CharacterFactory::SpawnMatchBots(stage, cellSize, player, objectManager, enemies);
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        // 画面分割PvP: 両チームともプレイヤー1人＋ボット2体の3vs3編成
+        CharacterFactory::SpawnPvPBots(stage, cellSize, player, remotePlayer, objectManager, enemies);
+        totalEnemiesSpawned = static_cast<int>(enemies.size());
+    }
+    else
+    {
+        // ボットの出現および武器配分処理を CharacterFactory に移譲
+        CharacterFactory::SpawnMatchBots(stage, cellSize, player, objectManager, enemies);
+    }
 }
 
 void GameScene::Init()
@@ -84,6 +93,10 @@ void GameScene::Init()
     gameTimer = 0.0f;
     isCleared = false;
     MatchManager::GetInstance().Reset();
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        MatchManager::GetInstance().SetTargetKillCount(10);
+    }
     brightTimer = 0.0f;
     int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
     int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
@@ -110,12 +123,51 @@ void GameScene::Init()
     player = CharacterFactory::CreatePlayer(startX, startY, stagePtr, cellSize, 0);
     if (objectManager) objectManager->AddObject(player);
 
-    if (currentPlayMode == PlayMode::LOCAL_COOP)
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        // 1P: 青チーム (teamId = 0)
+        player->teamId = 0;
+        player->SetThemeColor(GetColor(0, 150, 255));
+
+        // 2P: 赤チーム (teamId = 1, マップ上部中央側からスポーン)
+        int midX = stage.GetWidth() / 2;
+        int team1Y = 3;
+        float p2StartX = (midX + 0.5f) * cellSize;
+        float p2StartY = (team1Y + 0.5f) * cellSize;
+
+        remotePlayer = new Player(p2StartX, p2StartY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->teamId = 1;
+        remotePlayer->SetThemeColor(GetColor(255, 60, 60));
+        remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1); // ゲームパッド or 矢印キーハイブリッド
+        remotePlayer->SetRemote(false);
+        remotePlayer->status.Init(100, 4.2f, 10);
+        remotePlayer->SetColliderRadius(8.9f);
+        remotePlayer->SetModelScale(0.3f);
+        remotePlayer->SetModelPath("Resource/GreenCharacter/character.mv1");
+        std::vector<Weapon*> p2Weapons;
+        p2Weapons.push_back(new Handgun());
+        p2Weapons.push_back(new Shotgun());
+        p2Weapons.push_back(new SniperRifle());
+        remotePlayer->SetWeapons(p2Weapons);
+        if (objectManager) objectManager->AddObject(remotePlayer);
+
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+
+        // 両チームとも「プレイヤー1人＋ボット2体」を配分 (合計 3 vs 3)
+        ClearEnemies();
+        CharacterFactory::SpawnPvPBots(stage, cellSize, player, remotePlayer, objectManager, enemies);
+        totalEnemiesSpawned = static_cast<int>(enemies.size());
+    }
+    else if (currentPlayMode == PlayMode::LOCAL_COOP)
     {
         remotePlayer = new Player(startX + 50.0f, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
         if (objectManager) objectManager->AddObject(remotePlayer);
+
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+        SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
     }
     else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
     {
@@ -131,11 +183,16 @@ void GameScene::Init()
             packet.seed = stageManager.GetCurrentSeed();
             NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
         }
+
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+        SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
     }
-    
-    // 敵を水・壁・外枠を避けてプレイヤーから離れたランダム位置にスポーン
-    introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
-    SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
+    else
+    {
+        // Soloモード
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+        SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
+    }
 }
 
 void GameScene::Update()
@@ -246,24 +303,38 @@ void GameScene::Update()
             if (!isCleared && result != MatchResult::IN_PROGRESS)
             {
                 isCleared = true;
-                if (result == MatchResult::TEAM0_WIN) {
+                if (currentPlayMode == PlayMode::LOCAL_PVP)
+                {
                     ClearStats stats;
                     stats.clearTimeSec = gameTimer;
-                    stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                    stats.defeatedEnemies = (result == MatchResult::TEAM0_WIN) ? MatchManager::GetInstance().GetTeam0Kills() : MatchManager::GetInstance().GetTeam1Kills();
                     stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
-
-                    int baseScore = 5000;
-                    int timePenalty = static_cast<int>(gameTimer * 10.0f);
-                    stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
-
-                    if (stats.rankScore >= 4500) stats.rankName = "S";
-                    else if (stats.rankScore >= 3500) stats.rankName = "A";
-                    else if (stats.rankScore >= 2500) stats.rankName = "B";
-                    else stats.rankName = "C";
+                    stats.rankScore = 5000;
+                    stats.rankName = (result == MatchResult::TEAM0_WIN) ? "1P WIN" : "2P WIN";
 
                     SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
-                } else {
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
+                }
+                else
+                {
+                    if (result == MatchResult::TEAM0_WIN) {
+                        ClearStats stats;
+                        stats.clearTimeSec = gameTimer;
+                        stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                        stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
+
+                        int baseScore = 5000;
+                        int timePenalty = static_cast<int>(gameTimer * 10.0f);
+                        stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
+
+                        if (stats.rankScore >= 4500) stats.rankName = "S";
+                        else if (stats.rankScore >= 3500) stats.rankName = "A";
+                        else if (stats.rankScore >= 2500) stats.rankName = "B";
+                        else stats.rankName = "C";
+
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                    } else {
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
+                    }
                 }
                 return;
             }
@@ -386,7 +457,7 @@ void GameScene::Draw()
         playerWorldY = pos.y;
     }
 
-    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive())
+    if ((currentPlayMode == PlayMode::LOCAL_COOP || currentPlayMode == PlayMode::LOCAL_PVP) && remotePlayer)
     {
         // 画面分割 (1P - 左半分)
         SetDrawArea(0, 0, 1920 / 2, 1080);
@@ -523,7 +594,7 @@ void GameScene::Draw()
     if (player && player->IsActive()) {
         player->DrawUI(25, 850);
     }
-    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive()) {
+    if ((currentPlayMode == PlayMode::LOCAL_COOP || currentPlayMode == PlayMode::LOCAL_PVP) && remotePlayer && remotePlayer->IsActive()) {
         remotePlayer->DrawUI(1920 / 2 + 25, 850);
     }
 
@@ -578,31 +649,37 @@ void GameScene::Draw()
             }
         }
         
-        int ruleX = 1300;
-        int ruleY = 300;
-        DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(30, 30, 40), TRUE);
-        DrawBox(ruleX - 20, ruleY - 20, 1850, 800, GetColor(100, 100, 100), FALSE);
-        DrawString(ruleX, ruleY, "【遊び方・操作】", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 35, "W A S D : 移動", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 70, "マウス : 視点移動 / 狙う", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 105, "左クリック : 撃つ (または Z キー)", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 140, "右クリック : 懐中電灯ON/OFF", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 175, "R キー : リロード", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 210, "SPACE キー : ナイフ暗殺", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 245, "Q / 1,2,3 / ホイール : 武器切り替え", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 280, "E キー : 視点固定", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 315, "0 キー : デバッグモードON/OFF", GetColor(255, 255, 255));
-        
-        DrawString(ruleX, ruleY + 330, "[ ルール ]", GetColor(255, 200, 0));
-        DrawString(ruleX, ruleY + 365, "- 敵の攻撃を避けながら進む", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 400, "- 草むらにいると敵から見えにくくなる", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 435, "- ライトを消すとステルス性が上がる", GetColor(255, 255, 255));
+        int ruleX = 1200;
+        int ruleY = 250;
+        DrawBox(ruleX - 20, ruleY - 20, 1870, 850, GetColor(30, 30, 40), TRUE);
+        DrawBox(ruleX - 20, ruleY - 20, 1870, 850, GetColor(100, 100, 100), FALSE);
+        DrawString(ruleX, ruleY, "【1P操作 (キーボード & マウス)】", GetColor(100, 200, 255));
+        DrawString(ruleX, ruleY + 30, "W A S D : 移動", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 60, "マウス : 視点移動 / 照準", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 90, "左クリック / Z : 射撃", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 120, "右クリック : 懐中電灯ON/OFF", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 150, "R キー : リロード", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 180, "Q / 1,2,3 / ホイール : 武器切替", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 210, "F キー : スキル発動", GetColor(255, 255, 255));
+
+        DrawString(ruleX, ruleY + 250, "【2P操作 (パッド または キーボード)】", GetColor(255, 120, 120));
+        DrawString(ruleX, ruleY + 280, "パッド: スティック移動 / Aボタン射撃", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 310, "矢印キー (↑↓←→) : 移動 (自動エイム)", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 340, "Right Ctrl / Slash (/) / テンキー0 : 射撃", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 370, "P キー / テンキー7 : 武器切替", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 400, "ピリオド (.) / テンキー1 : リロード", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 430, "セミコロン (;) / テンキー5 : ライトON/OFF", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 460, "U キー / テンキー9 : スキル発動", GetColor(255, 255, 255));
+
+        DrawString(ruleX, ruleY + 500, "[ ルール ]", GetColor(255, 200, 0));
+        DrawString(ruleX, ruleY + 530, "- 10キル先取したチームの勝利！（両チーム: プレイヤー＋Bot2体）", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 560, "- 草むらや暗闇を活用してステルス攻撃", GetColor(255, 255, 255));
     }
 
     int activeEnemyCount = GetActiveEnemyCount();
     
     // キルカウントバーUI（画面中央上部に配置して右上のデバッグ表示との重なりを完全解消）
-    int maxKills = GameBalanceManager::GetInstance().GetInt("TargetKillCount", 10);
+    int maxKills = MatchManager::GetInstance().GetTargetKillCount();
     int barWidth = 260;
     int barHeight = 22;
     int startX = 860;
@@ -615,16 +692,30 @@ void GameScene::Draw()
     int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
     int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
 
-    // 自チーム（味方）のキル数バー (青: 味方チームが敵を倒すと増える)
+    // 自チーム（味方/1P）のキル数バー (青)
     int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
     DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
     SetFontSize(20);
-    DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        DrawFormatString(startX - 230, startY + 1, GetColor(100, 200, 255), "1P (青) KILLS: %d/%d", team0Kills, maxKills);
+    }
+    else
+    {
+        DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+    }
 
-    // 敵チームのキル数バー (赤: 敵チームが味方を倒すと増える)
+    // 敵チーム（2P）のキル数バー (赤)
     int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
     DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
-    DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        DrawFormatString(startX - 230, startY + 33, GetColor(255, 100, 100), "2P (赤) KILLS: %d/%d", team1Kills, maxKills);
+    }
+    else
+    {
+        DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+    }
     SetFontSize(32); // デフォルトフォントサイズに戻す
 
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);

@@ -1,4 +1,4 @@
-#include "TitleScene.h"
+﻿#include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
 #include "CharacterSelectScene.h"
@@ -7,17 +7,29 @@
 #include "GameSettings.h"
 #include "NetworkManager.h"
 #include <string>
+#include <random>
 
 TitleScene::TitleScene()
 {
+    LoadServerConfig();
 }
+
+void TitleScene::LoadServerConfig()
+{
+    char hostBuf[256] = "localhost";
+    GetPrivateProfileStringA("Server", "Host", "localhost", hostBuf, sizeof(hostBuf), ".\\server_config.ini");
+    serverHost = hostBuf;
+    serverPort = GetPrivateProfileIntA("Server", "Port", 8080, ".\\server_config.ini");
+    serverUseSSL = (GetPrivateProfileIntA("Server", "UseSSL", 0, ".\\server_config.ini") != 0);
+}
+
 TitleScene::~TitleScene()
 {
     if (udpHandle != -1)
     {
         DeleteUDPSocket(udpHandle);
     }
-    if (state == TitleState::WAITING && !NetworkManager::GetInstance().IsConnected()) {
+    if ((state == TitleState::WAITING || state == TitleState::WEB_HOST_WAITING) && !NetworkManager::GetInstance().IsConnected()) {
         NetworkManager::GetInstance().Disconnect();
     }
 }
@@ -54,8 +66,8 @@ void TitleScene::Update()
     {
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 4;
-        if (cursor > 4) cursor = 0;
+        if (cursor < 0) cursor = 5;
+        if (cursor > 5) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -64,12 +76,133 @@ void TitleScene::Update()
                 NetworkManager::GetInstance().Disconnect();
                 SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
             }
-            else if (cursor == 1) // Local Coop
+            else if (cursor == 1) // Local PvP
+            {
+                NetworkManager::GetInstance().Disconnect();
+                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_PVP));
+            }
+            else if (cursor == 2) // Local Coop
             {
                 NetworkManager::GetInstance().Disconnect();
                 SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_COOP));
             }
-            else if (cursor == 2) // Host
+            else if (cursor == 3) // Web Online
+            {
+                state = TitleState::WEB_SELECT;
+                cursor = 0;
+            }
+            else if (cursor == 4) // LAN Play
+            {
+                state = TitleState::LAN_SELECT;
+                cursor = 0;
+            }
+            else if (cursor == 5) // Back
+            {
+                state = TitleState::MAIN;
+                cursor = 0;
+            }
+        }
+    }
+    else if (state == TitleState::WEB_SELECT)
+    {
+        if (currUp && !prevUp) cursor--;
+        if (currDown && !prevDown) cursor++;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
+
+        if (currEnter && !prevEnter)
+        {
+            if (cursor == 0) // Create Room (Host)
+            {
+                // 4桁の部屋番号をランダム生成
+                int randNum = 1000 + (rand() % 9000);
+                sprintf_s(roomCodeBuffer, sizeof(roomCodeBuffer), "%04d", randNum);
+
+                DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
+                DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
+                DrawFormatString(1920 / 2 - 200, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to server...");
+                ScreenFlip();
+
+                if (NetworkManager::GetInstance().ConnectWeb(serverHost, serverPort, roomCodeBuffer, true, serverUseSSL))
+                {
+                    state = TitleState::WEB_HOST_WAITING;
+                    copiedIP = roomCodeBuffer;
+                }
+                else
+                {
+                    statusMessage = "Webサーバー接続失敗 (" + serverHost + ")";
+                    statusMessageTimer = 300;
+                }
+            }
+            else if (cursor == 1) // Join Room (Client)
+            {
+                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(0, 0, 0), TRUE);
+                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(200, 200, 200), FALSE);
+                DrawString(1920 / 2 - 280, 1080 / 2 - 40, "4桁の部屋番号を入力 (Enterで決定):", GetColor(255, 255, 255));
+                ScreenFlip();
+
+                roomCodeBuffer[0] = '\0';
+                KeyInputString(1920 / 2 - 280, 1080 / 2 + 10, 15, roomCodeBuffer, FALSE);
+
+                if (strlen(roomCodeBuffer) > 0)
+                {
+                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
+                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
+                    DrawFormatString(1920 / 2 - 200, 1080 / 2 - 10, GetColor(255, 255, 0), "Joining room %s ...", roomCodeBuffer);
+                    ScreenFlip();
+
+                    if (NetworkManager::GetInstance().ConnectWeb(serverHost, serverPort, roomCodeBuffer, false, serverUseSSL))
+                    {
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
+                        return;
+                    }
+                    else
+                    {
+                        statusMessage = "接続失敗: 部屋「" + std::string(roomCodeBuffer) + "」に接続できませんでした";
+                        statusMessageTimer = 300;
+                    }
+                }
+            }
+            else if (cursor == 2) // Back
+            {
+                state = TitleState::MODE_SELECT;
+                cursor = 4;
+            }
+        }
+    }
+    else if (state == TitleState::WEB_HOST_WAITING)
+    {
+        // 相手が部屋に入ってきたかチェック
+        if (NetworkManager::GetInstance().HasGuestJoined())
+        {
+            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_HOST));
+            return;
+        }
+
+        // Cキーで部屋番号をクリップボードにコピー
+        if (currC && !prevC)
+        {
+            SetClipboardText(copiedIP.c_str());
+            copyNotifyTimer = 180;
+        }
+
+        if (currEsc) // キャンセル
+        {
+            NetworkManager::GetInstance().Disconnect();
+            state = TitleState::WEB_SELECT;
+            cursor = 0;
+        }
+    }
+    else if (state == TitleState::LAN_SELECT)
+    {
+        if (currUp && !prevUp) cursor--;
+        if (currDown && !prevDown) cursor++;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
+
+        if (currEnter && !prevEnter)
+        {
+            if (cursor == 0) // Host LAN
             {
                 if (NetworkManager::GetInstance().Listen(9876))
                 {
@@ -77,15 +210,15 @@ void TitleScene::Update()
                     state = TitleState::WAITING;
                 }
             }
-            else if (cursor == 3) // Join
+            else if (cursor == 1) // Join LAN
             {
                 state = TitleState::JOIN_SELECT;
                 cursor = 0;
             }
-            else if (cursor == 4) // Back
+            else if (cursor == 2) // Back
             {
-                state = TitleState::MAIN;
-                cursor = 0;
+                state = TitleState::MODE_SELECT;
+                cursor = 3;
             }
         }
     }
@@ -318,8 +451,91 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::MODE_SELECT)
     {
-        const char* items[] = { "1P (Solo)", "2P (Same PC - Split Screen)", "Host Game (Network)", "Join Game (Network)", "Back" };
-        for (int i = 0; i < 5; i++)
+        const char* items[] = { 
+            "1. Solo Brawl (ソロ・AIデスマッチ)", 
+            "2. Local PvP (画面分割 1P vs 2P対戦)", 
+            "3. Local Co-op (画面分割 協力プレイ)", 
+            "4. Web Online (インターネット対戦)", 
+            "5. LAN Play (ローカルLAN対戦)", 
+            "Back" 
+        };
+        for (int i = 0; i < 6; i++)
+        {
+            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
+            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
+            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
+        }
+
+        // 選択中モードの解説表示 (企業審査員への配慮)
+        SetFontSize(22);
+        if (cursor == 0) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【ソロ】敵Botと戦いながらキル数を競うモード (1人ですぐ遊べます)", GetColor(180, 220, 255));
+        } else if (cursor == 1) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【3vs3 画面分割対戦】両チームとも人間1人＋Bot2体！(1P: WASD+マウス / 2P: パッドまたは矢印キー)", GetColor(255, 220, 100));
+        } else if (cursor == 2) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【画面分割Co-op】2人で協力して敵Botを撃破するモード", GetColor(180, 255, 180));
+        } else if (cursor == 3) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【オンライン】4桁の部屋番号でマッチングするインターネット対戦", GetColor(200, 200, 200));
+        } else if (cursor == 4) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【LAN対戦】同一ネットワーク内のPC同士で直接接続して対戦", GetColor(200, 200, 200));
+        }
+        SetFontSize(32);
+    }
+    else if (state == TitleState::WEB_SELECT)
+    {
+        const char* items[] = { 
+            "Create Room (部屋を作成・ホスト)", 
+            "Join Room (部屋番号で参加)", 
+            "Back" 
+        };
+        for (int i = 0; i < 3; i++)
+        {
+            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
+            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
+            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
+        }
+
+        // 接続先サーバー情報を小さく表示
+        SetFontSize(20);
+        DrawFormatString(menuStartX, menuStartY + 3 * menuSpacing + 20, GetColor(150, 150, 150),
+            "接続サーバー: %s:%d (%s)", serverHost.c_str(), serverPort, serverUseSSL ? "SSL" : "No-SSL");
+        SetFontSize(32);
+    }
+    else if (state == TitleState::WEB_HOST_WAITING)
+    {
+        DrawString(1920 / 2 - 200, 360, "=== Web Online 待機中 ===", GetColor(100, 220, 255));
+
+        SetFontSize(48);
+        DrawFormatString(1920 / 2 - 220, 440, GetColor(255, 255, 0), "部屋番号:  %s", copiedIP.c_str());
+        SetFontSize(32);
+
+        DrawString(1920 / 2 - 250, 530, "[C] キー: 部屋番号をクリップボードにコピー", GetColor(100, 255, 100));
+        DrawString(1920 / 2 - 250, 580, "相手に部屋番号を教えてください (ESCでキャンセル)", GetColor(200, 200, 200));
+
+        if (copyNotifyTimer > 0)
+        {
+            DrawBox(1920 / 2 - 250, 280, 1920 / 2 + 250, 330, GetColor(0, 100, 0), TRUE);
+            DrawBox(1920 / 2 - 250, 280, 1920 / 2 + 250, 330, GetColor(100, 255, 100), FALSE);
+            DrawFormatString(1920 / 2 - 230, 295, GetColor(255, 255, 255), "★ 部屋番号 %s をコピーしました!", copiedIP.c_str());
+        }
+
+        if ((waitTimer / 30) % 2 == 0)
+        {
+            DrawString(1920 / 2 - 200, 660, "Waiting for Player 2 to join ...", GetColor(255, 255, 100));
+        }
+
+        SetFontSize(20);
+        DrawFormatString(1920 / 2 - 200, 750, GetColor(140, 140, 140), "サーバー: %s:%d", serverHost.c_str(), serverPort);
+        SetFontSize(32);
+    }
+    else if (state == TitleState::LAN_SELECT)
+    {
+        const char* items[] = { 
+            "Host Game (LAN待機)", 
+            "Join Game (LAN参加)", 
+            "Back" 
+        };
+        for (int i = 0; i < 3; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
             if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);

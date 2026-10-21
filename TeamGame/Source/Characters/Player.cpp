@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -37,7 +37,7 @@ Player::Player(float startX, float startY)
     }
     else
     {
-        status.Init(10, 1.5f, 1);
+        status.Init(100, 4.2f, 10);
         if (collider) collider->SetRadius(8.9f);
         radius = 8.9f;
     }
@@ -79,13 +79,16 @@ void Player::Update()
 
     if (!isRemote)
     {
-        // 懐中電灯スイッチ
-        bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
-        if (currMouseRight && !m_prevMouseRight)
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            m_isLightOn = !m_isLightOn;
+            // 懐中電灯スイッチ (右クリック)
+            bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+            if (currMouseRight && !m_prevMouseRight)
+            {
+                m_isLightOn = !m_isLightOn;
+            }
+            m_prevMouseRight = currMouseRight;
         }
-        m_prevMouseRight = currMouseRight;
     }
 
     // 草むら隠れ状態判定
@@ -109,22 +112,23 @@ void Player::Update()
     {
         if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
+            // 1P: WASDキーのみで移動 (矢印キーは2Pに割り当て)
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
             {
                 moveDir.x -= 1.0f;
                 m_isMoving = true;
             }
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
             {
                 moveDir.x += 1.0f;
                 m_isMoving = true;
             }
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
             {
                 moveDir.y -= 1.0f;
                 m_isMoving = true;
             }
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
             {
                 moveDir.y += 1.0f;
                 m_isMoving = true;
@@ -132,6 +136,7 @@ void Player::Update()
         }
         else if (m_inputType == PlayerInputType::GAMEPAD_1)
         {
+            // 2P: ゲームパッド入力
             int padState = GetJoypadInputState(DX_INPUT_PAD1);
             int ax = 0, ay = 0;
             GetJoypadAnalogInput(&ax, &ay, DX_INPUT_PAD1);
@@ -144,6 +149,12 @@ void Player::Update()
             if (padState & PAD_INPUT_RIGHT) moveDir.x += 1.0f;
             if (padState & PAD_INPUT_UP) moveDir.y -= 1.0f;
             if (padState & PAD_INPUT_DOWN) moveDir.y += 1.0f;
+            
+            // 2P: ゲームパッドがない場合でも矢印キーで移動可能
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT)) moveDir.x -= 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT)) moveDir.x += 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP)) moveDir.y -= 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN)) moveDir.y += 1.0f;
             
             if (moveDir.x != 0.0f || moveDir.y != 0.0f) m_isMoving = true;
         }
@@ -356,6 +367,7 @@ void Player::Update()
         }
         else if (m_inputType == PlayerInputType::GAMEPAD_1)
         {
+            bool hasAimInput = false;
             int rx = 0, ry = 0;
             GetJoypadAnalogInputRight(&rx, &ry, DX_INPUT_PAD1);
             if (rx < -200 || rx > 200 || ry < -200 || ry > 200)
@@ -367,29 +379,72 @@ void Player::Update()
                 {
                     facingDir.x = dx / dirLen;
                     facingDir.y = dy / dirLen;
+                    hasAimInput = true;
+                }
+            }
+            
+            // 2Pキーボードエイム（テンキーまたはIJKL）
+            float keyAimX = 0.0f, keyAimY = 0.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD4) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_J)) keyAimX -= 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD6) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_L)) keyAimX += 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD8) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_I)) keyAimY -= 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD2) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_K)) keyAimY += 1.0f;
+            if (keyAimX != 0.0f || keyAimY != 0.0f)
+            {
+                float len = std::sqrt(keyAimX * keyAimX + keyAimY * keyAimY);
+                facingDir.x = keyAimX / len;
+                facingDir.y = keyAimY / len;
+                hasAimInput = true;
+            }
+            // 照準入力がなく移動している場合は移動方向を向く（自動エイム）
+            else if (!hasAimInput && m_isMoving)
+            {
+                float len = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+                if (len > 0.0001f)
+                {
+                    facingDir.x = moveDir.x / len;
+                    facingDir.y = moveDir.y / len;
                 }
             }
             
             int padState = GetJoypadInputState(DX_INPUT_PAD1);
             static int prevPadState = 0;
             
-            if ((padState & PAD_INPUT_3) && !(prevPadState & PAD_INPUT_3)) // Button X
+            // 武器切り替え: パッド Button 6(LB) / Button 3(X) または キーボード P / NumPad 7
+            bool isWeaponChangePressed = ((padState & PAD_INPUT_6) && !(prevPadState & PAD_INPUT_6)) ||
+                                         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_P) ||
+                                         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD7);
+            if (isWeaponChangePressed)
             {
                 currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
             }
-            if ((padState & PAD_INPUT_4) && !(prevPadState & PAD_INPUT_4)) // Button Y
+
+            // 懐中電灯ON/OFF: パッド Button 4(Y) または キーボード セミコロン / NumPad 5
+            bool isLightTogglePressed = ((padState & PAD_INPUT_4) && !(prevPadState & PAD_INPUT_4)) ||
+                                        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SEMICOLON) ||
+                                        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD5);
+            if (isLightTogglePressed)
             {
                 ToggleLight();
             }
             
-            if (padState & PAD_INPUT_1) // Button A (or R1)
+            // 射撃: パッド Button 1(A) / RT または キーボード Right Ctrl / Slash / NumPad 0
+            bool isShootHeld = (padState & PAD_INPUT_1) ||
+                               InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RCONTROL) ||
+                               InputManager::GetInstance().IsKeyHeld(KEY_INPUT_SLASH) ||
+                               InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD0);
+            if (isShootHeld)
             {
                 if (!weapons.empty() && currentWeaponIndex >= 0 && currentWeaponIndex < static_cast<int>(weapons.size()) && weapons[currentWeaponIndex]) 
                     weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
                 if (m_model) m_model->PlayShoot();
             }
             
-            if (padState & PAD_INPUT_3) // Button X
+            // スキル: パッド Button 8(RT) / Button 7 または キーボード U / NumPad 9
+            bool isSkillPressed = ((padState & PAD_INPUT_8) && !(prevPadState & PAD_INPUT_8)) ||
+                                  InputManager::GetInstance().IsKeyPressed(KEY_INPUT_U) ||
+                                  InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD9);
+            if (isSkillPressed)
             {
                 SkillManager::GetInstance().TriggerSkill(this);
             }
@@ -408,8 +463,13 @@ void Player::Update()
         }
         else if (m_inputType == PlayerInputType::GAMEPAD_1) {
             int pad = GetJoypadInputState(DX_INPUT_PAD1);
-            isKnifePressed = (pad & PAD_INPUT_2) != 0;
-            isReloadPressed = (pad & PAD_INPUT_5) != 0; // L1 or similar
+            isKnifePressed = ((pad & PAD_INPUT_2) != 0) ||
+                             InputManager::GetInstance().IsKeyPressed(KEY_INPUT_RSHIFT) ||
+                             InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD3);
+            isReloadPressed = ((pad & PAD_INPUT_5) != 0) ||
+                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_PERIOD) ||
+                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_O) ||
+                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD1);
         }
     }
     

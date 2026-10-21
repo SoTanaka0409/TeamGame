@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 class ObjectManager;
 class Stage;
@@ -54,5 +54,6 @@ public:
     int GetTeam0Kills() const { return team0Kills; }
     int GetTeam1Kills() const { return team1Kills; }
     int GetTargetKillCount() const { return targetKillCount; }
+    void SetTargetKillCount(int count) { targetKillCount = count; }
     bool IsMatchEnded() const { return isMatchEnded; }
 };
