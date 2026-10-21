@@ -141,7 +141,22 @@ void GameScene::Init()
         remotePlayer->SetStage(stagePtr, cellSize);
         remotePlayer->teamId = 1;
         remotePlayer->SetThemeColor(GetColor(255, 60, 60));
-        remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1); // ゲームパッド or 矢印キーハイブリッド
+
+        // コントローラー接続台数に応じたインテリジェント入力割り当て
+        int padCount = GetJoypadNum();
+        if (padCount >= 2)
+        {
+            // コントローラー2台以上: 1PにPAD1、2PにPAD2を割り当て（コントローラー2台対戦）
+            player->SetInputType(PlayerInputType::KEYBOARD_MOUSE);
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_2);
+        }
+        else
+        {
+            // コントローラー1台または0台: 1PはKBM、2PはGAMEPAD_1 (PAD1または矢印キー＋強力オートエイム)
+            player->SetInputType(PlayerInputType::KEYBOARD_MOUSE);
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        }
+
         remotePlayer->SetRemote(false);
         remotePlayer->status.Init(100, 4.2f, 10);
         remotePlayer->SetColliderRadius(8.9f);
@@ -165,7 +180,12 @@ void GameScene::Init()
     {
         remotePlayer = new Player(startX + 50.0f, startY);
         remotePlayer->SetStage(stagePtr, cellSize);
-        remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        int coopPadCount = GetJoypadNum();
+        if (coopPadCount >= 2) {
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_2);
+        } else {
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        }
         if (objectManager) objectManager->AddObject(remotePlayer);
 
         introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
@@ -682,16 +702,22 @@ void GameScene::Draw()
         DrawString(ruleX, ruleY + 180, "Q / 1,2,3 / ホイール : 武器切替", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 210, "F キー : スキル発動", GetColor(255, 255, 255));
 
-        DrawString(ruleX, ruleY + 250, "【2P操作 (パッド または キーボード)】", GetColor(255, 120, 120));
-        DrawString(ruleX, ruleY + 280, "パッド: スティック移動 / Aボタン射撃", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 310, "矢印キー (↑↓←→) : 移動 (自動エイム)", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 250, "【2P操作 (ゲームパッド または 矢印キー)】", GetColor(255, 120, 120));
+        DrawString(ruleX, ruleY + 280, "パッド: 左スティック移動 / 右スティック照準 / A射撃", GetColor(255, 255, 255));
+        DrawString(ruleX, ruleY + 310, "矢印キー (↑↓←→) : 移動 (★敵吸い付きオートエイム発動！)", GetColor(255, 230, 80));
         DrawString(ruleX, ruleY + 340, "Right Ctrl / Slash (/) / テンキー0 : 射撃", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 370, "P キー / テンキー7 : 武器切替", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 400, "ピリオド (.) / テンキー1 : リロード", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 430, "セミコロン (;) / テンキー5 : ライトON/OFF", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 460, "U キー / テンキー9 : スキル発動", GetColor(255, 255, 255));
 
-        DrawString(ruleX, ruleY + 500, "[ ルール ]", GetColor(255, 200, 0));
+        // コントローラー接続状態
+        int connectedPads = GetJoypadNum();
+        char padInfo[64];
+        snprintf(padInfo, sizeof(padInfo), "コントローラー接続: %d台 (%s)", connectedPads, connectedPads >= 2 ? "2台対戦対応" : (connectedPads == 1 ? "2Pパッド対応" : "キーボード対戦"));
+        DrawString(ruleX, ruleY + 490, padInfo, GetColor(100, 255, 160));
+
+        DrawString(ruleX, ruleY + 520, "[ ルール ]", GetColor(255, 200, 0));
         DrawString(ruleX, ruleY + 530, "- 10キル先取したチームの勝利！（両チーム: プレイヤー＋Bot2体）", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 560, "- 草むらや暗闇を活用してステルス攻撃", GetColor(255, 255, 255));
     }

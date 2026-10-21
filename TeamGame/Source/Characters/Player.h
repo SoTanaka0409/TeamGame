@@ -9,7 +9,8 @@
 enum class PlayerInputType
 {
     KEYBOARD_MOUSE, ///< キーボード＋マウス操作
-    GAMEPAD_1       ///< ゲームパッド1操作
+    GAMEPAD_1,      ///< ゲームパッド1操作
+    GAMEPAD_2       ///< ゲームパッド2操作
 };
 
 #include "../Weapons/Weapon.h"
@@ -216,6 +217,21 @@ public:
      */
     bool IsAimLocked() const { return isAimLocked; }
 
+    /**
+     * @brief オートエイムでロックオン中の敵キャラクター取得
+     */
+    Character* GetAutoAimTarget() const { return m_autoAimTarget; }
+
+    /**
+     * @brief オートエイムが有効（ロックオン中）かどうか
+     */
+    bool IsAutoAimActive() const { return m_isAutoAimActive; }
+
+    /**
+     * @brief 強力オートエイム（敵吸い付きアシスト）の更新
+     */
+    void UpdateAutoAim(const Vector2& moveDir = Vector2(0.0f, 0.0f));
+
 private:
     float m_lightAngle = 0.0f;  ///< ライト照射角度
     bool m_isLightOn = true;    ///< ライトON/OFF
@@ -235,4 +251,6 @@ private:
     unsigned int m_themeColor = 0x00FF88;     ///< キャラクターテーマカラー
     int m_characterId = 1;                    ///< キャラクターID (1:指揮者, 2:反逆者, 3:バカ, 4:主婦, 5:悪魔)
     std::string m_cutinImagePath;             ///< カットイン専用画像パス
+    Character* m_autoAimTarget = nullptr;     ///< オートエイムでロックオン中の敵
+    bool m_isAutoAimActive = false;           ///< オートエイム発動中フラグ
 };
