@@ -1,4 +1,4 @@
-#include "Weapon.h"
+﻿#include "Weapon.h"
 #include "../Managers/WeaponManager.h"
 
 Weapon::Weapon(const std::string &name)

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Character.h"
 #include <vector>
 #include <cmath>
@@ -85,7 +85,7 @@ public:
     /**
      * @brief ダメージ受信処理
      */
-    void TakeDamage(int amount = 1);
+    void TakeDamage(int amount = 1, const std::string& attackerName = "", int attackerTeamId = -1);
     
     /**
      * @brief 弾薬の回復・補充
@@ -127,6 +127,11 @@ public:
      * @brief ライト・視界マスクのレンダリング
      */
     void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX = 0, float startDrawY = 0, float brightRatio = 0.0f) const;
+
+    /**
+     * @brief 暗闇より優先して敵位置・距離・矢印を描画（悪魔 HighRiskスキル用）
+     */
+    void RenderHighRiskEnemyIndicators() const;
 
     /**
      * @brief 被弾時の血しぶきオーバーレイ描画
@@ -177,7 +182,20 @@ public:
      * @brief テーマカラーの設定
      */
     void SetThemeColor(unsigned int color) { m_themeColor = color; }
+    unsigned int GetThemeColor() const { return m_themeColor; }
     
+    /**
+     * @brief キャラクターIDの設定・取得
+     */
+    void SetCharacterId(int id) { m_characterId = id; }
+    int GetCharacterId() const { return m_characterId; }
+
+    /**
+     * @brief カットイン画像パスの設定・取得
+     */
+    void SetCutinImagePath(const std::string& path) { m_cutinImagePath = path; }
+    const std::string& GetCutinImagePath() const { return m_cutinImagePath; }
+
     /**
      * @brief 操作入力タイプの設定
      */
@@ -215,4 +233,6 @@ private:
     mutable bool m_isMoonlightFlicker = false; ///< 月光チラつきフラグ
 
     unsigned int m_themeColor = 0x00FF88;     ///< キャラクターテーマカラー
+    int m_characterId = 1;                    ///< キャラクターID (1:指揮者, 2:反逆者, 3:バカ, 4:主婦, 5:悪魔)
+    std::string m_cutinImagePath;             ///< カットイン専用画像パス
 };

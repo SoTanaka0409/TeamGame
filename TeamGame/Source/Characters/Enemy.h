@@ -42,6 +42,7 @@ private:
     float effectiveRangeCells = 10.0f;///< 攻撃有効射程（10セル）
     float sightRangeCells = 14.0f;    ///< 索敵視界（14セル: プレイヤーのライト照射範囲14セルに統一）
     class Weapon* equippedWeapon = nullptr; ///< 装備武器
+    bool wasPanic = false;                  ///< 直前フレームでパニック状態だったかどうかのフラグ
 
 public:
     /**
@@ -139,12 +140,12 @@ public:
     /**
      * @brief ダメージ受信処理
      */
-    void Damage(int amount = 1);
+    void Damage(int amount = 1, const std::string& attackerName = "", int attackerTeamId = -1);
 
     /**
      * @brief ステルスキル受信処理
      */
-    void StealthKill();
+    void StealthKill(const std::string& attackerName = "", int attackerTeamId = -1);
 
     /**
      * @brief 警戒・戦闘状態かどうか
@@ -185,6 +186,11 @@ public:
      * @brief HomingKillスキルによる特攻状態を開始
      */
     void StartHomingSuicide(Character* enemyTarget, float speedMultiplier = 1.6f);
+
+    /**
+     * @brief 特攻状態を解除・リセットする
+     */
+    void StopHomingSuicide();
 
     /**
      * @brief 特攻状態中かどうか

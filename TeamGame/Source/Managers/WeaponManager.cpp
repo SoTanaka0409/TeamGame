@@ -1,4 +1,4 @@
-#include "WeaponManager.h"
+﻿#include "WeaponManager.h"
 #include "DxLib.h"
 #include <fstream>
 #include <sstream>

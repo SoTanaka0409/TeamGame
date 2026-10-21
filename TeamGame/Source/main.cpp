@@ -1,4 +1,4 @@
-#include "DxLib.h"
+﻿#include "DxLib.h"
 #include "StageManager.h"
 #include "Player.h"
 #include <string>

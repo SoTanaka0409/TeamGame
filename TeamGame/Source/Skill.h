@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include"Skills/SkillData.h"
 #include"Character.h"
 
@@ -7,7 +7,7 @@ class Skill
   public:
     Skill();
     ~Skill();
-    // ŠÔŒo‰ß‚ÅƒN[ƒ‹ƒ^ƒCƒ€‚ğŒ¸‚ç‚·
+    // ï¿½ï¿½ï¿½ÔŒoï¿½ß‚ÅƒNï¿½[ï¿½ï¿½ï¿½^ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç‚·
     void UpdateTimer(Character *character, int deltaTime);
 
     void ApplyEffect(Character *character, const SkillData &skillData);
