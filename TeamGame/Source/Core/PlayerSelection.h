@@ -18,6 +18,7 @@ struct SelectionCharacterData {
     unsigned int themeColor = 0xFFFFFF; // UI上のテーマカラー
     std::string modelPath;              // 3Dモデルファイルパス
     std::string previewPath;            // プレビュー画像ファイルパス
+    std::string cutinImagePath;         // カットイン専用画像ファイルパス (未指定時はResource/Cutin/cutin_X.pngを検索)
 };
 
 /**

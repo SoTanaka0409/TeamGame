@@ -22,6 +22,7 @@ Enemy::Enemy(float startX, float startY, int tId)
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
+    characterName = (teamId == 0) ? "味方ボット" : "敵ボット";
     std::string botType = (teamId == 0) ? "AllyBot" : "EnemyBot";
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData(botType);
     if (!data && teamId != 0) data = CharacterManager::GetInstance().GetCharacterData("EnemyBot");
@@ -66,7 +67,8 @@ float Enemy::GetEffectiveRange() const
 
 void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness, int shooterTeamId)
 {
-    if (shooterTeamId != -1 && shooterTeamId == this->teamId)
+    // 非パニック時: 同じチームからの発砲音は味方の援護射撃なので警戒・敵対しない
+    if (!this->IsPanic() && shooterTeamId != -1 && shooterTeamId == this->teamId)
     {
         return;
     }
@@ -115,7 +117,9 @@ void Enemy::UpdateTarget()
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (!scene || !scene->GetObjectManager()) return;
 
-    if (targetCharacter && !targetCharacter->IsActive()) {
+    // ターゲットが非アクティブ、または混乱解除後に味方をターゲットしている場合は即座に解除
+    if (targetCharacter && (!targetCharacter->IsActive() || (!this->IsPanic() && targetCharacter->teamId == this->teamId)))
+    {
         targetCharacter = nullptr;
     }
 
@@ -131,8 +135,19 @@ void Enemy::UpdateTarget()
             // 透明化中のキャラは敵・味方問わず視界外・不可視として扱う
             if (c->IsTransparent()) continue;
 
-            // パニック中なら敵味方関係なく最寄りを攻撃、通常は敵チームのみターゲット
-            if (selfPanic || (c->teamId != this->teamId))
+            // パニック（バトルロワイヤル）中ならチーム関係なく、マップ上の最も近いキャラクターを無差別ロックオン
+            if (selfPanic)
+            {
+                float dx = c->GetPosition().x - position.x;
+                float dy = c->GetPosition().y - position.y;
+                float dist = dx * dx + dy * dy;
+                // 遮蔽物があってもバトロワ中は最短の対象へ向かって追跡・交戦する
+                if (dist < minDist) {
+                    minDist = dist;
+                    visibleEnemy = c;
+                }
+            }
+            else if (c->teamId != this->teamId)
             {
                 if (CheckLineOfSightToTarget(c)) {
                     float dx = c->GetPosition().x - position.x;
@@ -149,6 +164,8 @@ void Enemy::UpdateTarget()
 
     if (visibleEnemy) {
         targetCharacter = visibleEnemy;
+    } else if (!selfPanic && targetCharacter && targetCharacter->teamId == this->teamId) {
+        targetCharacter = nullptr;
     }
 }
 
@@ -194,7 +211,8 @@ bool Enemy::CheckLineOfSightToTarget(Character* target) const
         }
     }
 
-    if (dist > cellSize * 1.0f)
+    // パニック（錯乱）状態中は全方位360度見境なく索敵（視野角制限を解除）
+    if (!this->IsPanic() && dist > cellSize * 1.0f)
     {
         float facingAngle = std::atan2(facingDir.y, facingDir.x);
         float targetAngle = std::atan2(dy, dx);
@@ -435,9 +453,8 @@ void Enemy::Update()
             {
                 if (scene && scene->GetEffectManager())
                 {
-                    scene->GetEffectManager()->AddBloodEffect(position.x, position.y, 45);
-                    scene->GetEffectManager()->AddMuzzleFlashEffect(position.x, position.y, 0.0f, 90.0f);
-                    scene->GetEffectManager()->AddSonarWaveEffect(position.x, position.y, GetColor(255, 80, 0));
+                    // 指揮者による非情・残酷な特攻爆散ゴアエフェクト（大量鮮血・肉片骨片飛散・血溜まり残留・爆砕波）
+                    scene->GetEffectManager()->AddCruelExplosionEffect(position.x, position.y, 90.0f);
                 }
 
                 // 周囲の敵キャラクターにダメージ判定（半径90px。手前110pxで止まるため、動いている敵には外れることもある）
@@ -453,12 +470,15 @@ void Enemy::Update()
                             float cdy = c->GetPosition().y - position.y;
                             if (cdx * cdx + cdy * cdy <= blastRadiusSq)
                             {
+                                c->SetLastAttacker(GetCharacterName(), teamId);
                                 c->status.TakeDamage(100);
                             }
                         }
                     }
                 }
 
+                // 爆破時に特攻状態を完全解除
+                StopHomingSuicide();
                 Damage(status.GetMaxHp()); // 自分自身も爆散・死亡
                 return;
             }
@@ -481,9 +501,32 @@ void Enemy::Update()
         }
         else
         {
-            // 標的が既に死亡していたらその場で爆発
-            Damage(status.GetMaxHp());
+            // 標的が既に死亡していたら特攻を解除して通常状態に復帰（無駄な即爆発死を防止）
+            StopHomingSuicide();
             return;
+        }
+    }
+
+    // 混乱（バトルロワイヤル）解除時の完全復帰処理
+    bool currentPanic = IsPanic();
+    if (wasPanic && !currentPanic)
+    {
+        // 混乱が切れた瞬間にターゲットを完全初期化し、味方への誤射・追尾を直ちに中断して巡回へ戻す
+        targetCharacter = nullptr;
+        aimDelayTimer = 0;
+        shootCooldown = 40;
+        aiState = EnemyAIState::PATROL;
+        patrolChangeTimer = 30;
+    }
+    wasPanic = currentPanic;
+
+    // 非パニック状態かつ味方をターゲットしていた場合は強制リセット
+    if (!currentPanic && targetCharacter && targetCharacter->teamId == this->teamId)
+    {
+        targetCharacter = nullptr;
+        if (aiState == EnemyAIState::ALERT)
+        {
+            aiState = EnemyAIState::PATROL;
         }
     }
 
@@ -506,15 +549,27 @@ void Enemy::Update()
         if (aiState != EnemyAIState::ALERT)
         {
             aiState = EnemyAIState::ALERT;
-            aimDelayTimer = 25; // 初回視認時に約0.4秒のエイム遅延（隙）を発生
+            aimDelayTimer = IsPanic() ? 5 : 25; // パニック中はエイム遅延ほぼゼロで即射撃
         }
         lastKnownPos = targetCharacter->GetPosition();
+    }
+    else if (IsPanic())
+    {
+        // パニック中は標的を見失っても狂乱状態のまま（ALERT継続）
+        aiState = EnemyAIState::ALERT;
     }
     else if (aiState == EnemyAIState::ALERT)
     {
         // 視界が切れたら最後に見かけた位置の調査モード(INVESTIGATE)へ移行
         aiState = EnemyAIState::INVESTIGATE;
         investigateTimer = 60; // 1秒間探索してすぐ巡回へ
+    }
+
+    // 警戒・交戦状態: 非パニック時に味方なら即座に交戦中止
+    if (!IsPanic() && targetCharacter && targetCharacter->teamId == this->teamId)
+    {
+        targetCharacter = nullptr;
+        aiState = EnemyAIState::PATROL;
     }
 
     if (aiState == EnemyAIState::ALERT && targetCharacter && targetCharacter->IsActive())
@@ -572,7 +627,7 @@ void Enemy::Update()
             {
                 if (equippedWeapon->CanFire())
                 {
-                    equippedWeapon->Fire(muzzlePos, facingDir, teamId);
+                    equippedWeapon->Fire(muzzlePos, facingDir, teamId, false, GetCharacterName(), IsPanic());
                     if (m_model) m_model->PlayShoot();
                     int interval = (equippedWeapon->GetData()) ? equippedWeapon->GetData()->fireInterval : 75;
                     // パニック乱戦中は連射速度が激化（クールダウン半減）
@@ -599,7 +654,7 @@ void Enemy::Update()
                 float finalAngle = baseAngle + angleOffset;
                 Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 
-                new Bullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange(), 6.0f, teamId);
+                new Bullet(muzzlePos.x, muzzlePos.y, fireDir, 14.0f, GetEffectiveRange(), 6.0f, teamId, 1, GetCharacterName(), IsPanic());
                 if (m_model) m_model->PlayShoot();
 
                 auto scene = SceneManager::GetInstance().GetCurrentScene();
@@ -736,9 +791,13 @@ void Enemy::Draw()
         return;
     }
 
-    // チーム別カラー（チーム0＝青系、チーム1＝赤系）
+    // チーム別カラー（通常：青/赤、バトルロワイヤル錯乱中：全員が敵扱いの紫・マゼンタ・警告オレンジ）
     unsigned int bodyColor;
-    if (teamId == 0) {
+    if (IsPanic()) {
+        // バトルロワイヤル単独孤立化：禍々しいマゼンタ・紫色に変化
+        bodyColor = GetColor(220, 30, 160);
+        if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
+    } else if (teamId == 0) {
         bodyColor = GetColor(30, 30, 180);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
         else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(40, 40, 240);
@@ -780,6 +839,50 @@ void Enemy::Draw()
                    static_cast<int>(renderRadius), bodyColor, TRUE);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+    }
+
+    // HomingKill 特攻突撃中の残虐・暴走演出（全身が血のように赤黒く脈動し、頭上に死のカウントダウンと赤黒いオーラ）
+    if (isHomingSuicide)
+    {
+        float timeSec = GetNowCount() / 1000.0f;
+        float pulse = std::abs(std::sin(timeSec * 16.0f));
+
+        // 1. 赤黒い禍々しいオーラ
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(140 + pulse * 100));
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius + 8.0f + pulse * 6.0f), GetColor(220, 10, 10), FALSE);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius + 4.0f + pulse * 4.0f), GetColor(255, 60, 0), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    }
+
+    // パニック（錯乱）状態の頭上エフェクト描画（回転する紫・マゼンタの星とパルスリング）
+    if (IsPanic())
+    {
+        float timeSec = GetNowCount() / 1000.0f;
+        float headY = screenY - renderRadius - 16.0f;
+
+        // 1. 錯乱パルスリング（紫・マゼンタ）
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(120 + std::sin(timeSec * 8.0f) * 60));
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(headY), 16, GetColor(255, 50, 220), FALSE);
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(headY), 10, GetColor(200, 80, 255), FALSE);
+
+        // 2. 頭上をぐるぐる回転する3つの錯乱スター（黄色〜マゼンタ）
+        for (int k = 0; k < 3; ++k)
+        {
+            float ang = timeSec * 6.0f + (k * 2.094395f); // 120度間隔
+            float sx = screenX + std::cos(ang) * 14.0f;
+            float sy = headY + std::sin(ang) * 7.0f; // 楕円軌道で回転
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+            DrawCircle(static_cast<int>(sx), static_cast<int>(sy), 4, GetColor(255, 220, 50), TRUE);
+            DrawCircle(static_cast<int>(sx), static_cast<int>(sy), 2, GetColor(255, 255, 255), TRUE);
+        }
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        // 孤立敵対中（バトルロワイヤル）表示
+        DrawString(static_cast<int>(screenX) - 24, static_cast<int>(headY) - 10, "TARGET", GetColor(255, 60, 60));
     }
 
     // 警戒（ALERT）状態のリング強調および有効射程ガイド円、【赤色でやや透明な弾道予測線】の描画
@@ -881,21 +984,36 @@ void Enemy::Draw()
 #include "SceneManager.h"
 #include "Scene.h"
 
-void Enemy::Damage(int amount)
+void Enemy::Damage(int amount, const std::string& attackerName, int attackerTeamId)
 {
+    if (invincibleTimer > 0) return;
+    if (!attackerName.empty() || attackerTeamId != -1)
+    {
+        SetLastAttacker(attackerName, attackerTeamId);
+    }
     status.TakeDamage(amount);
     damageColorTimer = 15;
-    aiState = EnemyAIState::ALERT; // 被弾したら即警戒状態
+    // 被弾時: パニック中か、あるいは敵チームからの被弾時のみ警戒状態へ移行（混乱解除後の味方の誤射で敵対しない）
+    if (IsPanic() || attackerTeamId != this->teamId)
+    {
+        aiState = EnemyAIState::ALERT;
+    }
 
     if (status.IsDead())
     {
+        StopHomingSuicide();
         SetActive(false);
         if (m_model) m_model->PlayDie();
     }
 }
 
-void Enemy::StealthKill()
+void Enemy::StealthKill(const std::string& attackerName, int attackerTeamId)
 {
+    if (!attackerName.empty() || attackerTeamId != -1)
+    {
+        SetLastAttacker(attackerName, attackerTeamId);
+    }
+    StopHomingSuicide();
     status.TakeDamage(status.GetCurrentHp());
     SetActive(false);
     if (m_model) m_model->PlayDie();
@@ -927,5 +1045,14 @@ void Enemy::StartHomingSuicide(Character* enemyTarget, float speedMultiplier)
     targetCharacter = enemyTarget;
     aiState = EnemyAIState::ALERT;
     status.SetSpeedMultiplier(speedMultiplier);
+}
+
+void Enemy::StopHomingSuicide()
+{
+    isHomingSuicide = false;
+    suicideTimer = 0;
+    targetCharacter = nullptr;
+    status.SetSpeedMultiplier(1.0f);
+    aiState = EnemyAIState::PATROL;
 }
 

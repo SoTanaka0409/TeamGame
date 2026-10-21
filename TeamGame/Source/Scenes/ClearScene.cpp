@@ -1,4 +1,4 @@
-#include "ClearScene.h"
+﻿#include "ClearScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "DebugManager.h"

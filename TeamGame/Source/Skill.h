@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include"Skills/SkillData.h"
 #include"Character.h"
 

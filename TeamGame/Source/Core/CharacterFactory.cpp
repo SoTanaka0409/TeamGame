@@ -20,6 +20,9 @@ Player* CharacterFactory::CreatePlayer(float startX, float startY, Stage* stage,
 
     player->status.Init(charaData.maxHp, charaData.moveSpeed, 10);
     player->SetThemeColor(charaData.themeColor);
+    player->SetCharacterId(charaData.id);
+    player->SetCharacterName(charaData.name.empty() ? "プレイヤー" : charaData.name);
+    player->SetCutinImagePath(charaData.cutinImagePath);
     player->SetModelPath(charaData.modelPath.empty() ? "Resource/GreenCharacter/character.mv1" : charaData.modelPath);
     player->SetEquippedSkillById(charaData.skillId);
 
@@ -41,6 +44,7 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
     for (const auto& chara : availableCharas) {
         if (chara.id == characterId) {
             bot->status.Init(chara.maxHp, chara.moveSpeed, 10);
+            bot->SetCharacterName(chara.name);
             if (!chara.modelPath.empty()) {
                 bot->SetModelPath(chara.modelPath);
             }

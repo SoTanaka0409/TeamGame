@@ -1,4 +1,4 @@
-#include "CharacterManager.h"
+﻿#include "CharacterManager.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>

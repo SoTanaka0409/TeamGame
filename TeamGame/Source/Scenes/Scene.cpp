@@ -28,6 +28,13 @@ void Scene::Update()
 
 void Scene::Draw()
 {
+    if (effectManager)
+    {
+        effectManager->DrawGround();
+    }
     objectManager->Draw();
-    effectManager->Draw();
+    if (effectManager)
+    {
+        effectManager->DrawForeground();
+    }
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include "StageManager.h"
 #include "DebugManager.h"

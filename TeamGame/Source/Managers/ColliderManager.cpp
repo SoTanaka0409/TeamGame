@@ -1,4 +1,4 @@
-#include "ColliderManager.h"
+﻿#include "ColliderManager.h"
 #include "Object2D.h"
 
 ColliderManager::ColliderManager()

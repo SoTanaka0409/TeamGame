@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector2.h"
 #include "../Managers/WeaponManager.h"
 #include <string>
@@ -18,7 +18,7 @@ public:
     virtual ~Weapon() = default;
 
     virtual void Update();
-    virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, bool isMoving = false) = 0;
+    virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, bool isMoving = false, const std::string& shooterName = "", bool isPanic = false) = 0;
     virtual void Reload();
 
     bool CanFire() const;

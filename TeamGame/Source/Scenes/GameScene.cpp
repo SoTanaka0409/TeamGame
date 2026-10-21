@@ -1,8 +1,9 @@
-#include "GameScene.h"
+﻿#include "GameScene.h"
 #include "Camera.h"
 #include "DebugManager.h"
 #include "EffectManager.h"
 #include "SoundManager.h"
+#include "CutinManager.h"
 #include "GameBalanceManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
@@ -23,6 +24,7 @@
 #include "../Core/PlayerSelection.h"
 #include "../Core/CharacterFactory.h"
 #include "../Managers/MatchManager.h"
+#include "FontManager.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -148,12 +150,19 @@ void GameScene::Update()
         }
         else
         {
+            // ペルソナ5風カットイン演出の更新
+            CutinManager::GetInstance().Update();
+
             gameTimer += 0.016f;
 
             if (introTimer > 0.0f)
             {
                 introTimer -= 1.0f;
                 // Skip Scene::Update to pause the game during intro
+            }
+            else if (CutinManager::GetInstance().ShouldPauseGame())
+            {
+                // カットイン演出の強烈なインパクト期間中はゲーム世界をヒットストップ
             }
             else
             {
@@ -223,6 +232,7 @@ void GameScene::Update()
             float cellSize = (cellW < cellH) ? cellW : cellH;
 
             MatchManager::GetInstance().UpdateRespawns(objectManager, stage, cellSize);
+            MatchManager::GetInstance().UpdateKillLogs();
 
             // 勝敗判定 (MatchManagerの判定を使用)
             MatchResult result = MatchManager::GetInstance().CheckMatchResult();
@@ -472,6 +482,16 @@ void GameScene::Draw()
         }
     }
 
+    // 悪魔のHighRiskスキル: 暗闇（ライトマスク）よりも優先して敵の位置・距離(m)・矢印を最前面に描画
+    if (player && player->IsActive())
+    {
+        player->RenderHighRiskEnemyIndicators();
+    }
+    if (currentPlayMode == PlayMode::LOCAL_COOP && remotePlayer && remotePlayer->IsActive())
+    {
+        remotePlayer->RenderHighRiskEnemyIndicators();
+    }
+
     // 体力3以下で画面枠上に血しぶきデンジャーエフェクトを描画
     if (GameSettings::GetInstance().isBloodSplatterEnabled && player && player->IsActive())
     {
@@ -584,33 +604,83 @@ void GameScene::Draw()
 
     int activeEnemyCount = GetActiveEnemyCount();
     
-    // キルカウントバーUI（画面中央上部に配置して右上のデバッグ表示との重なりを完全解消）
-    int maxKills = GameBalanceManager::GetInstance().GetInt("TargetKillCount", 10);
-    int barWidth = 260;
-    int barHeight = 22;
-    int startX = 860;
-    int startY = 20;
+    // バトルロワイヤル状態（Botが錯乱中）かどうかの判定
+    bool isBattleRoyaleActive = false;
+    int panicRemainingFrames = 0;
+    if (objectManager) {
+        for (auto obj : objectManager->GetObjects()) {
+            Character* ch = dynamic_cast<Character*>(obj);
+            if (ch && ch != player && ch->IsActive() && ch->IsPanic()) {
+                isBattleRoyaleActive = true;
+                int frames = ch->GetEffectRemainingFrames(SkillMinorTag::PanicShoot);
+                if (frames > panicRemainingFrames) panicRemainingFrames = frames;
+            }
+        }
+    }
 
-    // 背景バー
-    DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
-    DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
+    if (isBattleRoyaleActive)
+    {
+        // =========================================================================
+        // バトルロワイヤル発動中：特大カオス警告バナー（赤・マゼンタ・警告ストライプ）
+        // =========================================================================
+        int brW = 540;
+        int brH = 58;
+        int brX = (1920 - brW) / 2;
+        int brY = 16;
 
-    int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
-    int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
+        float timeSec = GetNowCount() / 1000.0f;
+        int pulseAlpha = static_cast<int>(180 + std::sin(timeSec * 12.0f) * 60);
 
-    // 自チーム（味方）のキル数バー (青: 味方チームが敵を倒すと増える)
-    int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
-    DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
-    SetFontSize(20);
-    DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+        // 背景ボックス（黒＆マゼンタ）
+        DrawBox(brX, brY, brX + brW, brY + brH, GetColor(15, 10, 20), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, pulseAlpha);
+        DrawBox(brX + 2, brY + 2, brX + brW - 2, brY + brH - 2, GetColor(220, 20, 120), FALSE);
+        DrawBox(brX + 4, brY + 4, brX + brW - 4, brY + brH - 4, GetColor(255, 50, 50), FALSE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-    // 敵チームのキル数バー (赤: 敵チームが味方を倒すと増える)
-    int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
-    DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
-    DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
-    SetFontSize(32); // デフォルトフォントサイズに戻す
+        // バトロワ警告テキスト
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 6, "!! BATTLE ROYALE : ALL-OUT WAR !!", GetColor(255, 230, 40), 26, 9);
+
+        char brSubText[64];
+        snprintf(brSubText, sizeof(brSubText), "全員孤立・敵対中！ 残り時間: %.1f秒", panicRemainingFrames / 60.0f);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 34, brSubText, GetColor(255, 255, 255), 18, 6);
+    }
+    else
+    {
+        // 通常キルカウントバーUI（画面中央上部に配置）
+        int maxKills = GameBalanceManager::GetInstance().GetInt("TargetKillCount", 10);
+        int barWidth = 260;
+        int barHeight = 22;
+        int startX = 860;
+        int startY = 20;
+
+        // 背景バー
+        DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
+        DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
+
+        int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
+        int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
+
+        // 自チーム（味方）のキル数バー (青: 味方チームが敵を倒すと増える)
+        int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
+        DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
+        SetFontSize(20);
+        DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+
+        // 敵チームのキル数バー (赤: 敵チームが味方を倒すと増える)
+        int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
+        DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
+        DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+        SetFontSize(32); // デフォルトフォントサイズに戻す
+    }
 
     DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
+
+    // キルログ・デスログ通知バナーの描画
+    MatchManager::GetInstance().DrawKillNotifications();
+
+    // スキル発動時のペルソナ5風スタイリッシュカットイン描画（最前面オーバーレイ）
+    CutinManager::GetInstance().Draw();
 }
 
 void GameScene::ProcessNetworkPackets()

@@ -41,6 +41,12 @@ Character::~Character()
 
 void Character::Update()
 {
+    // 無敵タイマーの減衰
+    if (invincibleTimer > 0)
+    {
+        invincibleTimer--;
+    }
+
     // 1. キャラクターが所有するスキルのクールタイムを自身で更新（スキル自体のUpdateを呼び出す）
     if (equippedSkill)
     {

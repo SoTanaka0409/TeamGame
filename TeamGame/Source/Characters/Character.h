@@ -41,6 +41,16 @@ public:
     int highRiskSoundTimer = 0;   ///< HighRiskスキル時の定期発音タイマー
     Vector2 knockbackVelocity = Vector2(0.0f, 0.0f); ///< 吹き飛ばし減衰速度ベクトル
 
+    std::string characterName = "Unit";        ///< キャラクター表示名
+    std::string lastAttackerName = "";        ///< 最後に攻撃を与えたキャラクター名
+    int lastAttackerTeamId = -1;              ///< 最後に攻撃を与えたチームID
+
+    const std::string& GetCharacterName() const { return characterName; }
+    void SetCharacterName(const std::string& name) { characterName = name; }
+    void SetLastAttacker(const std::string& name, int tId) { lastAttackerName = name; lastAttackerTeamId = tId; }
+    const std::string& GetLastAttackerName() const { return lastAttackerName; }
+    int GetLastAttackerTeamId() const { return lastAttackerTeamId; }
+
     bool IsInBush() const { return m_isInBush; }
     void SetInBush(bool val) { m_isInBush = val; }
 

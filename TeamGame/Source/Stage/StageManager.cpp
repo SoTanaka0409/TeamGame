@@ -1,4 +1,4 @@
-#include "StageManager.h"
+﻿#include "StageManager.h"
 #include "DxLib.h"
 #include <ctime>
 #include <vector>
