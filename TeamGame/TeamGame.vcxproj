@@ -295,6 +295,9 @@
     <ClCompile Include="Source\Weapons\Weapon.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Weapons\SubmachineGun.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Graphics\Animation.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -362,6 +365,8 @@
     <ClInclude Include="Source\Weapons\Shotgun.h" />
     <ClInclude Include="Source\Weapons\SniperRifle.h" />
     <ClInclude Include="Source\Weapons\Weapon.h" />
+    <ClInclude Include="Source\Weapons\SubmachineGun.h" />
+    <ClInclude Include="Source\Weapons\BulletVisualConfig.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resource\characters.csv" />

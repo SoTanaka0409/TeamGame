@@ -222,6 +222,9 @@
     <ClCompile Include="Source\Weapons\Weapon.cpp">
       <Filter>ソース ファイル\Weapons</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Weapons\SubmachineGun.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Graphics\Animation.cpp">
       <Filter>ソース ファイル\Graphics</Filter>
     </ClCompile>
@@ -399,6 +402,12 @@
       <Filter>ヘッダー ファイル\Weapons</Filter>
     </ClInclude>
     <ClInclude Include="Source\Weapons\Weapon.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\SubmachineGun.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\BulletVisualConfig.h">
       <Filter>ヘッダー ファイル\Weapons</Filter>
     </ClInclude>
   </ItemGroup>

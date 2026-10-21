@@ -24,7 +24,16 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos, int shooterTeamId)
     }
 }
 
-Shotgun::Shotgun() : Weapon("Shotgun") {}
+Shotgun::Shotgun() : Weapon("Shotgun")
+{
+    barrelVisual.barrelLength = 32.0f;
+    barrelVisual.barrelWidth = 6;
+    barrelVisual.barrelColor = 0x3A3A3A;
+    barrelVisual.accentColor = 0xC88A30;
+    barrelVisual.hasMuzzleBrake = true;
+    barrelVisual.muzzleColor = 0x222222;
+    barrelVisual.muzzleWidthOffset = 3.0f;
+}
 
 void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving, const std::string& shooterName, bool isPanic)
 {

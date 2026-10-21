@@ -4,6 +4,7 @@
 #include "../Weapons/Handgun.h"
 #include "../Weapons/Shotgun.h"
 #include "../Weapons/SniperRifle.h"
+#include "../Weapons/SubmachineGun.h"
 #include "../Stage/Stage.h"
 #include "../Managers/ObjectManager.h"
 #include "PlayerSelection.h"
@@ -92,8 +93,18 @@ std::vector<int> CharacterFactory::GenerateUniqueCharacterIds(int count, int exc
 }
 
 Weapon* CharacterFactory::CreateWeaponByName(const std::string& name) {
+    const auto& selection = PlayerSelectionManager::GetInstance().GetSelection();
+    int charaId = selection.selectedCharacter.id;
+    return CreateWeaponForCharacter(name, charaId);
+}
+
+Weapon* CharacterFactory::CreateWeaponForCharacter(const std::string& name, int characterId) {
     if (name.find("Shotgun") != std::string::npos) return new Shotgun();
     if (name.find("Sniper") != std::string::npos) return new SniperRifle();
+    if (name.find("Submachine") != std::string::npos || name.find("SMG") != std::string::npos || name.find("Assault") != std::string::npos) {
+        // キャラクター別の派生SMG（パラメータ＆弾・銃身の描画アセット）を生成
+        return SubmachineGunFactory::CreateForCharacter(characterId);
+    }
     return new Handgun();
 }
 

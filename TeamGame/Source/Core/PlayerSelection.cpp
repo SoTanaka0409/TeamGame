@@ -29,8 +29,8 @@ WeaponSelectData PlayerSelectionManager::GetFixedSlot1Weapon() {
 
 std::vector<WeaponSelectData> PlayerSelectionManager::GetAvailableSlot2Weapons() {
     return {
-        { 201, "Shotgun",      "Shotgun", "Close range spread", 6, 18 },
-        { 202, "Sniper Rifle", "Sniper",  "Long range pierce", 5, 80 },
-        { 203, "Assault Rifle","Assault", "Medium range automatic", 30, 20 }
+        { 201, "Shotgun",         "Shotgun", "近接拡散・高威力散弾銃", 6, 18 },
+        { 202, "Sniper Rifle",    "Sniper",  "超長射程・高速貫通狙撃銃", 5, 80 },
+        { 203, "Submachine Gun",  "SMG",     "高速連射短機関銃 (★キャラ別カスタム弾＆銃身！)", 32, 10 }
     };
 }

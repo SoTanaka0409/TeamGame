@@ -600,26 +600,26 @@ void Player::Draw()
                    static_cast<int>(renderRadius), color, TRUE);
     }
 
-    // 向いている方角を線で描画
-    float lineLen = 50.0f; // 線の長さ
-    float len =
-        std::sqrt(facingDir.x * facingDir.x + facingDir.y * facingDir.y);
-    float nx = facingDir.x;
-    float ny = facingDir.y;
+    // 向いている方角の単位ベクトル
+    float dirLen = std::sqrt(facingDir.x * facingDir.x + facingDir.y * facingDir.y);
+    float nx = (dirLen > 0.0001f) ? (facingDir.x / dirLen) : facingDir.x;
+    float ny = (dirLen > 0.0001f) ? (facingDir.y / dirLen) : facingDir.y;
 
-    if (len > 0.0001f)
+    // 銃身（ガンバレル）の描画: 装備中の武器固有の描画アセットを描画
+    if (!weapons.empty() && weapons[currentWeaponIndex])
     {
-        nx /= len;
-        ny /= len;
+        weapons[currentWeaponIndex]->DrawBarrel(screenX, screenY, facingDir);
     }
-
-    int x1 = static_cast<int>(screenX);
-    int y1 = static_cast<int>(screenY);
-    int x2 = static_cast<int>(screenX + nx * lineLen);
-    int y2 = static_cast<int>(screenY + ny * lineLen);
-
-    // 白い線を描画（太さ2）
-    DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+    else
+    {
+        // 向いている方角を線で描画
+        float lineLen = 50.0f; // 線の長さ
+        int x1 = static_cast<int>(screenX);
+        int y1 = static_cast<int>(screenY);
+        int x2 = static_cast<int>(screenX + nx * lineLen);
+        int y2 = static_cast<int>(screenY + ny * lineLen);
+        DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+    }
 
     // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
     if (!weapons.empty() && weapons[currentWeaponIndex]) {
