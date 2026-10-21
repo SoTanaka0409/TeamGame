@@ -1,4 +1,4 @@
-#include "GameScene.h"
+﻿#include "GameScene.h"
 #include "Camera.h"
 #include "DebugManager.h"
 #include "EffectManager.h"
@@ -397,8 +397,9 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f / 4.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
         Scene::Draw();
+        stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
 
         // 画面分割 (2P - 右半分)
         SetDrawArea(1920 / 2, 0, 1920, 1080);
@@ -410,8 +411,9 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f * 0.75f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(p2Pos.x, p2Pos.y, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
         Scene::Draw();
+        stage.DrawForegroundGrass(p2Pos.x, p2Pos.y, zoomCellSize, worldCellSize);
         
         // 描画エリアリセット
         SetDrawArea(0, 0, 1920, 1080);
@@ -462,9 +464,11 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f / 2.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
 
         Scene::Draw();
+
+        stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
     }
 
     float brightRatio = 0.0f;

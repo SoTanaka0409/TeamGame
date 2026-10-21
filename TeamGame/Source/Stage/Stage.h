@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include "Vector2.h"
@@ -68,6 +68,15 @@ public:
     void SetWallBlockGraph(int handle) { m_hWallBlockGraph = handle; }
     void SetOuterWallGraph(int handle) { m_hOuterWallGraph = handle; }
     void SetGrassGraph(int handle) { m_hGrassGraph = handle; }
+    void SetGrassModel(int handle, float baseSize = 1.2f) { m_hGrassModel = handle; m_grassModelBaseSize = (baseSize > 0.001f) ? baseSize : 1.2f; }
+    void SetRockModel(int index, int handle, float baseSize = 5.0f)
+    {
+        if (index >= 0 && index < 4)
+        {
+            m_hRockModels[index] = handle;
+            m_rockModelBaseSizes[index] = (baseSize > 0.001f) ? baseSize : 5.0f;
+        }
+    }
     void SetWaterGraph(int handle) { m_hWaterGraph = handle; }
     void SetCactusGraph(int handle) { m_hCactusGraph = handle; }
     void SetStarGraph(int handle) { m_hStarGraph = handle; }
@@ -77,6 +86,9 @@ public:
 
     // プレイヤー中心ズームカメラ描画 (1920x1080の中央 960, 540 にプレイヤー配置)
     void DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCellSize, float worldCellSize, bool isDebugMode, const char* patternName = "", int hGrass = -1) const;
+
+    // キャラクター描画後に重ねる前景3D草むら描画（草むらに潜っている立体表現）
+    void DrawForegroundGrass(float playerWorldX, float playerWorldY, float zoomCellSize, float worldCellSize) const;
 
 private:
     int m_width = 0;   // 横セル数 (48)
@@ -88,6 +100,10 @@ private:
     int m_hWallBlockGraph = -1;  // 木箱・壁ブロック画像
     int m_hOuterWallGraph = -1;  // 外周封鎖壁画像
     int m_hGrassGraph = -1;      // 草むら画像
+    int m_hGrassModel = -1;      // 3D草むらモデルハンドル (grass.mv1)
+    float m_grassModelBaseSize = 1.2f; // 3D草むらモデルの元サイズ幅
+    int m_hRockModels[4] = { -1, -1, -1, -1 }; // 3D岩モデルハンドル (rock_01〜04.mv1)
+    float m_rockModelBaseSizes[4] = { 5.0f, 5.0f, 5.0f, 5.0f }; // 3D岩モデルの水平幅
     int m_hWaterGraph = -1;      // 水場画像
     int m_hCactusGraph = -1;     // サボテン・岩障害物画像
     int m_hStarGraph = -1;       // 中央スター画像
