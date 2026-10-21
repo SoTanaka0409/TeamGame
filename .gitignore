@@ -432,21 +432,46 @@ FodyWeavers.xsd
 # Custom Exclusions for Portfolio & Submission Cleanliness (企業提出用除外設定)
 # =========================================================================
 
-# Python scripts & tools (開発作業用スクリプト・ツール)
-*.py
-*.pyc
-__pycache__/
-Scripts/
-Tools/
+# Runtime logs (実行時ログ・ログファイル全般)
+Log.txt
+**/Log.txt
+**/log.txt
+*.log
+**/*.log
+*.tlog
+**/*.tlog
+Log/
+Logs/
+**/Log/
+**/Logs/
 
-# 3D Raw Models & Asset files (未加工モデル素材・xファイル)
+# 3D Raw Models, intermediate files & DirectX X files (xファイル・中間OBJモデル等)
 *.x
 *.X
+**/*.x
+**/*.X
 *.obj
+**/*.obj
 *.fbx
 *.blend
 *.max
 *.3ds
+
+# Python scripts & tools (開発作業用スクリプト・ツール)
+*.py
+**/*.py
+*.pyc
+__pycache__/
+**/__pycache__/
+Scripts/
+Tools/
+
+# Whitelist: Multiplayer Relay Server (オンライン対戦用中継サーバーファイルのみ許可)
+!relay_server.py
+!server_config.ini
+!render.yaml
+!requirements.txt
+!run_relay_server.bat
 
 # Task management / Excel / Note files (作業メモ・タスク管理)
 *.xlsx
@@ -461,12 +486,19 @@ title.txt
 *_old.h
 *_backup.*
 *.bak
+*.tmp
+*~
 
-# Runtime logs (実行時ログ)
-TeamGame/Log.txt
-Log.txt
-
-# Relay server files for multiplayer
-!relay_server.py
-!server_config.ini
-
+# Visual Studio user-specific files & build outputs
+*.user
+**/*.user
+.vs/
+**/.vs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+**/[Dd]ebug/
+**/[Rr]elease/
+**/x64/
+**/x86/

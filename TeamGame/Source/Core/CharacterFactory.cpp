@@ -40,6 +40,7 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
     bot->SetStage(stage, cellSize);
 
     auto availableCharas = PlayerSelectionManager::GetAvailableCharacters();
+    bool found = false;
     for (const auto& chara : availableCharas) {
         if (chara.id == characterId) {
             bot->status.Init(chara.maxHp, chara.moveSpeed, 10);
@@ -48,8 +49,14 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
             if (!chara.modelPath.empty()) {
                 bot->SetModelPath(chara.modelPath);
             }
+            found = true;
             break;
         }
+    }
+    if (!found) {
+        bot->status.Init(100, 4.0f, 10);
+        bot->SetColliderRadius(8.9f);
+        bot->SetModelScale(0.3f);
     }
     if (!bot->HasModel()) {
         bot->SetModelPath("Resource/GreenCharacter/character.mv1");
@@ -147,3 +154,56 @@ void CharacterFactory::SpawnMatchBots(const Stage& stage, float cellSize, Player
     }
 }
 
+void CharacterFactory::SpawnPvPBots(const Stage& stage, float cellSize, Player* player1, Player* player2, ObjectManager* objectManager, std::vector<Enemy*>& enemiesOut) {
+    int midX = stage.GetWidth() / 2;
+    int team0Y = stage.GetHeight() - 4;
+    int team1Y = 3;
+
+    // 安全なX座標を見つけるヘルパー（壁の中へのスポーン防止）
+    auto findSafeX = [&](int baseX, int baseY) -> int {
+        if (!stage.IsSolidWall(baseX, baseY)) return baseX;
+        for (int d = 1; d <= 6; ++d) {
+            if (baseX - d >= 1 && !stage.IsSolidWall(baseX - d, baseY)) return baseX - d;
+            if (baseX + d < stage.GetWidth() - 1 && !stage.IsSolidWall(baseX + d, baseY)) return baseX + d;
+        }
+        return baseX;
+    };
+
+    // 1P（青・下部中央）の位置設定
+    if (player1) {
+        int p1X = findSafeX(midX, team0Y);
+        player1->SetPosition(Vector2((p1X + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize));
+    }
+
+    // 2P（赤・上部中央）の位置設定
+    if (player2) {
+        int p2X = findSafeX(midX, team1Y);
+        player2->SetPosition(Vector2((p2X + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize));
+    }
+
+    // Team 0（青チーム味方ボット2体: 1Pの左右に配置、合計3体編成）
+    int allyOffsets[] = {-4, 4};
+    std::string allyBotWeapons[] = {"Shotgun", "SniperRifle"};
+    int allyCharaIds[] = {3, 5}; // Assault (バカ), Sniper (悪魔)
+    for (int i = 0; i < 2; ++i)
+    {
+        int botX = findSafeX(midX + allyOffsets[i], team0Y);
+        Enemy* allyBot = CreateBot((botX + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0, allyCharaIds[i], const_cast<Stage*>(&stage), cellSize);
+        allyBot->SetEquippedWeapon(CreateWeaponByName(allyBotWeapons[i]));
+        enemiesOut.push_back(allyBot);
+        if (objectManager) objectManager->AddObject(allyBot);
+    }
+
+    // Team 1（赤チーム敵ボット2体: 2Pの左右に配置、合計3体編成）
+    int enemyOffsets[] = {-4, 4};
+    std::string enemyBotWeapons[] = {"Shotgun", "SniperRifle"};
+    int enemyCharaIds[] = {3, 5}; // Assault (バカ), Sniper (悪魔)
+    for (int i = 0; i < 2; ++i)
+    {
+        int botX = findSafeX(midX + enemyOffsets[i], team1Y);
+        Enemy* enemyBot = CreateBot((botX + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1, enemyCharaIds[i], const_cast<Stage*>(&stage), cellSize);
+        enemyBot->SetEquippedWeapon(CreateWeaponByName(enemyBotWeapons[i]));
+        enemiesOut.push_back(enemyBot);
+        if (objectManager) objectManager->AddObject(enemyBot);
+    }
+}

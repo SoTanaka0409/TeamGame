@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include "StageManager.h"
 #include "DebugManager.h"
@@ -14,6 +14,7 @@ class Enemy;
 enum class PlayMode
 {
     SOLO,           ///< ソロプレイ
+    LOCAL_PVP,      ///< ローカルでの画面分割対戦プレイ (1P vs 2P)
     LOCAL_COOP,     ///< ローカルでの協力プレイ（画面分割など）
     NETWORK_HOST,   ///< ネットワークプレイでのホスト
     NETWORK_CLIENT  ///< ネットワークプレイでのクライアント

@@ -1,4 +1,4 @@
-#include "TitleScene.h"
+﻿#include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
 #include "CharacterSelectScene.h"
@@ -66,8 +66,8 @@ void TitleScene::Update()
     {
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 4;
-        if (cursor > 4) cursor = 0;
+        if (cursor < 0) cursor = 5;
+        if (cursor > 5) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -76,22 +76,27 @@ void TitleScene::Update()
                 NetworkManager::GetInstance().Disconnect();
                 SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
             }
-            else if (cursor == 1) // Local Coop
+            else if (cursor == 1) // Local PvP
+            {
+                NetworkManager::GetInstance().Disconnect();
+                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_PVP));
+            }
+            else if (cursor == 2) // Local Coop
             {
                 NetworkManager::GetInstance().Disconnect();
                 SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_COOP));
             }
-            else if (cursor == 2) // Web Online (NEW!)
+            else if (cursor == 3) // Web Online
             {
                 state = TitleState::WEB_SELECT;
                 cursor = 0;
             }
-            else if (cursor == 3) // LAN Play
+            else if (cursor == 4) // LAN Play
             {
                 state = TitleState::LAN_SELECT;
                 cursor = 0;
             }
-            else if (cursor == 4) // Back
+            else if (cursor == 5) // Back
             {
                 state = TitleState::MAIN;
                 cursor = 0;
@@ -161,7 +166,7 @@ void TitleScene::Update()
             else if (cursor == 2) // Back
             {
                 state = TitleState::MODE_SELECT;
-                cursor = 2;
+                cursor = 4;
             }
         }
     }
@@ -447,18 +452,34 @@ void TitleScene::Draw()
     else if (state == TitleState::MODE_SELECT)
     {
         const char* items[] = { 
-            "1P (Solo)", 
-            "2P (Same PC - Split Screen)", 
-            "Web Online (インターネット対戦)", 
-            "LAN Play (ローカルLAN対戦)", 
+            "1. Solo Brawl (ソロ・AIデスマッチ)", 
+            "2. Local PvP (画面分割 1P vs 2P対戦)", 
+            "3. Local Co-op (画面分割 協力プレイ)", 
+            "4. Web Online (インターネット対戦)", 
+            "5. LAN Play (ローカルLAN対戦)", 
             "Back" 
         };
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
             if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
             DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
         }
+
+        // 選択中モードの解説表示 (企業審査員への配慮)
+        SetFontSize(22);
+        if (cursor == 0) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【ソロ】敵Botと戦いながらキル数を競うモード (1人ですぐ遊べます)", GetColor(180, 220, 255));
+        } else if (cursor == 1) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【3vs3 画面分割対戦】両チームとも人間1人＋Bot2体！(1P: WASD+マウス / 2P: パッドまたは矢印キー)", GetColor(255, 220, 100));
+        } else if (cursor == 2) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【画面分割Co-op】2人で協力して敵Botを撃破するモード", GetColor(180, 255, 180));
+        } else if (cursor == 3) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【オンライン】4桁の部屋番号でマッチングするインターネット対戦", GetColor(200, 200, 200));
+        } else if (cursor == 4) {
+            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【LAN対戦】同一ネットワーク内のPC同士で直接接続して対戦", GetColor(200, 200, 200));
+        }
+        SetFontSize(32);
     }
     else if (state == TitleState::WEB_SELECT)
     {
