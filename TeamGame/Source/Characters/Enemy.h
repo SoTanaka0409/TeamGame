@@ -8,9 +8,36 @@
  */
 enum class EnemyAIState
 {
-    PATROL,     ///< 巡回状態（開始・リスポーン直後は中央へ巡界移動）
+    PATROL,     ///< 巡回状態（開始・リスポーン直後は中央へ巡回移動）
     ALERT,      ///< 警戒・戦闘状態（ターゲット追跡および射撃）
-    INVESTIGATE ///< 調査状態（銃声や最終確認位置へ移動）
+    INVESTIGATE,///< 調査状態（銃声や最終確認位置へ移動）
+    RETREAT     ///< 撤退・遮蔽退避状態（低HP時やデバフ時に最寄りの壁裏へ避難）
+};
+
+/**
+ * @brief Botキャラクターの性格・思考パラメータ
+ */
+struct BotPersonality
+{
+    float retreatHpRatio = 0.35f;      ///< 撤退開始HP割合（0.0fなら死ぬまで撤退しない）
+    float aggression = 1.0f;           ///< 突進・接近度合 (0.5:引き気味, 2.0:猪突猛進)
+    float teamworkDistance = 0.0f;     ///< 味方との理想距離（0なら単独行動、300なら味方随伴）
+    bool focusLowHpTarget = false;     ///< 瀕死の敵（HP最小）を優先狙撃するか（悪魔）
+    bool preferBush = false;           ///< 草むら（ブッシュ）潜伏志向（反逆者）
+    bool defensiveChokePoint = false;  ///< チョークポイント待ち伏せ・迎撃志向（主婦）
+};
+
+/**
+ * @brief 武器ごとの交戦間合い・移動戦術
+ */
+struct WeaponAITactic
+{
+    float optimalRangeMin = 250.0f;    ///< 最適交戦距離(下限)
+    float optimalRangeMax = 450.0f;    ///< 最適交戦距離(上限)
+    float disengageDistance = 150.0f;  ///< 接近されすぎた時の後退開始距離
+    bool allowRetreatKiting = false;   ///< 近距離で敵と逆方向へ後退（引き撃ち・カイト）するか（スナイパー）
+    bool circleStrafe = false;         ///< 敵の周囲を旋回・回り込み移動するか（SMG）
+    bool recklessRush = false;         ///< 最短距離でゼロ距離接射へ肉薄するか（ショットガン）
 };
 
 /**
@@ -43,6 +70,11 @@ private:
     float sightRangeCells = 14.0f;    ///< 索敵視界（14セル: プレイヤーのライト照射範囲14セルに統一）
     class Weapon* equippedWeapon = nullptr; ///< 装備武器
     bool wasPanic = false;                  ///< 直前フレームでパニック状態だったかどうかのフラグ
+    int m_characterId = 1;                  ///< キャラクターID (1:指揮者, 2:反逆者, 3:バカ, 4:主婦, 5:悪魔)
+    BotPersonality personality;             ///< キャラクター固有の性格・思考ルーチン
+    WeaponAITactic weaponTactic;             ///< 装備武器に基づく交戦間合い・射撃戦術
+    int retreatTimer = 0;                   ///< 撤退行動継続タイマー
+    Vector2 coverTargetPos;                 ///< 目指す遮蔽ポイント
 
 public:
     /**
@@ -57,6 +89,29 @@ public:
      * @brief デストラクタ
      */
     ~Enemy();
+
+    /**
+     * @brief キャラクターIDの設定（性格パラメータを自動初期化）
+     */
+    void SetCharacterId(int id);
+    int GetCharacterId() const { return m_characterId; }
+
+    /**
+     * @brief キャラクター性格および武器戦術の更新・取得
+     */
+    void UpdatePersonality();
+    void UpdateWeaponTactic();
+    const BotPersonality& GetPersonality() const { return personality; }
+    void SetPersonality(const BotPersonality& p) { personality = p; }
+    const WeaponAITactic& GetWeaponTactic() const { return weaponTactic; }
+    void SetWeaponTactic(const WeaponAITactic& t) { weaponTactic = t; }
+
+    /**
+     * @brief 敵から射線を切れる最寄りの壁裏（遮蔽物）を検索
+     * @param threatPos 脅威となる敵の位置
+     * @return 遮蔽位置（見つからない場合は現在位置）
+     */
+    Vector2 FindCoverPosition(const Vector2& threatPos);
 
     /**
      * @brief 装備武器の設定

@@ -42,6 +42,7 @@ Player* CharacterFactory::CreatePlayer(float startX, float startY, Stage* stage,
 Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int characterId, Stage* stage, float cellSize) {
     Enemy* bot = new Enemy(startX, startY, teamId);
     bot->SetStage(stage, cellSize);
+    bot->SetCharacterId(characterId);
 
     auto availableCharas = PlayerSelectionManager::GetAvailableCharacters();
     bool found = false;
@@ -137,33 +138,33 @@ void CharacterFactory::SpawnMatchBots(const Stage& stage, float cellSize, Player
 
     // Ally bots (Team 0)
     int allyOffsets[] = {-3, 3};
+    int allyCharaIds[] = {1, 3}; // 指揮者(Tactical), バカ(Assault)
     for (int i = 0; i < 2; ++i)
     {
-        Enemy* allyBot = new Enemy((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0);
-        allyBot->SetStage(const_cast<Stage*>(&stage), cellSize);
-        allyBot->SetModelPath("Resource/GreenCharacter/character.mv1");
+        int charaId = allyCharaIds[i];
+        Enemy* allyBot = CreateBot((midX + allyOffsets[i] + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0, charaId, const_cast<Stage*>(&stage), cellSize);
         std::string wName = (i < static_cast<int>(allyBotWeapons.size())) ? allyBotWeapons[i] : "Handgun";
-        allyBot->SetEquippedWeapon(CreateWeaponByName(wName));
+        allyBot->SetEquippedWeapon(CreateWeaponForCharacter(wName, charaId));
         enemiesOut.push_back(allyBot);
         if (objectManager) objectManager->AddObject(allyBot);
     }
 
-    // Team 1（敵チーム）: Handgun, Shotgun, SniperRifle の3種類を重複なく固定配分
+    // Team 1（敵チーム）: Handgun, Shotgun, SniperRifle (およびキャラ別SMG)
     std::vector<std::string> enemyBotWeapons = {"Handgun", "Shotgun", "SniperRifle"};
     for (size_t i = enemyBotWeapons.size(); i > 1; --i) {
         size_t j = static_cast<size_t>(std::rand()) % i;
         std::swap(enemyBotWeapons[i - 1], enemyBotWeapons[j]);
     }
 
-    // Enemy bots (Team 1)
+    // Enemy bots (Team 1): 反逆者(2), 主婦(4), 悪魔(5) などの多彩な個性
     int enemyOffsets[] = {-3, 0, 3};
+    int enemyCharaIds[] = {2, 4, 5};
     for (int i = 0; i < 3; ++i)
     {
-        Enemy* enemyBot = new Enemy((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1);
-        enemyBot->SetStage(const_cast<Stage*>(&stage), cellSize);
-        enemyBot->SetModelPath("Resource/GreenCharacter/character.mv1");
+        int charaId = enemyCharaIds[i];
+        Enemy* enemyBot = CreateBot((midX + enemyOffsets[i] + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1, charaId, const_cast<Stage*>(&stage), cellSize);
         std::string wName = (i < static_cast<int>(enemyBotWeapons.size())) ? enemyBotWeapons[i] : "Handgun";
-        enemyBot->SetEquippedWeapon(CreateWeaponByName(wName));
+        enemyBot->SetEquippedWeapon(CreateWeaponForCharacter(wName, charaId));
         enemiesOut.push_back(enemyBot);
         if (objectManager) objectManager->AddObject(enemyBot);
     }
@@ -204,7 +205,7 @@ void CharacterFactory::SpawnPvPBots(const Stage& stage, float cellSize, Player* 
     {
         int botX = findSafeX(midX + allyOffsets[i], team0Y);
         Enemy* allyBot = CreateBot((botX + 0.5f) * cellSize, (team0Y + 0.5f) * cellSize, 0, allyCharaIds[i], const_cast<Stage*>(&stage), cellSize);
-        allyBot->SetEquippedWeapon(CreateWeaponByName(allyBotWeapons[i]));
+        allyBot->SetEquippedWeapon(CreateWeaponForCharacter(allyBotWeapons[i], allyCharaIds[i]));
         enemiesOut.push_back(allyBot);
         if (objectManager) objectManager->AddObject(allyBot);
     }
@@ -217,7 +218,7 @@ void CharacterFactory::SpawnPvPBots(const Stage& stage, float cellSize, Player* 
     {
         int botX = findSafeX(midX + enemyOffsets[i], team1Y);
         Enemy* enemyBot = CreateBot((botX + 0.5f) * cellSize, (team1Y + 0.5f) * cellSize, 1, enemyCharaIds[i], const_cast<Stage*>(&stage), cellSize);
-        enemyBot->SetEquippedWeapon(CreateWeaponByName(enemyBotWeapons[i]));
+        enemyBot->SetEquippedWeapon(CreateWeaponForCharacter(enemyBotWeapons[i], enemyCharaIds[i]));
         enemiesOut.push_back(enemyBot);
         if (objectManager) objectManager->AddObject(enemyBot);
     }
