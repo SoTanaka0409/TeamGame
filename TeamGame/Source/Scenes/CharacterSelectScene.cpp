@@ -1,5 +1,6 @@
 ﻿#include "CharacterSelectScene.h"
 #include "WeaponSelectScene.h"
+#include "TitleScene.h"
 #include "../Managers/SceneManager.h"
 #include "../Managers/FontManager.h"
 #include "../Managers/InputManager.h"
@@ -44,12 +45,20 @@ void CharacterSelectScene::Update() {
             SceneManager::GetInstance().ChangeScene(std::make_shared<WeaponSelectScene>());
         }
     }
+
+    // ESCキーでタイトル画面へ戻る
+    if (input.IsKeyPressed(KEY_INPUT_ESCAPE)) {
+        auto titleScene = std::make_shared<TitleScene>();
+        titleScene->state = TitleScene::TitleState::MODE_SELECT;
+        titleScene->cursor = 0;
+        SceneManager::GetInstance().ChangeScene(titleScene);
+    }
 }
 
 void CharacterSelectScene::Draw() {
     DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
     FontManager::GetInstance().DrawStringCenter(960, 60, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
-    FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] / [A][D] で移動、[Z] / [Enter] で決定 )", GetColor(200, 210, 225), 20);
+    FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] / [A][D] で移動、[Z] / [Enter] で決定、[Esc] で戻る )", GetColor(200, 210, 225), 20);
 
     int count = static_cast<int>(m_characters.size());
     int cardW = 270;

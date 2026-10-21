@@ -1,4 +1,4 @@
-#include "PathfindingComponent.h"
+﻿#include "PathfindingComponent.h"
 #include "../Stage/Stage.h"
 #include <queue>
 #include <unordered_set>

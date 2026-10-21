@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 #include <cstdlib>
 #include "SniperRifle.h"
 #include "Bullet.h"
@@ -21,7 +21,7 @@ SniperRifle::SniperRifle() : Weapon("SniperRifle") {}
  * @param additionalSpread 追加の拡散角度
  * @details ブレを考慮しつつ高速・長射程のBulletオブジェクトを生成し、スナイパー特有の銃声を鳴らす
  */
-void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving)
+void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving, const std::string& shooterName, bool isPanic)
 {
     if (CanFire() && data)
     {
@@ -40,7 +40,7 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
             int dmg = data ? data->damage : 3;
-            Bullet* bullet = new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, dmg);
+            Bullet* bullet = new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, dmg, shooterName, isPanic);
             
             // スナイパー特有の銃声
             SoundManager::GetInstance().Play3D("sniper_shot", pos, 1500.0f, 1.0f, teamId);

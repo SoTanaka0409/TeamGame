@@ -20,6 +20,7 @@ struct SelectionCharacterData {
     std::string previewPath;            // プレビュー画像ファイルパス
     float colliderRadius = 8.9f;        // 当たり判定半径 (px)
     float modelScale = 0.3f;            // 3Dモデルスケール倍率
+    std::string cutinImagePath;         // カットイン専用画像ファイルパス (未指定時はResource/Cutin/cutin_X.pngを検索)
 };
 
 /**
