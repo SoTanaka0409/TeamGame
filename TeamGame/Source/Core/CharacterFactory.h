@@ -35,6 +35,11 @@ public:
     static Weapon* CreateWeaponByName(const std::string& name);
 
     /**
+     * @brief 武器名およびキャラクターIDを指定して専用カスタム武器を生成
+     */
+    static Weapon* CreateWeaponForCharacter(const std::string& name, int characterId);
+
+    /**
      * @brief 試合開始時のボット（味方ボット・敵ボット）を生成し、チームごとの武器重複防止配分と配置を行う
      */
     static void SpawnMatchBots(const Stage& stage, float cellSize, Player* player, ObjectManager* objectManager, std::vector<Enemy*>& enemiesOut);

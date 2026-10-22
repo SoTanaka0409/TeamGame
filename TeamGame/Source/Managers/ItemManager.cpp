@@ -6,6 +6,7 @@
 bool ItemManager::LoadFromCSV(const std::string& filePath)
 {
     std::vector<std::string> searchPaths = {
+        "Resource/CSV/" + filePath,
         "Resource/" + filePath,
         filePath
     };

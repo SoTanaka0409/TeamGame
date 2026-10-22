@@ -20,7 +20,7 @@ struct CharacterData
     // 互換・モデル関連パラメータ
     float colliderRadius = 8.9f;    ///< 当たり判定半径 (px)
     float modelScale = 0.3f;        ///< 3Dモデルスケール倍率
-    float sightRangeCells = 14.0f;
+    float sightRangeCells = 8.5f;
     float effectiveRangeCells = 10.0f;
     int shootCooldown = 75;
     int aimDelayFrames = 25;

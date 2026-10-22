@@ -15,7 +15,10 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
     // 画像ファイルの全方位検索ロード用ヘルパー
     auto loadTileGraph = [](const std::vector<const char*>& fileNames) -> int {
         const std::vector<const char*> baseDirs = {
+            "Resource/Textures/",
+            "Resource/Images/",
             "Resource/",
+            "TeamGame/Resource/Textures/",
             "Resouce/",
             "",
             "TeamGame/Resource/",

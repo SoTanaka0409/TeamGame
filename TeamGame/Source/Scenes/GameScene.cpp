@@ -41,11 +41,35 @@ int GameScene::GetActiveEnemyCount() const
 {
     if (!objectManager) return 0;
     int count = 0;
+    int myTeam = player ? player->teamId : 0;
     for (auto obj : objectManager->GetObjects())
     {
-        if (obj && obj->GetObjectTag() == ObjectTag::Enemy && obj->IsActive())
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c->IsActive() && !c->status.IsDead())
         {
-            count++;
+            if (c->teamId != myTeam && c != remotePlayer)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+int GameScene::GetActiveAllyCount() const
+{
+    if (!objectManager) return 0;
+    int count = 0;
+    int myTeam = player ? player->teamId : 0;
+    for (auto obj : objectManager->GetObjects())
+    {
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c->IsActive() && !c->status.IsDead())
+        {
+            if (c->teamId == myTeam && c != player)
+            {
+                count++;
+            }
         }
     }
     return count;
@@ -477,7 +501,26 @@ void GameScene::Draw()
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float worldCellSize = (cellW < cellH) ? cellW : cellH;
-    float zoomCellSize = 75.0f;
+
+    // カメラの表示セルサイズ（イントロ時は全体を見渡す75.0f、追従プレイ時は狭めて集中できる110.0f）
+    float introZoom = 75.0f;
+    float playZoom = 110.0f;
+    float zoomCellSize = playZoom;
+
+    if (introTimer > 0.0f)
+    {
+        if (introTimer < 60.0f)
+        {
+            // イントロ最後の1秒間（60フレーム）でスムーズにプレイヤーへズームイン
+            float zoomT = 1.0f - (introTimer / 60.0f);
+            zoomT = zoomT * zoomT * (3.0f - 2.0f * zoomT); // smoothstep補間
+            zoomCellSize = introZoom + (playZoom - introZoom) * zoomT;
+        }
+        else
+        {
+            zoomCellSize = introZoom;
+        }
+    }
 
     float playerWorldX = 0.0f, playerWorldY = 0.0f;
     if (player && player->IsActive())
@@ -808,7 +851,8 @@ void GameScene::Draw()
         SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
-    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
+    int activeAllyCount = GetActiveAllyCount();
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount, activeAllyCount);
 
     // キルログ・デスログ通知バナーの描画
     MatchManager::GetInstance().DrawKillNotifications();
