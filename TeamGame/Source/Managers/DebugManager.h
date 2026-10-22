@@ -71,5 +71,5 @@ public:
      * @param enemyCount 敵の数
      * @details 画面上にデバッグテキストを表示する。
      */
-    void DrawDebugOverlay(const std::string& stageName, float playerX, float playerY, int enemyCount);
+    void DrawDebugOverlay(const std::string& stageName, float playerX, float playerY, int enemyCount, int allyCount = 0);
 };

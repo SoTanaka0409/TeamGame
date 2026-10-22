@@ -1,4 +1,4 @@
-#include "Handgun.h"
+﻿#include "Handgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
@@ -23,9 +23,16 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos, int shooterTeamId)
     }
 }
 
-Handgun::Handgun() : Weapon("Handgun") {}
+Handgun::Handgun() : Weapon("Handgun")
+{
+    barrelVisual.barrelLength = 22.0f;
+    barrelVisual.barrelWidth = 3;
+    barrelVisual.barrelColor = 0x4A505A;
+    barrelVisual.accentColor = 0x8899AA;
+    barrelVisual.hasMuzzleBrake = false;
+}
 
-void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving)
+void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving, const std::string& shooterName, bool isPanic)
 {
     if (CanFire() && data)
     {
@@ -40,7 +47,7 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
             // Create bullet using CSV data & spread direction
-            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, data->damage);
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, data->damage, shooterName, isPanic);
             if (scene->GetEffectManager())
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, finalAngle, 16.0f);

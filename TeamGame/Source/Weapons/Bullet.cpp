@@ -18,8 +18,10 @@
  * @param tId チームID
  * @details 初期位置、速度などの設定を行い、コライダーマネージャーに円形コライダーを登録する
  */
-Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius, int tId, int dmg)
-    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range), startPos(startX, startY), teamId(tId), damage(dmg)
+Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius,
+               int tId, int dmg, const std::string& sName, bool isPanic, const BulletVisualConfig& visual)
+    : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range),
+      startPos(startX, startY), teamId(tId), damage(dmg), shooterName(sName), isPanicBullet(isPanic), visualConfig(visual)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -107,14 +109,38 @@ void Bullet::Draw()
     float screenX = Camera::WorldToScreenX(position.x);
     float screenY = Camera::WorldToScreenY(position.y);
 
-    unsigned int colorCore = GetColor(255, 255, 255);
-    unsigned int colorGlow = (teamId == 0) ? GetColor(0, 150, 255) : GetColor(255, 50, 50);
+    unsigned int colorCore = visualConfig.customColors ? visualConfig.coreColor : GetColor(255, 255, 255);
+    unsigned int colorGlow = visualConfig.customColors ? visualConfig.glowColor : ((teamId == 0) ? GetColor(0, 150, 255) : GetColor(255, 50, 50));
+    int glowAlpha = visualConfig.customColors ? visualConfig.glowAlpha : 160;
+    float glowOffset = visualConfig.customColors ? visualConfig.glowRadiusOffset : 4.0f;
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160);
+    // トレール（弾道軌跡・光の尾）の描画
+    if (visualConfig.hasTrail)
+    {
+        float vLen = std::sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+        if (vLen > 0.001f)
+        {
+            float tLen = visualConfig.trailLength;
+            float backX = screenX - (velocity.x / vLen) * tLen;
+            float backY = screenY - (velocity.y / vLen) * tLen;
+            unsigned int tColor = visualConfig.customColors ? visualConfig.trailColor : colorGlow;
+            int tAlpha = visualConfig.customColors ? visualConfig.trailAlpha : 100;
+            int tWidth = visualConfig.trailWidth;
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, tAlpha);
+            DrawLine(static_cast<int>(backX), static_cast<int>(backY),
+                     static_cast<int>(screenX), static_cast<int>(screenY), tColor, tWidth);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
+    }
+
+    // グロー（発光外周）の描画
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, glowAlpha);
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-               static_cast<int>(radius + 4.0f), colorGlow, TRUE);
+               static_cast<int>(radius + glowOffset), colorGlow, TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
+    // コア（中心）の描画
     DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                static_cast<int>(radius), colorCore, TRUE);
 }
@@ -136,9 +162,9 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
             {
                 canHit = true;
             }
-            else if (target->IsPanic())
+            else if (target->IsPanic() || this->isPanicBullet)
             {
-                // パニック（錯乱）状態のキャラクターは味方の弾にも被弾する
+                // パニック（錯乱）状態のキャラクターは味方の弾にも被弾し、パニック中の射撃者の弾は味方にも当たる
                 canHit = true;
             }
         }
@@ -147,10 +173,10 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
         {
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage(this->damage);
+                if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
             } else if (target->GetObjectTag() == ObjectTag::Player) {
                 Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage(this->damage);
+                if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
             }
             
             // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す

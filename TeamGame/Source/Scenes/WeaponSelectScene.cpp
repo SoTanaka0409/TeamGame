@@ -1,5 +1,6 @@
-#include "WeaponSelectScene.h"
+﻿#include "WeaponSelectScene.h"
 #include "GameScene.h"
+#include "CharacterSelectScene.h"
 #include "../Managers/SceneManager.h"
 #include "../Managers/FontManager.h"
 #include "../Managers/InputManager.h"
@@ -37,12 +38,18 @@ void WeaponSelectScene::Update() {
             SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::SOLO));
         }
     }
+
+    // ESCキーでキャラクター選択画面へ戻る
+    if (input.IsKeyPressed(KEY_INPUT_ESCAPE)) {
+        SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
+    }
 }
 
 void WeaponSelectScene::Draw() {
     DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
 
     FontManager::GetInstance().DrawStringCenter(960, 60, "WEAPON SELECT", GetColor(255, 220, 0), 48);
+    FontManager::GetInstance().DrawStringCenter(960, 100, "( [←][→] / [A][D] で武器選択、[Z] / [Enter] で出撃、[Esc] でキャラ選択に戻る )", GetColor(190, 205, 220), 18);
     
     // 選択済キャラ情報
     const auto& selChar = PlayerSelectionManager::GetInstance().GetSelection().selectedCharacter;

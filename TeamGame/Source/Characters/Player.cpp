@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -37,7 +37,7 @@ Player::Player(float startX, float startY)
     }
     else
     {
-        status.Init(10, 1.5f, 1);
+        status.Init(100, 4.2f, 10);
         if (collider) collider->SetRadius(8.9f);
         radius = 8.9f;
     }
@@ -79,13 +79,16 @@ void Player::Update()
 
     if (!isRemote)
     {
-        // 懐中電灯スイッチ
-        bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
-        if (currMouseRight && !m_prevMouseRight)
+        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            m_isLightOn = !m_isLightOn;
+            // 懐中電灯スイッチ (右クリック)
+            bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+            if (currMouseRight && !m_prevMouseRight)
+            {
+                m_isLightOn = !m_isLightOn;
+            }
+            m_prevMouseRight = currMouseRight;
         }
-        m_prevMouseRight = currMouseRight;
     }
 
     // 草むら隠れ状態判定
@@ -109,43 +112,47 @@ void Player::Update()
     {
         if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A))
-            {
-                moveDir.x -= 1.0f;
-                m_isMoving = true;
-            }
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D))
-            {
-                moveDir.x += 1.0f;
-                m_isMoving = true;
-            }
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W))
-            {
-                moveDir.y -= 1.0f;
-                m_isMoving = true;
-            }
-            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S))
-            {
-                moveDir.y += 1.0f;
-                m_isMoving = true;
-            }
-        }
-        else if (m_inputType == PlayerInputType::GAMEPAD_1)
-        {
-            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            // 1P: WASDキー移動
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A)) { moveDir.x -= 1.0f; m_isMoving = true; }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_D)) { moveDir.x += 1.0f; m_isMoving = true; }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_W)) { moveDir.y -= 1.0f; m_isMoving = true; }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_S)) { moveDir.y += 1.0f; m_isMoving = true; }
+
+            // 1P: ゲームパッド1が接続されている場合はパッドでもスティック/十字キー移動可能 (ハイブリッド)
             int ax = 0, ay = 0;
             GetJoypadAnalogInput(&ax, &ay, DX_INPUT_PAD1);
-            if (ax < -200) moveDir.x -= 1.0f;
-            if (ax > 200) moveDir.x += 1.0f;
-            if (ay < -200) moveDir.y -= 1.0f;
-            if (ay > 200) moveDir.y += 1.0f;
+            if (ax < -200) { moveDir.x -= 1.0f; m_isMoving = true; }
+            if (ax > 200)  { moveDir.x += 1.0f; m_isMoving = true; }
+            if (ay < -200) { moveDir.y -= 1.0f; m_isMoving = true; }
+            if (ay > 200)  { moveDir.y += 1.0f; m_isMoving = true; }
+            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            if (padState & PAD_INPUT_LEFT)  { moveDir.x -= 1.0f; m_isMoving = true; }
+            if (padState & PAD_INPUT_RIGHT) { moveDir.x += 1.0f; m_isMoving = true; }
+            if (padState & PAD_INPUT_UP)    { moveDir.y -= 1.0f; m_isMoving = true; }
+            if (padState & PAD_INPUT_DOWN)  { moveDir.y += 1.0f; m_isMoving = true; }
+        }
+        else // GAMEPAD_1 または GAMEPAD_2
+        {
+            int padIdx = (m_inputType == PlayerInputType::GAMEPAD_2) ? DX_INPUT_PAD2 : DX_INPUT_PAD1;
+            // 2P: ゲームパッド入力 (PAD1 または PAD2)
+            int ax = 0, ay = 0;
+            GetJoypadAnalogInput(&ax, &ay, padIdx);
+            if (ax < -200) { moveDir.x -= 1.0f; m_isMoving = true; }
+            if (ax > 200)  { moveDir.x += 1.0f; m_isMoving = true; }
+            if (ay < -200) { moveDir.y -= 1.0f; m_isMoving = true; }
+            if (ay > 200)  { moveDir.y += 1.0f; m_isMoving = true; }
             
-            if (padState & PAD_INPUT_LEFT) moveDir.x -= 1.0f;
-            if (padState & PAD_INPUT_RIGHT) moveDir.x += 1.0f;
-            if (padState & PAD_INPUT_UP) moveDir.y -= 1.0f;
-            if (padState & PAD_INPUT_DOWN) moveDir.y += 1.0f;
+            int padState = GetJoypadInputState(padIdx);
+            if (padState & PAD_INPUT_LEFT)  { moveDir.x -= 1.0f; m_isMoving = true; }
+            if (padState & PAD_INPUT_RIGHT) { moveDir.x += 1.0f; m_isMoving = true; }
+            if (padState & PAD_INPUT_UP)    { moveDir.y -= 1.0f; m_isMoving = true; }
+            if (padState & PAD_INPUT_DOWN)  { moveDir.y += 1.0f; m_isMoving = true; }
             
-            if (moveDir.x != 0.0f || moveDir.y != 0.0f) m_isMoving = true;
+            // 2P: ゲームパッドがない場合でも矢印キーで移動可能
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_LEFT))  { moveDir.x -= 1.0f; m_isMoving = true; }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RIGHT)) { moveDir.x += 1.0f; m_isMoving = true; }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP))    { moveDir.y -= 1.0f; m_isMoving = true; }
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN))  { moveDir.y += 1.0f; m_isMoving = true; }
         }
     }
 
@@ -354,10 +361,14 @@ void Player::Update()
                 SkillManager::GetInstance().TriggerSkill(this);
             }
         }
-        else if (m_inputType == PlayerInputType::GAMEPAD_1)
+        else // GAMEPAD_1 または GAMEPAD_2
         {
+            int padIdx = (m_inputType == PlayerInputType::GAMEPAD_2) ? DX_INPUT_PAD2 : DX_INPUT_PAD1;
+            bool hasAimInput = false;
+
+            // 右アナログスティック入力
             int rx = 0, ry = 0;
-            GetJoypadAnalogInputRight(&rx, &ry, DX_INPUT_PAD1);
+            GetJoypadAnalogInputRight(&rx, &ry, padIdx);
             if (rx < -200 || rx > 200 || ry < -200 || ry > 200)
             {
                 float dx = (float)rx;
@@ -367,29 +378,74 @@ void Player::Update()
                 {
                     facingDir.x = dx / dirLen;
                     facingDir.y = dy / dirLen;
+                    hasAimInput = true;
                 }
             }
             
-            int padState = GetJoypadInputState(DX_INPUT_PAD1);
+            // 2Pキーボードエイム（テンキーまたはIJKL）
+            float keyAimX = 0.0f, keyAimY = 0.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD4) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_J)) keyAimX -= 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD6) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_L)) keyAimX += 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD8) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_I)) keyAimY -= 1.0f;
+            if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD2) || InputManager::GetInstance().IsKeyHeld(KEY_INPUT_K)) keyAimY += 1.0f;
+            if (keyAimX != 0.0f || keyAimY != 0.0f)
+            {
+                float len = std::sqrt(keyAimX * keyAimX + keyAimY * keyAimY);
+                facingDir.x = keyAimX / len;
+                facingDir.y = keyAimY / len;
+                hasAimInput = true;
+            }
+            else if (!hasAimInput && m_isMoving)
+            {
+                float len = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+                if (len > 0.0001f)
+                {
+                    facingDir.x = moveDir.x / len;
+                    facingDir.y = moveDir.y / len;
+                }
+            }
+
+            // ★ 強力オートエイム（敵吸い付きアシスト）
+            UpdateAutoAim(moveDir);
+            
+            int padState = GetJoypadInputState(padIdx);
             static int prevPadState = 0;
             
-            if ((padState & PAD_INPUT_3) && !(prevPadState & PAD_INPUT_3)) // Button X
+            // 武器切り替え: パッド Button 6(LB) / Button 3(X) または キーボード P / NumPad 7
+            bool isWeaponChangePressed = ((padState & PAD_INPUT_6) && !(prevPadState & PAD_INPUT_6)) ||
+                                         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_P) ||
+                                         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD7);
+            if (isWeaponChangePressed)
             {
                 currentWeaponIndex = (currentWeaponIndex + 1) % weapons.size();
             }
-            if ((padState & PAD_INPUT_4) && !(prevPadState & PAD_INPUT_4)) // Button Y
+
+            // 懐中電灯ON/OFF: パッド Button 4(Y) または キーボード セミコロン / NumPad 5
+            bool isLightTogglePressed = ((padState & PAD_INPUT_4) && !(prevPadState & PAD_INPUT_4)) ||
+                                        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SEMICOLON) ||
+                                        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD5);
+            if (isLightTogglePressed)
             {
                 ToggleLight();
             }
             
-            if (padState & PAD_INPUT_1) // Button A (or R1)
+            // 射撃: パッド Button 1(A) / RT または キーボード Right Ctrl / Slash / NumPad 0
+            bool isShootHeld = (padState & PAD_INPUT_1) ||
+                               InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RCONTROL) ||
+                               InputManager::GetInstance().IsKeyHeld(KEY_INPUT_SLASH) ||
+                               InputManager::GetInstance().IsKeyHeld(KEY_INPUT_NUMPAD0);
+            if (isShootHeld)
             {
                 if (!weapons.empty() && currentWeaponIndex >= 0 && currentWeaponIndex < static_cast<int>(weapons.size()) && weapons[currentWeaponIndex]) 
                     weapons[currentWeaponIndex]->Fire(position, facingDir, teamId, m_isMoving ? weapons[currentWeaponIndex]->GetMoveSpreadPenalty() : 0.0f);
                 if (m_model) m_model->PlayShoot();
             }
             
-            if (padState & PAD_INPUT_3) // Button X
+            // スキル: パッド Button 8(RT) / Button 7 または キーボード U / NumPad 9
+            bool isSkillPressed = ((padState & PAD_INPUT_8) && !(prevPadState & PAD_INPUT_8)) ||
+                                  InputManager::GetInstance().IsKeyPressed(KEY_INPUT_U) ||
+                                  InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD9);
+            if (isSkillPressed)
             {
                 SkillManager::GetInstance().TriggerSkill(this);
             }
@@ -406,10 +462,16 @@ void Player::Update()
             isKnifePressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE);
             isReloadPressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R);
         }
-        else if (m_inputType == PlayerInputType::GAMEPAD_1) {
-            int pad = GetJoypadInputState(DX_INPUT_PAD1);
-            isKnifePressed = (pad & PAD_INPUT_2) != 0;
-            isReloadPressed = (pad & PAD_INPUT_5) != 0; // L1 or similar
+        else {
+            int padIdx = (m_inputType == PlayerInputType::GAMEPAD_2) ? DX_INPUT_PAD2 : DX_INPUT_PAD1;
+            int pad = GetJoypadInputState(padIdx);
+            isKnifePressed = ((pad & PAD_INPUT_2) != 0) ||
+                             InputManager::GetInstance().IsKeyPressed(KEY_INPUT_RSHIFT) ||
+                             InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD3);
+            isReloadPressed = ((pad & PAD_INPUT_5) != 0) ||
+                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_PERIOD) ||
+                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_O) ||
+                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD1);
         }
     }
     
@@ -538,26 +600,26 @@ void Player::Draw()
                    static_cast<int>(renderRadius), color, TRUE);
     }
 
-    // 向いている方角を線で描画
-    float lineLen = 50.0f; // 線の長さ
-    float len =
-        std::sqrt(facingDir.x * facingDir.x + facingDir.y * facingDir.y);
-    float nx = facingDir.x;
-    float ny = facingDir.y;
+    // 向いている方角の単位ベクトル
+    float dirLen = std::sqrt(facingDir.x * facingDir.x + facingDir.y * facingDir.y);
+    float nx = (dirLen > 0.0001f) ? (facingDir.x / dirLen) : facingDir.x;
+    float ny = (dirLen > 0.0001f) ? (facingDir.y / dirLen) : facingDir.y;
 
-    if (len > 0.0001f)
+    // 銃身（ガンバレル）の描画: 装備中の武器固有の描画アセットを描画
+    if (!weapons.empty() && weapons[currentWeaponIndex])
     {
-        nx /= len;
-        ny /= len;
+        weapons[currentWeaponIndex]->DrawBarrel(screenX, screenY, facingDir);
     }
-
-    int x1 = static_cast<int>(screenX);
-    int y1 = static_cast<int>(screenY);
-    int x2 = static_cast<int>(screenX + nx * lineLen);
-    int y2 = static_cast<int>(screenY + ny * lineLen);
-
-    // 白い線を描画（太さ2）
-    DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+    else
+    {
+        // 向いている方角を線で描画
+        float lineLen = 50.0f; // 線の長さ
+        int x1 = static_cast<int>(screenX);
+        int y1 = static_cast<int>(screenY);
+        int x2 = static_cast<int>(screenX + nx * lineLen);
+        int y2 = static_cast<int>(screenY + ny * lineLen);
+        DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+    }
 
     // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
     if (!weapons.empty() && weapons[currentWeaponIndex]) {
@@ -569,7 +631,7 @@ void Player::Draw()
     // 【サーチ的な感じでブレ幅（予測線）を描画】
     if (currentStage && cellSize > 0.0f)
     {
-        float zoomCellSize = 75.0f;
+        float zoomCellSize = cellSize * Camera::ZoomScale;
         float maxRange = cellSize * 12.0f;
         if (!weapons.empty() && weapons[currentWeaponIndex]->GetData()) {
             maxRange = weapons[currentWeaponIndex]->GetData()->range;
@@ -680,7 +742,7 @@ void Player::Draw()
 
         if (canKillEnemy)
         {
-            float zoomScale = 75.0f / (cellSize > 0.0f ? cellSize : 40.0f);
+            float zoomScale = Camera::ZoomScale;
             Vector2 ePos = canKillEnemy->GetPosition();
             float eScreenX = Camera::WorldToScreenX(ePos.x);
             float eScreenY = Camera::WorldToScreenY(ePos.y);
@@ -695,84 +757,108 @@ void Player::Draw()
             DrawStringF(eScreenX - 65.0f, eScreenY - 50.0f, "[SPACE] KNIFE KILL", GetColor(255, 230, 0));
         }
 
-        // HighRiskスキル発動中: 全敵キャラクターの位置を壁透過でハイライト表示 ＋ 画面端/至近距離での矢印＆距離表示
-        if (IsHighRisk())
-        {
-            for (auto obj : scene->GetObjectManager()->GetObjects())
-            {
-                Enemy* enemy = dynamic_cast<Enemy*>(obj);
-                if (enemy && enemy->IsActive() && enemy->teamId != this->teamId)
-                {
-                    Vector2 ePos = enemy->GetPosition();
-                    float eScreenX = Camera::WorldToScreenX(ePos.x);
-                    float eScreenY = Camera::WorldToScreenY(ePos.y);
-
-                    float dx = ePos.x - position.x;
-                    float dy = ePos.y - position.y;
-                    float distPx = std::sqrt(dx * dx + dy * dy);
-                    float distMeter = distPx / 40.0f; // 40px = 1m換算
-
-                    // 敵が画面外にある場合は画面端に追跡矢印を配置、画面内なら敵の直上に表示
-                    float arrowScreenX = eScreenX;
-                    float arrowScreenY = eScreenY;
-                    bool isOffScreen = false;
-
-                    float margin = 80.0f;
-                    if (arrowScreenX < margin || arrowScreenX > 1920.0f - margin ||
-                        arrowScreenY < margin || arrowScreenY > 1080.0f - margin)
-                    {
-                        isOffScreen = true;
-                        float dirX = dx / (distPx > 0.001f ? distPx : 1.0f);
-                        float dirY = dy / (distPx > 0.001f ? distPx : 1.0f);
-                        // 画面中心から画面端へ投影
-                        float cScreenX = 1920.0f / 2.0f;
-                        float cScreenY = 1080.0f / 2.0f;
-                        arrowScreenX = cScreenX + dirX * 420.0f;
-                        arrowScreenY = cScreenY + dirY * 420.0f;
-                    }
-
-                    // 1. 敵頭上/画面端インジケータ（矢印 ＋ 「あと〇m」テキスト）
-                    float angleToEnemy = std::atan2(dy, dx);
-                    float tipX = arrowScreenX;
-                    float tipY = isOffScreen ? arrowScreenY : (eScreenY - 35.0f);
-
-                    // 矢印（三角形）の描画
-                    float arrowLen = 14.0f;
-                    float p1X = tipX + std::cos(angleToEnemy) * arrowLen;
-                    float p1Y = tipY + std::sin(angleToEnemy) * arrowLen;
-                    float p2X = tipX + std::cos(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
-                    float p2Y = tipY + std::sin(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
-                    float p3X = tipX + std::cos(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
-                    float p3Y = tipY + std::sin(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
-
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
-                    DrawTriangle(static_cast<int>(p1X), static_cast<int>(p1Y),
-                                 static_cast<int>(p2X), static_cast<int>(p2Y),
-                                 static_cast<int>(p3X), static_cast<int>(p3Y),
-                                 GetColor(255, 50, 50), TRUE);
-                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-                    // 距離表示「あと 〇.〇m」
-                    char distText[32];
-                    snprintf(distText, sizeof(distText), "あと %.1fm", distMeter);
-                    DrawString(static_cast<int>(tipX) - 30, static_cast<int>(tipY) - 22, distText, GetColor(255, 230, 40));
-
-                    // 2. 敵自体の強調サークル
-                    if (!isOffScreen)
-                    {
-                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-                        DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 24, GetColor(255, 40, 40), FALSE);
-                        DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 22, GetColor(255, 200, 0), FALSE);
-                        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                    }
-                }
-            }
-        }
+        // 悪魔のHighRisk敵位置探知インジケータ（暗闇より優先して最前面に描画するため、RenderHighRiskEnemyIndicatorsで描画）
     }
 
     if (m_isInBush)
     {
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+}
+
+void Player::RenderHighRiskEnemyIndicators() const
+{
+    if (!IsActive() || !IsHighRisk()) return;
+
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (!scene || !scene->GetObjectManager()) return;
+
+    for (auto obj : scene->GetObjectManager()->GetObjects())
+    {
+        Enemy* enemy = dynamic_cast<Enemy*>(obj);
+        if (enemy && enemy->IsActive() && enemy->teamId != this->teamId)
+        {
+            Vector2 ePos = enemy->GetPosition();
+            float eScreenX = Camera::WorldToScreenX(ePos.x);
+            float eScreenY = Camera::WorldToScreenY(ePos.y);
+
+            float dx = ePos.x - position.x;
+            float dy = ePos.y - position.y;
+            float distPx = std::sqrt(dx * dx + dy * dy);
+            float distMeter = distPx / 40.0f; // 40px = 1m換算
+
+            // 敵が画面外にある場合は画面端に追跡矢印を配置、画面内なら敵の直上に表示
+            float arrowScreenX = eScreenX;
+            float arrowScreenY = eScreenY;
+            bool isOffScreen = false;
+
+            float margin = 80.0f;
+            if (arrowScreenX < margin || arrowScreenX > 1920.0f - margin ||
+                arrowScreenY < margin || arrowScreenY > 1080.0f - margin)
+            {
+                isOffScreen = true;
+                float dirX = dx / (distPx > 0.001f ? distPx : 1.0f);
+                float dirY = dy / (distPx > 0.001f ? distPx : 1.0f);
+                // 画面中心から画面端へ投影
+                float cScreenX = 1920.0f / 2.0f;
+                float cScreenY = 1080.0f / 2.0f;
+                arrowScreenX = cScreenX + dirX * 420.0f;
+                arrowScreenY = cScreenY + dirY * 420.0f;
+            }
+
+            // 1. 敵頭上/画面端インジケータ（矢印 ＋ 「〇.〇m」距離表示）
+            float angleToEnemy = std::atan2(dy, dx);
+            float tipX = arrowScreenX;
+            float tipY = isOffScreen ? arrowScreenY : (eScreenY - 35.0f);
+
+            // 矢印（三角形）の描画（暗闇に埋もれないよう黒縁取り＋鮮烈な赤色）
+            float arrowLen = 16.0f;
+            float p1X = tipX + std::cos(angleToEnemy) * arrowLen;
+            float p1Y = tipY + std::sin(angleToEnemy) * arrowLen;
+            float p2X = tipX + std::cos(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
+            float p2Y = tipY + std::sin(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
+            float p3X = tipX + std::cos(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
+            float p3Y = tipY + std::sin(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
+
+            // 矢印の外枠（黒縁取りで暗闇でも明瞭に輪郭を浮き立たせる）
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
+            DrawTriangle(static_cast<int>(p1X), static_cast<int>(p1Y),
+                         static_cast<int>(p2X), static_cast<int>(p2Y),
+                         static_cast<int>(p3X), static_cast<int>(p3Y),
+                         GetColor(0, 0, 0), FALSE);
+
+            // 矢印本体塗りつぶし（ビビッドな赤）
+            DrawTriangle(static_cast<int>(p1X), static_cast<int>(p1Y),
+                         static_cast<int>(p2X), static_cast<int>(p2Y),
+                         static_cast<int>(p3X), static_cast<int>(p3Y),
+                         GetColor(255, 40, 40), TRUE);
+
+            // 距離表示「あと 〇.〇m」の背景黒帯（文字が暗闇でも確実にくっきり読めるようにする）
+            char distText[32];
+            snprintf(distText, sizeof(distText), "あと %.1fm", distMeter);
+            int textW = 86;
+            int textH = 18;
+            int textX = static_cast<int>(tipX) - textW / 2;
+            int textY = static_cast<int>(tipY) - 26;
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
+            DrawBox(textX - 4, textY - 2, textX + textW, textY + textH, GetColor(0, 0, 0), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            DrawBox(textX - 4, textY - 2, textX + textW, textY + textH, GetColor(255, 220, 0), FALSE);
+
+            // 距離テキスト（鮮やかな黄色で最前面表示）
+            DrawString(textX, textY, distText, GetColor(255, 230, 40));
+
+            // 2. 敵本体の強調サークル（画面内なら敵の足元・頭部位置を壁透過でハイライト）
+            if (!isOffScreen)
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
+                DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 26, GetColor(255, 30, 30), FALSE);
+                DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 24, GetColor(255, 210, 0), FALSE);
+                DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 22, GetColor(255, 50, 50), FALSE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            }
+        }
     }
 }
 
@@ -818,9 +904,13 @@ void Player::RenderBloodSplatterOverlay(int screenWidth, int screenHeight) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
-void Player::TakeDamage(int amount)
+void Player::TakeDamage(int amount, const std::string& attackerName, int attackerTeamId)
 {
     if (invincibleTimer > 0) return;
+    if (!attackerName.empty() || attackerTeamId != -1)
+    {
+        SetLastAttacker(attackerName, attackerTeamId);
+    }
     status.TakeDamage(amount);
     damageColorTimer = 30;
     
@@ -853,8 +943,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float playerPixelX = Camera::WorldToScreenX(position.x);
     float playerPixelY = Camera::WorldToScreenY(position.y);
 
-    float zoomCellSize = 75.0f;
-    float zoomScale = zoomCellSize / cellSize;
+    float zoomCellSize = cellSize * Camera::ZoomScale;
+    float zoomScale = Camera::ZoomScale;
 
     float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
     float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
@@ -956,6 +1046,49 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     }
 
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // ★ 2P等のオートエイム発動中：ロックオン対象の敵にHUDターゲットレティクルを描画
+    if (m_autoAimTarget && m_autoAimTarget->IsActive() && !m_autoAimTarget->status.IsDead())
+    {
+        Vector2 targetPos = m_autoAimTarget->GetPosition();
+        float tScreenX = Camera::WorldToScreenX(targetPos.x);
+        float tScreenY = Camera::WorldToScreenY(targetPos.y);
+
+        // 画面内に存在する場合のみ描画
+        if (tScreenX >= -100.0f && tScreenX <= 2020.0f && tScreenY >= -100.0f && tScreenY <= 1180.0f)
+        {
+            float targetR = m_autoAimTarget->GetRadius() * Camera::ZoomScale + 12.0f;
+            float timeSec = GetNowCount() / 1000.0f;
+            float pulse = std::sin(timeSec * 8.0f) * 3.0f;
+            float drawR = targetR + pulse;
+
+            unsigned int lockColor = GetColor(255, 60, 60);
+
+            // ロックオンリング (赤色)
+            DrawCircle(static_cast<int>(tScreenX), static_cast<int>(tScreenY), static_cast<int>(drawR), lockColor, FALSE);
+
+            // カッコ型レティクル [  ]
+            int len = 10;
+            int offset = static_cast<int>(drawR);
+            // 左上
+            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX - offset + len), static_cast<int>(tScreenY - offset), lockColor, 2);
+            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY - offset + len), lockColor, 2);
+            // 右上
+            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX + offset - len), static_cast<int>(tScreenY - offset), lockColor, 2);
+            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY - offset + len), lockColor, 2);
+            // 左下
+            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX - offset + len), static_cast<int>(tScreenY + offset), lockColor, 2);
+            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY + offset - len), lockColor, 2);
+            // 右下
+            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX + offset - len), static_cast<int>(tScreenY + offset), lockColor, 2);
+            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset - len), lockColor, 2);
+
+            // LOCK-ON テキスト
+            SetFontSize(16);
+            DrawString(static_cast<int>(tScreenX - 32), static_cast<int>(tScreenY - offset - 18), "LOCK ON", lockColor);
+            SetFontSize(32);
+        }
+    }
 }
 
 void Player::DrawUI(int screenX, int screenY)
@@ -1114,6 +1247,21 @@ void Player::DrawUI(int screenX, int screenY)
             DrawString(screenX + marginX + 70, curY, "[ READY ] (F)", GetColor(0, 230, 255));
         }
     }
+
+    // 2P等のオートエイム状態インジケーター表示
+    if (m_inputType != PlayerInputType::KEYBOARD_MOUSE)
+    {
+        SetFontSize(16);
+        if (m_autoAimTarget)
+        {
+            DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: LOCKED ON ]", GetColor(255, 80, 80));
+        }
+        else
+        {
+            DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: SEARCHING ]", GetColor(80, 220, 100));
+        }
+        SetFontSize(32);
+    }
 }
 
 
@@ -1123,5 +1271,95 @@ void Player::AddAmmo(int amount)
     if (!weapons.empty() && weapons[currentWeaponIndex])
     {
         weapons[currentWeaponIndex]->AddAmmo(amount);
+    }
+}
+
+void Player::UpdateAutoAim(const Vector2& moveDir)
+{
+    m_autoAimTarget = nullptr;
+    m_isAutoAimActive = false;
+
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (!scene || !scene->GetObjectManager()) return;
+
+    float bestScore = -99999.0f;
+    Character* bestTarget = nullptr;
+    const float maxAssistRange = 850.0f; // 吸い付き索敵範囲
+
+    for (auto obj : scene->GetObjectManager()->GetObjects())
+    {
+        Character* other = dynamic_cast<Character*>(obj);
+        if (!other || other == this || !other->IsActive() || other->status.IsDead()) continue;
+        if (other->teamId == this->teamId || other->teamId == -1) continue;
+        if (other->IsTransparent()) continue; // 透明化中の敵は対象外
+
+        Vector2 targetPos = other->GetPosition();
+        float dx = targetPos.x - position.x;
+        float dy = targetPos.y - position.y;
+        float dist = std::sqrt(dx * dx + dy * dy);
+
+        if (dist > maxAssistRange || dist < 1.0f) continue;
+
+        // 壁遮蔽チェック（レイキャスト）
+        if (currentStage && cellSize > 0.0f)
+        {
+            int steps = static_cast<int>(dist / (cellSize * 0.4f));
+            if (steps < 2) steps = 2;
+            float stepX = dx / steps;
+            float stepY = dy / steps;
+            bool hitWall = false;
+
+            for (int i = 1; i < steps; ++i)
+            {
+                int gx = static_cast<int>((position.x + stepX * i) / cellSize);
+                int gy = static_cast<int>((position.y + stepY * i) / cellSize);
+                if (currentStage->IsOutOfBounds(gx, gy) || currentStage->IsSolidWall(gx, gy))
+                {
+                    hitWall = true;
+                    break;
+                }
+            }
+            if (hitWall) continue; // 壁の裏にいる敵は除外
+        }
+
+        Vector2 toEnemy(dx / dist, dy / dist);
+
+        // 基準ベクトル（移動中なら移動方向、そうでなければ現在のエイム方向）
+        Vector2 refDir = facingDir;
+        if (m_isMoving)
+        {
+            float mLen = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+            if (mLen > 0.001f) refDir = Vector2(moveDir.x / mLen, moveDir.y / mLen);
+        }
+
+        float dot = refDir.x * toEnemy.x + refDir.y * toEnemy.y;
+
+        // 前方150度以内 (dot > -0.3f) または 近距離 (dist < 300.0f)
+        if (dot > -0.3f || dist < 300.0f)
+        {
+            // 正面度合いと近さからスコア算出
+            float score = dot * 400.0f + (maxAssistRange - dist);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestTarget = other;
+            }
+        }
+    }
+
+    m_autoAimTarget = bestTarget;
+
+    if (m_autoAimTarget)
+    {
+        m_isAutoAimActive = true;
+        Vector2 targetPos = m_autoAimTarget->GetPosition();
+        float dx = targetPos.x - position.x;
+        float dy = targetPos.y - position.y;
+        float dist = std::sqrt(dx * dx + dy * dy);
+        if (dist > 0.001f)
+        {
+            // 敵の方向へピタリと吸い付き・ロックオン！
+            facingDir = Vector2(dx / dist, dy / dist);
+        }
     }
 }
