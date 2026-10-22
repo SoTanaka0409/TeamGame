@@ -9,6 +9,11 @@
 #include <string>
 #include <random>
 
+namespace {
+    constexpr int LAN_PORT = 30000;
+    constexpr int LAN_UDP_PORT = 30000;
+}
+
 TitleScene::TitleScene()
 {
     LoadServerConfig();
@@ -204,7 +209,7 @@ void TitleScene::Update()
         {
             if (cursor == 0) // Host LAN
             {
-                if (NetworkManager::GetInstance().Listen(9876))
+                if (NetworkManager::GetInstance().Listen(LAN_PORT))
                 {
                     udpHandle = MakeUDPSocket(-1);
                     state = TitleState::WAITING;
@@ -233,7 +238,7 @@ void TitleScene::Update()
         {
             if (cursor == 0) // Join LAN Auto
             {
-                udpHandle = MakeUDPSocket(9877);
+                udpHandle = MakeUDPSocket(LAN_UDP_PORT);
                 state = TitleState::JOINING_LAN;
                 waitTimer = 0;
             }
@@ -261,7 +266,7 @@ void TitleScene::Update()
                         DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", targetIP.c_str());
                         ScreenFlip();
 
-                        if (NetworkManager::GetInstance().Connect(targetIP.c_str(), 9876))
+                        if (NetworkManager::GetInstance().Connect(targetIP.c_str(), LAN_PORT))
                         {
                             SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
                             return;
@@ -300,7 +305,7 @@ void TitleScene::Update()
                     DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", ipBuffer);
                     ScreenFlip();
 
-                    if (NetworkManager::GetInstance().Connect(ipBuffer, 9876))
+                    if (NetworkManager::GetInstance().Connect(ipBuffer, LAN_PORT))
                     {
                         SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
                         return;
@@ -378,7 +383,7 @@ void TitleScene::Update()
         {
             // Global broadcast
             IPDATA ip = {255, 255, 255, 255};
-            NetWorkSendUDP(udpHandle, ip, 9877, "HOST", 4);
+            NetWorkSendUDP(udpHandle, ip, LAN_UDP_PORT, "HOST", 4);
             
             // Subnet broadcast fallback
             IPDATA myip[10];
@@ -389,7 +394,7 @@ void TitleScene::Update()
                 {
                     IPDATA bcast = myip[i];
                     bcast.d4 = 255;
-                    NetWorkSendUDP(udpHandle, bcast, 9877, "HOST", 4);
+                    NetWorkSendUDP(udpHandle, bcast, LAN_UDP_PORT, "HOST", 4);
                 }
             }
         }
@@ -413,7 +418,7 @@ void TitleScene::Update()
             {
                 char ipStr[64];
                 sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", hostIP.d1, hostIP.d2, hostIP.d3, hostIP.d4);
-                if (NetworkManager::GetInstance().Connect(ipStr, 9876))
+                if (NetworkManager::GetInstance().Connect(ipStr, LAN_PORT))
                 {
                     DeleteUDPSocket(udpHandle);
                     udpHandle = -1;
@@ -584,7 +589,8 @@ void TitleScene::Draw()
                 sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
                 DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (i * 25), (std::string("Your IP: ") + ipStr).c_str(), GetColor(255, 255, 255));
             }
-            DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 15, "[C] キー: 自分のIPアドレスをクリップボードにコピー", GetColor(100, 255, 100));
+            DrawFormatString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 10, GetColor(180, 220, 255), "Port: %d", LAN_PORT);
+            DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 35, "[C] キー: 自分のIPアドレスをクリップボードにコピー", GetColor(100, 255, 100));
         }
 
         if (copyNotifyTimer > 0)
