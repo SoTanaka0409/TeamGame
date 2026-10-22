@@ -274,7 +274,7 @@
     <ClCompile Include="Source\Stage\StageTest_main.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="Source\UITextWindow.cpp">
+    <ClCompile Include="Source\UI\UITextWindow.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Weapons\Bullet.cpp">
@@ -358,7 +358,7 @@
     <ClInclude Include="Source\Stage\StageGenerator.h" />
     <ClInclude Include="Source\Stage\StageManager.h" />
     <ClInclude Include="Source\Stage\StageTypes.h" />
-    <ClInclude Include="Source\UITextWindow.h" />
+    <ClInclude Include="Source\UI\UITextWindow.h" />
     <ClInclude Include="Source\Weapons\Bullet.h" />
     <ClInclude Include="Source\Weapons\EnemyBullet.h" />
     <ClInclude Include="Source\Weapons\Handgun.h" />
@@ -369,11 +369,11 @@
     <ClInclude Include="Source\Weapons\BulletVisualConfig.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resource\characters.csv" />
-    <None Include="Resource\game_balance.csv" />
-    <None Include="Resource\items.csv" />
-    <None Include="Resource\skills.csv" />
-    <None Include="Resource\weapons.csv" />
-    <None Include="Resource\Grass1.png" />
+    <None Include="Resource\CSV\characters.csv" />
+    <None Include="Resource\CSV\game_balance.csv" />
+    <None Include="Resource\CSV\items.csv" />
+    <None Include="Resource\CSV\skills.csv" />
+    <None Include="Resource\CSV\weapons.csv" />
+    <None Include="Resource\Textures\Grass1.png" />
   </ItemGroup>
 </Project>
