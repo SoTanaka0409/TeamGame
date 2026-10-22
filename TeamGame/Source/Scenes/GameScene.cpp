@@ -501,7 +501,26 @@ void GameScene::Draw()
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float worldCellSize = (cellW < cellH) ? cellW : cellH;
-    float zoomCellSize = 75.0f;
+
+    // カメラの表示セルサイズ（イントロ時は全体を見渡す75.0f、追従プレイ時は狭めて集中できる110.0f）
+    float introZoom = 75.0f;
+    float playZoom = 110.0f;
+    float zoomCellSize = playZoom;
+
+    if (introTimer > 0.0f)
+    {
+        if (introTimer < 60.0f)
+        {
+            // イントロ最後の1秒間（60フレーム）でスムーズにプレイヤーへズームイン
+            float zoomT = 1.0f - (introTimer / 60.0f);
+            zoomT = zoomT * zoomT * (3.0f - 2.0f * zoomT); // smoothstep補間
+            zoomCellSize = introZoom + (playZoom - introZoom) * zoomT;
+        }
+        else
+        {
+            zoomCellSize = introZoom;
+        }
+    }
 
     float playerWorldX = 0.0f, playerWorldY = 0.0f;
     if (player && player->IsActive())

@@ -67,7 +67,7 @@ private:
     int strafeDirection;              ///< かに歩き（横移動）方向
     int strafeTimer;                  ///< かに歩き切り替えタイマー
     float effectiveRangeCells = 10.0f;///< 攻撃有効射程（10セル）
-    float sightRangeCells = 14.0f;    ///< 索敵視界（14セル: プレイヤーのライト照射範囲14セルに統一）
+    float sightRangeCells = 8.5f;     ///< 索敵視界（8.5セル: プレイヤーのカメラ画面サイズ・ライト照射範囲に合わせて同期）
     class Weapon* equippedWeapon = nullptr; ///< 装備武器
     bool wasPanic = false;                  ///< 直前フレームでパニック状態だったかどうかのフラグ
     int m_characterId = 1;                  ///< キャラクターID (1:指揮者, 2:反逆者, 3:バカ, 4:主婦, 5:悪魔)

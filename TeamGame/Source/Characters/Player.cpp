@@ -631,7 +631,7 @@ void Player::Draw()
     // 【サーチ的な感じでブレ幅（予測線）を描画】
     if (currentStage && cellSize > 0.0f)
     {
-        float zoomCellSize = 75.0f;
+        float zoomCellSize = cellSize * Camera::ZoomScale;
         float maxRange = cellSize * 12.0f;
         if (!weapons.empty() && weapons[currentWeaponIndex]->GetData()) {
             maxRange = weapons[currentWeaponIndex]->GetData()->range;
@@ -742,7 +742,7 @@ void Player::Draw()
 
         if (canKillEnemy)
         {
-            float zoomScale = 75.0f / (cellSize > 0.0f ? cellSize : 40.0f);
+            float zoomScale = Camera::ZoomScale;
             Vector2 ePos = canKillEnemy->GetPosition();
             float eScreenX = Camera::WorldToScreenX(ePos.x);
             float eScreenY = Camera::WorldToScreenY(ePos.y);
@@ -943,8 +943,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float playerPixelX = Camera::WorldToScreenX(position.x);
     float playerPixelY = Camera::WorldToScreenY(position.y);
 
-    float zoomCellSize = 75.0f;
-    float zoomScale = zoomCellSize / cellSize;
+    float zoomCellSize = cellSize * Camera::ZoomScale;
+    float zoomScale = Camera::ZoomScale;
 
     float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
     float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
