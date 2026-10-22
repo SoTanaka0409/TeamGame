@@ -48,10 +48,16 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
     bool found = false;
     for (const auto& chara : availableCharas) {
         if (chara.id == characterId) {
-            bot->status.Init(chara.maxHp, chara.moveSpeed, 10);
+            // Botの移動速度をプレイヤーと同等の適正範囲 (3.2〜3.8) に調整
+            float botSpeed = chara.moveSpeed;
+            if (botSpeed > 3.8f) botSpeed = 3.8f;
+            if (botSpeed < 3.2f) botSpeed = 3.2f;
+
+            bot->status.Init(chara.maxHp, botSpeed, 10);
             bot->SetColliderRadius(chara.colliderRadius);
             bot->SetModelScale(chara.modelScale);
-            bot->SetCharacterName(chara.name);
+            std::string teamPrefix = (teamId == 0) ? "[味方] " : "[敵] ";
+            bot->SetCharacterName(teamPrefix + chara.name);
             if (!chara.modelPath.empty()) {
                 bot->SetModelPath(chara.modelPath);
             }
@@ -60,9 +66,10 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
         }
     }
     if (!found) {
-        bot->status.Init(100, 4.0f, 10);
+        bot->status.Init(100, 3.6f, 10);
         bot->SetColliderRadius(8.9f);
         bot->SetModelScale(0.3f);
+        bot->SetCharacterName((teamId == 0) ? "[味方] ボット" : "[敵] ボット");
     }
     if (!bot->HasModel()) {
         bot->SetModelPath("Resource/GreenCharacter/character.mv1");

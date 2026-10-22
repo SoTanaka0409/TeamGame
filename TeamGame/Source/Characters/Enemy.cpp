@@ -22,7 +22,7 @@ Enemy::Enemy(float startX, float startY, int tId)
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
-    characterName = (teamId == 0) ? "味方ボット" : "敵ボット";
+    characterName = (teamId == 0) ? "[味方] ボット" : "[敵] ボット";
     std::string botType = (teamId == 0) ? "AllyBot" : "EnemyBot";
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData(botType);
     if (!data && teamId != 0) data = CharacterManager::GetInstance().GetCharacterData("EnemyBot");
@@ -37,11 +37,11 @@ Enemy::Enemy(float startX, float startY, int tId)
     }
     else
     {
-        status.Init(100, 3.8f, 10);
+        status.Init(100, 3.6f, 10);
         collider->SetRadius(8.9f);
         radius = 8.9f;
     }
-    collider->SetTag("Enemy");
+    collider->SetTag((teamId == 0) ? "AllyBot" : "EnemyBot");
     SetModelPath("Resource/GreenCharacter/character.mv1");
     UpdatePersonality();
     UpdateWeaponTactic();
@@ -544,8 +544,8 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
         position.y = nextY;
     }
 
-    // 正面が壁やキャラクターで引っかかった場合、角を回避するスライド移動を試みる
-    if (xBlocked || yBlocked)
+    // 両軸ともブロックされて完全に進行不可になった場合のみ、角を回避するスライド移動を試みる
+    if (xBlocked && yBlocked)
     {
         Vector2 slideDir1(normDir.y, -normDir.x);
         Vector2 slideDir2(-normDir.y, normDir.x);
@@ -1108,22 +1108,25 @@ void Enemy::Draw()
         return;
     }
 
-    // チーム別カラー（通常：青/赤、バトルロワイヤル錯乱中：全員が敵扱いの紫・マゼンタ・警告オレンジ）
+    // チーム別カラー（味方：鮮明な青シアン、敵：赤、バトルロワイヤル錯乱中：マゼンタ）
     unsigned int bodyColor;
+    unsigned int accentColor;
     if (IsPanic()) {
-        // バトルロワイヤル単独孤立化：禍々しいマゼンタ・紫色に変化
         bodyColor = GetColor(220, 30, 160);
+        accentColor = GetColor(255, 80, 220);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
     } else if (teamId == 0) {
-        bodyColor = GetColor(30, 30, 180);
+        bodyColor = GetColor(20, 130, 240); // 鮮やかな味方ブルー
+        accentColor = GetColor(100, 210, 255);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
-        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(40, 40, 240);
-        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(30, 140, 230);
+        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(0, 170, 255);
+        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(30, 190, 225);
     } else {
-        bodyColor = GetColor(180, 30, 30);
+        bodyColor = GetColor(210, 35, 35); // 鮮やかな敵レッド
+        accentColor = GetColor(255, 90, 90);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
-        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(240, 40, 40);
-        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 140, 30);
+        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(245, 45, 45);
+        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 130, 30);
     }
 
     // 透明化中の描画制御（完全非表示、または味方なら極薄く表示）
@@ -1138,12 +1141,12 @@ void Enemy::Draw()
     if (m_model && m_model->IsLoaded())
     {
         // 足元にチームカラーのガイド円を描画（半透明）
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 130);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius), bodyColor, TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+                   static_cast<int>(renderRadius), accentColor, FALSE);
 
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
@@ -1155,7 +1158,46 @@ void Enemy::Draw()
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius), bodyColor, TRUE);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+                   static_cast<int>(renderRadius), accentColor, FALSE);
+    }
+
+    // 頭上の敵味方ネームタグ＆小型HPバーの描画
+    if (!status.IsDead())
+    {
+        float tagY = screenY - renderRadius - 26.0f;
+        int barW = 38;
+        int barH = 5;
+        int barX = static_cast<int>(screenX) - barW / 2;
+
+        std::string displayName = GetCharacterName();
+        unsigned int nameColor = (IsPanic()) ? GetColor(255, 120, 240) :
+                                 (teamId == 0) ? GetColor(130, 220, 255) : GetColor(255, 120, 120);
+
+        SetFontSize(12);
+        int strW = GetDrawStringWidth(displayName.c_str(), static_cast<int>(displayName.length()));
+        int textX = static_cast<int>(screenX) - strW / 2;
+
+        // ネーム背景帯
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 170);
+        DrawBox(textX - 3, static_cast<int>(tagY) - 1, textX + strW + 3, static_cast<int>(tagY) + 13, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        DrawString(textX, static_cast<int>(tagY), displayName.c_str(), nameColor);
+
+        // HPバー描画
+        int maxHp = status.GetMaxHp();
+        int curHp = status.GetCurrentHp();
+        float hpRate = (maxHp > 0) ? ((float)curHp / (float)maxHp) : 0.0f;
+        if (hpRate < 0.0f) hpRate = 0.0f;
+        if (hpRate > 1.0f) hpRate = 1.0f;
+
+        int hpY = static_cast<int>(tagY) + 14;
+        DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(20, 20, 20), TRUE);
+        unsigned int hpColor = (teamId == 0) ? GetColor(50, 220, 120) : GetColor(255, 60, 60);
+        DrawBox(barX, hpY, barX + static_cast<int>(barW * hpRate), hpY + barH, hpColor, TRUE);
+        DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(80, 80, 80), FALSE);
+
+        SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
     // HomingKill 特攻突撃中の残虐・暴走演出（全身が血のように赤黒く脈動し、頭上に死のカウントダウンと赤黒いオーラ）
@@ -1202,23 +1244,23 @@ void Enemy::Draw()
         DrawString(static_cast<int>(screenX) - 24, static_cast<int>(headY) - 10, "TARGET", GetColor(255, 60, 60));
     }
 
-    // 警戒（ALERT）状態のリング強調および有効射程ガイド円、【赤色でやや透明な弾道予測線】の描画
+    // 警戒（ALERT）状態のリング強調および有効射程ガイド円、弾道予測線の描画
     if (aiState == EnemyAIState::ALERT)
     {
+        unsigned int alertCol = (teamId == 0) ? GetColor(60, 190, 255) : GetColor(255, 80, 80);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius + 4.0f), GetColor(255, 80, 80), FALSE);
+                   static_cast<int>(renderRadius + 4.0f), alertCol, FALSE);
 
         // 有効射程を示す円（ガイドライン）描画
         float rangeScreenRadius = GetEffectiveRange() * Camera::ZoomScale;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 50);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 45);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(rangeScreenRadius), GetColor(255, 60, 60), FALSE);
+                   static_cast<int>(rangeScreenRadius), alertCol, FALSE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 赤色半透明の弾道予測線 (障害物まで伸ばす)
+        // 弾道予測線 (障害物まで伸ばす)
         if (currentStage && cellSize > 0.0f)
         {
-            
             float maxRange = GetEffectiveRange();
             float stepDist = cellSize * 0.4f;
             float currDist = radius + 5.0f;
@@ -1242,13 +1284,13 @@ void Enemy::Draw()
             float hitScreenX = Camera::WorldToScreenX(hitPos.x);
             float hitScreenY = Camera::WorldToScreenY(hitPos.y);
 
-            // 半透明の赤い弾道予測線
+            // 弾道予測線（味方は青シアン、敵は赤）
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 115);
             DrawLine(static_cast<int>(screenX), static_cast<int>(screenY),
                      static_cast<int>(hitScreenX), static_cast<int>(hitScreenY),
-                     GetColor(255, 40, 40), 2);
+                     alertCol, 2);
             DrawCircle(static_cast<int>(hitScreenX), static_cast<int>(hitScreenY),
-                       4, GetColor(255, 80, 80), TRUE);
+                       4, alertCol, TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         }
     }
@@ -1274,10 +1316,17 @@ void Enemy::Draw()
         float facingAngle = std::atan2(facingDir.y, facingDir.x);
         float halfAngle = 0.3000f; // 17° (左右合計34°)
 
-        // AI状態に応じた視界コーンの色（通常：薄い黄色、警戒：赤橙色）
-        unsigned int visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(255, 80, 80) :
-                                   (aiState == EnemyAIState::INVESTIGATE) ? GetColor(255, 180, 60) :
-                                   GetColor(255, 230, 100);
+        // AI状態に応じた視界コーンの色（味方は青シアン系、敵は赤・橙系）
+        unsigned int visionColor;
+        if (teamId == 0) {
+            visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(60, 200, 255) :
+                          (aiState == EnemyAIState::INVESTIGATE) ? GetColor(80, 220, 240) :
+                          GetColor(100, 210, 255);
+        } else {
+            visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(255, 80, 80) :
+                          (aiState == EnemyAIState::INVESTIGATE) ? GetColor(255, 180, 60) :
+                          GetColor(255, 230, 100);
+        }
         int coneAlpha = (aiState == EnemyAIState::ALERT) ? 65 : 40;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, coneAlpha);
@@ -1303,7 +1352,12 @@ void Enemy::Draw()
     int x2 = static_cast<int>(screenX + facingDir.x * lineLen);
     int y2 = static_cast<int>(screenY + facingDir.y * lineLen);
 
-    unsigned int lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(255, 50, 50) : GetColor(230, 160, 100);
+    unsigned int lineCol;
+    if (teamId == 0) {
+        lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(50, 180, 255) : GetColor(100, 200, 255);
+    } else {
+        lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(255, 50, 50) : GetColor(230, 160, 100);
+    }
     DrawLine(x1, y1, x2, y2, lineCol, 2);
 }
 

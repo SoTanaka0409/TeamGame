@@ -41,11 +41,35 @@ int GameScene::GetActiveEnemyCount() const
 {
     if (!objectManager) return 0;
     int count = 0;
+    int myTeam = player ? player->teamId : 0;
     for (auto obj : objectManager->GetObjects())
     {
-        if (obj && obj->GetObjectTag() == ObjectTag::Enemy && obj->IsActive())
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c->IsActive() && !c->status.IsDead())
         {
-            count++;
+            if (c->teamId != myTeam && c != remotePlayer)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+int GameScene::GetActiveAllyCount() const
+{
+    if (!objectManager) return 0;
+    int count = 0;
+    int myTeam = player ? player->teamId : 0;
+    for (auto obj : objectManager->GetObjects())
+    {
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c->IsActive() && !c->status.IsDead())
+        {
+            if (c->teamId == myTeam && c != player)
+            {
+                count++;
+            }
         }
     }
     return count;
@@ -808,7 +832,8 @@ void GameScene::Draw()
         SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
-    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
+    int activeAllyCount = GetActiveAllyCount();
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount, activeAllyCount);
 
     // キルログ・デスログ通知バナーの描画
     MatchManager::GetInstance().DrawKillNotifications();

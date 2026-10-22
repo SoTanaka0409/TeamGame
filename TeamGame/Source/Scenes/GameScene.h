@@ -132,6 +132,7 @@ class GameScene : public Scene
      * @details フィールド上に存在し、まだ倒されていない敵キャラクターの数をカウントして返します。
      */
     int GetActiveEnemyCount() const;
+    int GetActiveAllyCount() const;
 
     /**
      * @brief 現在のステージを取得する

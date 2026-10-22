@@ -15,7 +15,7 @@ void DebugManager::Update()
     }
 }
 
-void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX, float playerY, int enemyCount)
+void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX, float playerY, int enemyCount, int allyCount)
 {
     // デバッグモードがOFFの場合はオーバーレイ画面を描画しない
     if (!m_isDebugMode) return;
@@ -40,9 +40,9 @@ void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX,
     std::string infoStage = "Stage: " + stageName;
     DrawString(startX + 15, startY + 37, infoStage.c_str(), GetColor(255, 255, 255));
 
-    // プレイヤー座標 & 敵数
+    // プレイヤー座標 & 敵味方数
     char posStr[128];
-    snprintf(posStr, sizeof(posStr), "Player Pos: (%.1f, %.1f) | Enemies: %d", playerX, playerY, enemyCount);
+    snprintf(posStr, sizeof(posStr), "Player Pos: (%.1f, %.1f) | 敵Bot: %d | 味方Bot: %d", playerX, playerY, enemyCount, allyCount);
     DrawString(startX + 15, startY + 62, posStr, GetColor(200, 220, 255));
 
     // 操作ガイド
