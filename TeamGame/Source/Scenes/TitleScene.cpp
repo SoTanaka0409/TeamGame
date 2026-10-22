@@ -1,4 +1,4 @@
-#include "TitleScene.h"
+﻿#include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
 #include "CharacterSelectScene.h"
@@ -10,9 +10,44 @@
 
 TitleScene::TitleScene()
 {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    titleBgIndex       = Load2DImage("Titleu.jpg");
+    titleLogoIndex     = Load2DImage("Title02.png");
+    titleLogoIndex2     = Load2DImage("Title2.png");
+    settingsBgIndex    = Load2DImage("settings_bg.png");
+    modeSelectBgIndex  = Load2DImage("mode_select_bg.png");
+    windowFrameIndex   = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // UITextWindow によるUIウィンドウの初期化
+    messageWindow = new UI::UITextWindow();
+    messageWindow->SetMaxTextWidth(700);
+    messageWindow->SetPadding(UI::Margin(25, 14, 25, 14));
+    messageWindow->SetBoxColor(GetColor(160, 30, 30), GetColor(255, 150, 150), 220);
+    if (windowFrameIndex != -1) {
+        messageWindow->SetBgGraphHandle(Get2DImage(windowFrameIndex));
+    }
+
+    settingsWindow = new UI::UITextWindow();
+    settingsWindow->SetMaxTextWidth(650);
+    settingsWindow->SetPadding(UI::Margin(30, 20, 30, 20));
+    settingsWindow->SetBoxColor(GetColor(15, 20, 35), GetColor(0, 160, 240), 180);
+    if (windowFrameIndex != -1) {
+        settingsWindow->SetBgGraphHandle(Get2DImage(windowFrameIndex));
+    }
 }
+
 TitleScene::~TitleScene()
 {
+    // UITextWindow の解放
+    delete messageWindow;
+    messageWindow = nullptr;
+
+    delete settingsWindow;
+    settingsWindow = nullptr;
+
     if (udpHandle != -1)
     {
         DeleteUDPSocket(udpHandle);
@@ -300,14 +335,109 @@ void TitleScene::Update()
 void TitleScene::Draw()
 {
     Scene::Draw();
-    DrawString(1920 / 2 - 150, 200, "=== TEAM GAME ===", GetColor(255, 255, 255));
 
+    // =========================================================================
+    // 1. 背景画像の描画（配列番号から呼び出し）
+    // =========================================================================
+    if (state == TitleState::SETTINGS)
+    {
+        if (settingsBgIndex != -1)
+        {
+            // 設定画面用の背景画像を配列番号から描画
+            DrawFullScreen2DImage(settingsBgIndex, false);
+        }
+        else if (titleBgIndex != -1)
+        {
+            // 設定画像がない場合はタイトル背景に暗幕フィルターを重ねて描画
+            DrawFullScreen2DImage(titleBgIndex, false);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160);
+            DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
+        else
+        {
+            // 画像がない場合のデフォルト背景
+            DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+        }
+    }
+    else if (state == TitleState::MODE_SELECT && modeSelectBgIndex != -1)
+    {
+        // モード選択画面専用の背景画像を配列番号から描画
+        DrawFullScreen2DImage(modeSelectBgIndex, false);
+    }
+    else if (titleBgIndex != -1)
+    {
+        // タイトル画面全般の背景画像を配列番号から描画
+        DrawFullScreen2DImage(titleBgIndex, false);
+    }
+    else
+    {
+        // 画像がない場合のデフォルト背景
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+    }
+
+    // =========================================================================
+    // 2. タイトルロゴまたはタイトルの文字描画
+    // =========================================================================
+    int logoHandle = Get2DImage(titleLogoIndex);
+    if (state == TitleState::SETTINGS)
+    {
+        // 設定画面ヘッダー
+        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(20, 30, 45), TRUE);
+        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(0, 180, 255), FALSE);
+        DrawString(1920 / 2 - 90, 200, "=== SETTINGS ===", GetColor(255, 255, 255));
+    }
+    else if (logoHandle != -1)
+    {
+        // タイトルロゴ画像が存在する場合、中央揃えで描画
+        int logoW = 0, logoH = 0;
+        GetGraphSize(logoHandle, &logoW, &logoH);
+        int logoX = (1920 - logoW) / 2;
+        int logoY = 150;
+        DrawGraph(logoX, logoY, logoHandle, TRUE);
+    }
+    else
+    {
+        // ロゴ画像がない場合は従来のテキストタイトルを描画
+        DrawString(1920 / 2 - 150, 200, "=== TEAM GAME ===", GetColor(255, 255, 255));
+    }
+
+    // =========================================================================
+    // 2. タイトルロゴまたはタイトルの文字描画
+    // =========================================================================
+    int logoHandle2 = Get2DImage(titleLogoIndex2);
+    if (state == TitleState::SETTINGS)
+    {
+        // 設定画面ヘッダー
+        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(20, 30, 45), TRUE);
+        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(0, 180, 255), FALSE);
+        DrawString(1920 / 2 - 90, 200, "=== SETTINGS ===", GetColor(255, 255, 255));
+    }
+    else if (logoHandle2 != -1)
+    {
+        // タイトルロゴ画像が存在する場合、中央揃えで描画
+        int logoW = 0, logoH = 0;
+        GetGraphSize(logoHandle2, &logoW, &logoH);
+        int logoX = (1920 - logoW) / 2;
+        int logoY = 150+50;
+        DrawGraph(logoX, logoY, logoHandle2, TRUE);
+    }
+
+    // =========================================================================
+    // 3. 各種メニュー描画（文字の視認性向上のため背面に透過プレートを敷く）
+    // =========================================================================
     const int menuStartX = 1920 / 2 - 100;
     const int menuStartY = 400;
     const int menuSpacing = 60;
 
     if (state == TitleState::MAIN)
     {
+        // メニュー用半透明プレート
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 250, menuStartY + 3 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 250, menuStartY + 3 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+
         const char* items[] = { "GAME START", "SETTINGS", "EXIT" };
         for (int i = 0; i < 3; i++)
         {
@@ -318,6 +448,11 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::MODE_SELECT)
     {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 360, menuStartY + 5 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 360, menuStartY + 5 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+
         const char* items[] = { "1P (Solo)", "2P (Same PC - Split Screen)", "Host Game (Network)", "Join Game (Network)", "Back" };
         for (int i = 0; i < 5; i++)
         {
@@ -328,6 +463,11 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::JOIN_SELECT)
     {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 420, menuStartY + 4 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 420, menuStartY + 4 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+
         const char* items[] = { 
             "Join LAN (Auto Search)", 
             "Paste IP & Connect (クリップボードから接続)", 
@@ -343,6 +483,11 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::SETTINGS)
     {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(15, 20, 35), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(0, 160, 240), FALSE);
+
         std::string items[] = {
             std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
             "Back"
@@ -393,10 +538,12 @@ void TitleScene::Draw()
         }
     }
 
-    if (statusMessageTimer > 0 && !statusMessage.empty())
+    // UITextWindow による通知・エラーメッセージ描画
+    if (statusMessageTimer > 0 && !statusMessage.empty() && messageWindow)
     {
-        DrawBox(1920 / 2 - 350, 1080 - 100, 1920 / 2 + 350, 1080 - 50, GetColor(160, 30, 30), TRUE);
-        DrawBox(1920 / 2 - 350, 1080 - 100, 1920 / 2 + 350, 1080 - 50, GetColor(255, 150, 150), FALSE);
-        DrawString(1920 / 2 - 330, 1080 - 80, statusMessage.c_str(), GetColor(255, 255, 255));
+        messageWindow->SetText(statusMessage);
+        int winW = messageWindow->GetWindowWidth();
+        int winH = messageWindow->GetWindowHeight();
+        messageWindow->Draw((1920 - winW) / 2, 1080 - winH - 40);
     }
 }

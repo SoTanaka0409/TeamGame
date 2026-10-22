@@ -13,6 +13,25 @@ CharacterSelectScene::~CharacterSelectScene() {
 }
 
 void CharacterSelectScene::Init() {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    m_bgImageIndex = Load2DImage("character_select_bg.png");
+    if (m_bgImageIndex == -1) {
+        m_bgImageIndex = Load2DImage("select_bg.png");
+    }
+    m_windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // UITextWindow による詳細説明枠の設定
+    m_detailWindow.SetFixedSize(1200, 110);
+    m_detailWindow.SetMaxTextWidth(1140);
+    m_detailWindow.SetPadding(UI::Margin(30, 16, 30, 16));
+    m_detailWindow.SetLineSpacing(6);
+    if (m_windowFrameIndex != -1) {
+        m_detailWindow.SetBgGraphHandle(Get2DImage(m_windowFrameIndex));
+    }
+
     m_characters = PlayerSelectionManager::GetAvailableCharacters();
     m_selectedIndex = 0;
 
@@ -47,7 +66,16 @@ void CharacterSelectScene::Update() {
 }
 
 void CharacterSelectScene::Draw() {
-    DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    // 背景画像の描画（配列番号から呼び出し）
+    if (m_bgImageIndex != -1) {
+        DrawFullScreen2DImage(m_bgImageIndex, false);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    } else {
+        DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    }
+
     FontManager::GetInstance().DrawStringCenter(960, 60, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
     FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] / [A][D] で移動、[Z] / [Enter] で決定 )", GetColor(200, 210, 225), 20);
 
@@ -118,15 +146,19 @@ void CharacterSelectScene::Draw() {
         }
     }
 
-    // 画面下部の詳細説明枠
+    // 画面下部の詳細説明枠（UITextWindow による描画）
     if (m_selectedIndex >= 0 && m_selectedIndex < count) {
         const auto& curChara = m_characters[m_selectedIndex];
+        int infoX = 360;
         int infoY = 670;
-        DrawBox(360, infoY, 1560, infoY + 110, GetColor(25, 32, 45), TRUE);
-        DrawBox(360, infoY, 1560, infoY + 110, curChara.themeColor, FALSE);
 
-        FontManager::GetInstance().DrawFormatString(390, infoY + 18, GetColor(255, 220, 0), 20, "【%s】 %s", curChara.name.c_str(), curChara.typeName.c_str());
-        FontManager::GetInstance().DrawString(390, infoY + 55, curChara.description.c_str(), GetColor(220, 230, 240), 18);
+        char titleBuf[128];
+        sprintf_s(titleBuf, sizeof(titleBuf), "【%s】 %s", curChara.name.c_str(), curChara.typeName.c_str());
+        m_detailWindow.SetTitle(titleBuf, GetColor(255, 220, 0));
+        m_detailWindow.SetText(curChara.description);
+        m_detailWindow.SetBoxColor(GetColor(25, 32, 45), curChara.themeColor, 200);
+
+        m_detailWindow.Draw(infoX, infoY);
     }
 }
 

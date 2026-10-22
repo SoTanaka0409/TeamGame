@@ -1,7 +1,6 @@
-#include "ClearScene.h"
+﻿#include "ClearScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
-#include "DebugManager.h"
 #include "SceneManager.h"
 #include "GameScene.h"
 #include "TitleScene.h"
@@ -11,10 +10,32 @@
 ClearScene::ClearScene(const ClearStats& inStats)
     : stats(inStats), menuCursor(0), animTimer(0.0f)
 {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    clearBgIndex = Load2DImage("clear_bg.png");
+    if (clearBgIndex == -1) {
+        clearBgIndex = Load2DImage("result_clear_bg.png");
+    }
+    windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // UITextWindow によるリザルト枠の初期化
+    statsWindow = new UI::UITextWindow();
+    statsWindow->SetFixedSize(700, 380);
+    statsWindow->SetMaxTextWidth(640);
+    statsWindow->SetPadding(UI::Margin(40, 25, 40, 25));
+    statsWindow->SetLineSpacing(14);
+    statsWindow->SetBoxColor(GetColor(20, 30, 45), GetColor(0, 200, 255), 190);
+    if (windowFrameIndex != -1) {
+        statsWindow->SetBgGraphHandle(Get2DImage(windowFrameIndex));
+    }
 }
 
 ClearScene::~ClearScene()
 {
+    delete statsWindow;
+    statsWindow = nullptr;
 }
 
 void ClearScene::Init()
@@ -68,16 +89,27 @@ void ClearScene::Draw()
 {
     Scene::Draw();
 
-    // 暗いグラデーション背景
-    DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
-
-    // 装飾背景ライン
-    for (int i = 0; i < 10; ++i)
+    // 背景描画（配列番号から呼び出し）
+    if (clearBgIndex != -1)
     {
-        int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 30);
-        DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
+        DrawFullScreen2DImage(clearBgIndex, false);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+    else
+    {
+        // 画像がない場合は暗いグラデーション背景
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+
+        // 装飾背景ライン
+        for (int i = 0; i < 10; ++i)
+        {
+            int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 30);
+            DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
     }
 
     const int centerX = 1920 / 2;
@@ -93,16 +125,24 @@ void ClearScene::Draw()
     // メインタイトル文字
     DrawString(centerX - titleWidth / 2, titleY, "STAGE CLEAR!", GetColor(255, 215, 0));
 
-    // リザルト枠
+    // リザルト枠（UITextWindow による描画）
     int panelW = 700;
     int panelH = 380;
     int panelX = centerX - panelW / 2;
     int panelY = 240;
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(20, 30, 45), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 200, 255), FALSE);
+    if (statsWindow)
+    {
+        statsWindow->SetTitle("STAGE RESULT", GetColor(255, 220, 0));
+        statsWindow->Draw(panelX, panelY);
+    }
+    else
+    {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(20, 30, 45), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 200, 255), FALSE);
+    }
 
     // スコア＆統計情報表示
     SetFontSize(24);
@@ -163,18 +203,7 @@ void ClearScene::Draw()
         DrawString(optX, itemY, options[i], color);
     }
 
-    if (animTimer < 2.0f)
-    {
-        if (DebugManager::GetInstance().IsDebugMode())
-        {
-            SetFontSize(20);
-            char waitMsg[64];
-            snprintf(waitMsg, sizeof(waitMsg), "[ DEBUG: 決定操作ロック中... (あと %.1f 秒) ]", 2.0f - animTimer);
-            int msgWidth = GetDrawStringWidth(waitMsg, -1);
-            DrawString(centerX - msgWidth / 2, 820, waitMsg, GetColor(255, 100, 100));
-        }
-    }
-    else
+    if (animTimer >= 2.0f)
     {
         SetFontSize(22);
         const char* guideMsg = "[ W / S / 矢印キー ] 選択   [ Enter / Space / 左クリック ] 決定";

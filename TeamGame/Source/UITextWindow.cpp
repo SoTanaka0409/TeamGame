@@ -1,4 +1,4 @@
-#include "UITextWindow.h"
+﻿#include "UITextWindow.h"
 
 namespace UI {
 
@@ -60,6 +60,28 @@ void UITextWindow::SetTextEncoding(TextEncoding encoding) {
 
 void UITextWindow::SetDrawTransparentFlag(int transparentFlag) {
     m_transFlag = transparentFlag;
+}
+
+void UITextWindow::SetTitle(const std::string& title, unsigned int titleColor) {
+    if (m_title != title || m_titleColor != titleColor) {
+        m_title = title;
+        m_titleColor = titleColor;
+        m_isDirty = true;
+    }
+}
+
+void UITextWindow::SetBoxColor(unsigned int bgColor, unsigned int borderColor, int alpha) {
+    m_boxBgColor = bgColor;
+    m_boxBorderColor = borderColor;
+    m_boxAlpha = alpha;
+}
+
+void UITextWindow::SetFixedSize(int width, int height) {
+    if (m_fixedWidth != width || m_fixedHeight != height) {
+        m_fixedWidth = width;
+        m_fixedHeight = height;
+        m_isDirty = true;
+    }
 }
 
 int UITextWindow::GetWindowWidth() const {
@@ -211,8 +233,16 @@ void UITextWindow::RecalculateLayout() {
     int minW = m_nineSliceMargin.left + m_nineSliceMargin.right;
     int minH = m_nineSliceMargin.top + m_nineSliceMargin.bottom;
 
-    m_windowWidth = (std::max)(m_calculatedTextWidth + m_padding.left + m_padding.right, minW);
-    m_windowHeight = (std::max)(m_calculatedTextHeight + m_padding.top + m_padding.bottom, minH);
+    int autoW = (std::max)(m_calculatedTextWidth + m_padding.left + m_padding.right, minW);
+    int autoH = (std::max)(m_calculatedTextHeight + m_padding.top + m_padding.bottom, minH);
+
+    // タイトルが設定されている場合はヘッダー分の高さを追加
+    if (!m_title.empty()) {
+        autoH += fontHeight + m_lineSpacing + 8;
+    }
+
+    m_windowWidth = (m_fixedWidth > 0) ? m_fixedWidth : autoW;
+    m_windowHeight = (m_fixedHeight > 0) ? m_fixedHeight : autoH;
 
     m_isDirty = false;
 }
@@ -282,16 +312,31 @@ void UITextWindow::Draw(int x, int y) const {
         const_cast<UITextWindow*>(this)->RecalculateLayout();
     }
 
-    // 1. 9-Slicing背景の描画
-    Draw9Slice(x, y, m_windowWidth, m_windowHeight);
+    // 1. 背景の描画（9スライス画像があれば画像を描画、なければ半透明ボックスを描画）
+    if (m_bgGraphHandle >= 0) {
+        Draw9Slice(x, y, m_windowWidth, m_windowHeight);
+    } else if (m_drawBoxBg) {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, m_boxAlpha);
+        DrawBox(x, y, x + m_windowWidth, y + m_windowHeight, m_boxBgColor, TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(x, y, x + m_windowWidth, y + m_windowHeight, m_boxBorderColor, FALSE);
+    }
 
-    // 2. テキスト描画
     int fontHeight = (m_fontHandle == -1) ? 16 : GetFontSizeToHandle(m_fontHandle);
     if (fontHeight <= 0) fontHeight = 16;
 
     int currentY = y + m_padding.top;
     int drawX = x + m_padding.left;
 
+    // 2. タイトル文字列の描画（設定されている場合）
+    if (!m_title.empty()) {
+        DrawStringToHandle(drawX, currentY, m_title.c_str(), m_titleColor, m_fontHandle);
+        currentY += fontHeight + 6;
+        DrawLine(drawX, currentY, x + m_windowWidth - m_padding.right, currentY, m_boxBorderColor);
+        currentY += m_lineSpacing + 6;
+    }
+
+    // 3. 本文テキストの描画
     for (const auto& line : m_wrappedLines) {
         if (!line.empty()) {
             DrawStringToHandle(drawX, currentY, line.c_str(), m_textColor, m_fontHandle);

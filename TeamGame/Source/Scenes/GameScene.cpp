@@ -1,6 +1,5 @@
 #include "GameScene.h"
 #include "Camera.h"
-#include "DebugManager.h"
 #include "EffectManager.h"
 #include "SoundManager.h"
 #include "GameBalanceManager.h"
@@ -268,42 +267,7 @@ void GameScene::Update()
                 return;
             }
 
-            DebugManager::GetInstance().Update();
 
-            if (DebugManager::GetInstance().IsDebugMode())
-            {
-                if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_L))
-                {
-                    stageManager.NextVariation();
-                    if (player)
-                    {
-                        const Stage& stage = stageManager.GetCurrentStage();
-                        float cellW = 1920.0f / stage.GetWidth();
-                        float cellH = 1080.0f / stage.GetHeight();
-                        float cellSize = (cellW < cellH) ? cellW : cellH;
-                        Point2D startGrid = stage.GetPlayerStartPos();
-                        player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-                        player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-                        SpawnEnemiesRandomly(5);
-                    }
-                }
-
-                if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
-                {
-                    stageManager.NextTheme();
-                    if (player)
-                    {
-                        const Stage& stage = stageManager.GetCurrentStage();
-                        float cellW = 1920.0f / stage.GetWidth();
-                        float cellH = 1080.0f / stage.GetHeight();
-                        float cellSize = (cellW < cellH) ? cellW : cellH;
-                        Point2D startGrid = stage.GetPlayerStartPos();
-                        player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
-                        player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
-                        SpawnEnemiesRandomly(5);
-                    }
-                }
-            }
 
             if (NetworkManager::GetInstance().IsConnected() && player)
             {
@@ -344,19 +308,18 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PAUSED;
         if (currUp && !prevUp) settingsMenuCursor--;
         if (currDown && !prevDown) settingsMenuCursor++;
-        if (settingsMenuCursor < 0) settingsMenuCursor = 5;
-        if (settingsMenuCursor > 5) settingsMenuCursor = 0;
+        if (settingsMenuCursor < 0) settingsMenuCursor = 4;
+        if (settingsMenuCursor > 4) settingsMenuCursor = 0;
 
         bool actionTriggered = (currEnter && !prevEnter) || (currLeft && !prevLeft) || (currRight && !prevRight);
 
         if (actionTriggered)
         {
             if (settingsMenuCursor == 0) GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
-            else if (settingsMenuCursor == 1) DebugManager::GetInstance().ToggleDebugMode();
-            else if (settingsMenuCursor == 2) GameSettings::GetInstance().isBloodSplatterEnabled = !GameSettings::GetInstance().isBloodSplatterEnabled;
-            else if (settingsMenuCursor == 3) { stageManager.NextTheme(); }
-            else if (settingsMenuCursor == 4) { stageManager.NextVariation(); }
-            else if (settingsMenuCursor == 5) state = GameState::PAUSED;
+            else if (settingsMenuCursor == 1) GameSettings::GetInstance().isBloodSplatterEnabled = !GameSettings::GetInstance().isBloodSplatterEnabled;
+            else if (settingsMenuCursor == 2) { stageManager.NextTheme(); }
+            else if (settingsMenuCursor == 3) { stageManager.NextVariation(); }
+            else if (settingsMenuCursor == 4) state = GameState::PAUSED;
         }
     }
 
@@ -370,7 +333,7 @@ void GameScene::Update()
 
 void GameScene::Draw()
 {
-    bool isDebugView = DebugManager::GetInstance().IsDebugMode();
+    bool isDebugView = false;
     const Stage& stage = stageManager.GetCurrentStage();
     std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
@@ -481,7 +444,7 @@ void GameScene::Draw()
         }
     }
 
-    if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
+    if (player && player->IsActive())
     {
         if (introTimer <= 0.0f) 
         {
@@ -564,13 +527,12 @@ void GameScene::Draw()
         {
             std::string items[] = { 
                 std::string("視点固定モード (Eキー) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (ON)" : "切り替え (OFF)"),
-                std::string("デバッグ表示 : ") + (isDebugView ? "ON" : "OFF"), 
                 std::string("血しぶき枠表示 : ") + (GameSettings::GetInstance().isBloodSplatterEnabled ? "ON" : "OFF"), 
                 "テーマ変更", 
                 "マップ変更", 
                 "戻る" 
             };
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 5; i++)
             {
                 unsigned int color = (i == settingsMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
                 if (i == settingsMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -591,7 +553,6 @@ void GameScene::Draw()
         DrawString(ruleX, ruleY + 210, "SPACE キー : ナイフ暗殺", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 245, "Q / 1,2,3 / ホイール : 武器切り替え", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 280, "E キー : 視点固定", GetColor(255, 255, 255));
-        DrawString(ruleX, ruleY + 315, "0 キー : デバッグモードON/OFF", GetColor(255, 255, 255));
         
         DrawString(ruleX, ruleY + 330, "[ ルール ]", GetColor(255, 200, 0));
         DrawString(ruleX, ruleY + 365, "- 敵の攻撃を避けながら進む", GetColor(255, 255, 255));
@@ -627,7 +588,6 @@ void GameScene::Draw()
     DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
     SetFontSize(32); // デフォルトフォントサイズに戻す
 
-    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
 }
 
 void GameScene::ProcessNetworkPackets()

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <DxLib.h>
 #include <string>
@@ -49,8 +49,31 @@ public:
     void SetTextEncoding(TextEncoding encoding);
     void SetDrawTransparentFlag(int transparentFlag);
 
+    /**
+     * @brief タイトル文字列と色を設定する
+     * @param title ウィンドウヘッダーに表示するタイトル
+     * @param titleColor タイトル文字色
+     */
+    void SetTitle(const std::string& title, unsigned int titleColor = GetColor(255, 220, 0));
+
+    /**
+     * @brief 背景画像がない場合（または併用時）のボックス背景色と枠線色を設定する
+     * @param bgColor 背景塗りつぶし色
+     * @param borderColor 枠線色
+     * @param alpha アルファ値（0〜255、デフォルト160）
+     */
+    void SetBoxColor(unsigned int bgColor, unsigned int borderColor, int alpha = 160);
+
+    /**
+     * @brief 固定ウィンドウサイズを指定する（0以下の場合はテキストに合わせた自動計算）
+     * @param width ウィンドウ幅
+     * @param height ウィンドウ高さ
+     */
+    void SetFixedSize(int width, int height);
+
     // --- Getter ---
     const std::string& GetText() const { return m_rawText; }
+    const std::string& GetTitle() const { return m_title; }
     int GetMaxTextWidth() const { return m_maxTextWidth; }
     int GetWindowWidth() const;
     int GetWindowHeight() const;
@@ -91,6 +114,15 @@ private:
 
     Margin m_padding{ 16, 16, 16, 16 };               // ウィンドウ枠とテキストの余白
     Margin m_nineSliceMargin{ 16, 16, 16, 16 };       // 9スライスの4隅コーナーサイズ
+
+    std::string m_title;                              // ウィンドウ上部タイトル
+    unsigned int m_titleColor = GetColor(255, 220, 0);// タイトル文字色
+    bool m_drawBoxBg = true;                          // 背景画像がない場合にデフォルトボックスを描画するか
+    unsigned int m_boxBgColor = GetColor(15, 22, 35); // ボックス背景色
+    unsigned int m_boxBorderColor = GetColor(60, 90, 130); // ボックス枠線色
+    int m_boxAlpha = 160;                             // ボックス透過度 (0-255)
+    int m_fixedWidth = 0;                             // 固定幅 (0以下の場合は自動)
+    int m_fixedHeight = 0;                            // 固定高さ (0以下の場合は自動)
 
     // レイアウト計算保持変数
     mutable std::vector<std::string> m_wrappedLines;  // 折り返し後の各行文字列

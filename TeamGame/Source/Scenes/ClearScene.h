@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Scene.h"
+#include "../UITextWindow.h"
 #include <string>
 
 /**
@@ -29,6 +30,16 @@ class ClearScene : public Scene
     bool prevUp = false;             ///< 前フレームでの上入力状態
     bool prevDown = false;           ///< 前フレームでの下入力状態
     bool prevEnter = false;          ///< 前フレームでの決定入力状態
+
+    // ========================================================
+    // 【2D画像配列キャッシュ & 番号（インデックス）管理】
+    // 一度読み込まれた画像は配列にキャッシュされ、番号（インデックス）で呼び出せます。
+    // ========================================================
+    int clearBgIndex = -1;           ///< クリアリザルト背景画像の配列番号
+    int windowFrameIndex = -1;       ///< UITextWindow枠画像の配列番号
+
+    // UITextWindow によるクリアリザルト情報枠描画
+    UI::UITextWindow* statsWindow = nullptr; ///< リザルト統計用テキストウィンドウ
 
   public:
     /**

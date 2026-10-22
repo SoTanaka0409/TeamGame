@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Scene.h"
+#include "../UITextWindow.h"
 
 /**
  * @brief リザルト画面を管理するシーンクラス
@@ -31,4 +32,16 @@ class ResultScene : public Scene
      * @details 毎フレーム呼ばれ、リザルト情報やUIを描画します。
      */
     void Draw() override;
+
+  private:
+    // ========================================================
+    // 【2D画像配列キャッシュ & 番号（インデックス）管理】
+    // 一度読み込まれた画像は配列にキャッシュされ、番号（インデックス）で呼び出せます。
+    // ========================================================
+    int resultBgIndex = -1;       ///< リザルト画面背景画像の配列番号
+    int resultLogoIndex = -1;     ///< リザルトロゴ画像の配列番号
+    int windowFrameIndex = -1;    ///< UITextWindow枠画像の配列番号
+
+    // UITextWindow によるリザルトパネル枠描画
+    UI::UITextWindow* resultPanelWindow = nullptr; ///< リザルト結果用テキストウィンドウ
 };
