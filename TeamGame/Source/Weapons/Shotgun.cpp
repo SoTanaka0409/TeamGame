@@ -3,6 +3,7 @@
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
+#include "EffectManager.h"
 #include <cmath>
 
 
@@ -54,7 +55,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             }
             if (scene->GetEffectManager())
             {
-                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, baseAngle, 24.0f);
+                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, baseAngle, 16.0f);
             }
             NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
