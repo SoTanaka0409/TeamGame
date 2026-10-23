@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Scene.h"
-#include "../UITextWindow.h"
+#include "../UI/UITextWindow.h"
 #include <string>
 
 /**

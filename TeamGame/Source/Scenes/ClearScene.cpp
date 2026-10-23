@@ -119,11 +119,24 @@ void ClearScene::Draw()
     int titleY = static_cast<int>(150 + pulse);
 
     SetFontSize(48);
-    int titleWidth = GetDrawStringWidth("STAGE CLEAR!", -1);
+    std::string headerText = "STAGE CLEAR!";
+    unsigned int headerColor = GetColor(255, 215, 0);
+    if (stats.rankName == "1P WIN")
+    {
+        headerText = "1P (青) VICTORY!";
+        headerColor = GetColor(80, 200, 255);
+    }
+    else if (stats.rankName == "2P WIN")
+    {
+        headerText = "2P (赤) VICTORY!";
+        headerColor = GetColor(255, 80, 80);
+    }
+
+    int titleWidth = GetDrawStringWidth(headerText.c_str(), -1);
     // タイトル文字シャドウ
-    DrawString(centerX - titleWidth / 2 + 4, titleY + 4, "STAGE CLEAR!", GetColor(0, 0, 0));
+    DrawString(centerX - titleWidth / 2 + 4, titleY + 4, headerText.c_str(), GetColor(0, 0, 0));
     // メインタイトル文字
-    DrawString(centerX - titleWidth / 2, titleY, "STAGE CLEAR!", GetColor(255, 215, 0));
+    DrawString(centerX - titleWidth / 2, titleY, headerText.c_str(), headerColor);
 
     // リザルト枠（UITextWindow による描画）
     int panelW = 700;

@@ -1,100 +1,82 @@
-﻿#pragma once
+#pragma once
 #include "DxLib.h"
 #include "PacketTypes.h"
+#include <windows.h>
+#include <winhttp.h>
+#include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <queue>
+#include <atomic>
+
+/**
+ * @brief ネットワーク通信モード
+ */
+enum class NetworkMode
+{
+    NONE,       ///< 未接続
+    DXLIB_LAN,  ///< 従来のLAN直接通信（DxLib）
+    WEBSOCKET   ///< Web（WebSocket）中継通信
+};
 
 /**
  * @brief ネットワーク通信を管理するシングルトンクラス
  * @details クライアント・ホスト間の接続、パケットの送受信、切断処理などを管理する。
+ *          LAN直接通信（DxLib）およびWeb中継通信（WinHTTP WebSocket）の両方に対応。
  */
 class NetworkManager
 {
 private:
-    /**
-     * @brief コンストラクタ
-     */
     NetworkManager();
-
-    /**
-     * @brief デストラクタ
-     */
     ~NetworkManager();
 
-    int m_netHandle;
+    // 共通状態
+    NetworkMode m_networkMode;
     bool m_isConnected;
     bool m_isHost;
+
+    // DxLib LAN通信用
+    int m_netHandle;
     bool m_isListening;
 
+    // WebSocket通信用
+    std::string m_roomCode;
+    std::atomic<bool> m_hasGuestJoined;
+    HINTERNET m_hSession;
+    HINTERNET m_hConnect;
+    HINTERNET m_hWebSocket;
+    std::thread m_wsThread;
+    std::atomic<bool> m_wsRunning;
+    std::mutex m_queueMutex;
+    std::queue<std::vector<uint8_t>> m_recvQueue;
+
+    void WebSocketReceiveLoop();
+
 public:
-    /**
-     * @brief インスタンスの取得
-     * @return NetworkManager& ネットワークマネージャのシングルトンインスタンス
-     */
     static NetworkManager& GetInstance()
     {
         static NetworkManager instance;
         return instance;
     }
 
-    /**
-     * @brief サーバーへの接続
-     * @param ip 接続先のIPアドレス
-     * @param port 接続先のポート番号
-     * @return bool 接続に成功した場合はtrue、失敗した場合はfalse
-     * @details 指定したIPおよびポートに対してクライアントとして接続を試みる。
-     */
+    // LAN通信（既存）
     bool Connect(const char* ip, int port);
-
-    /**
-     * @brief 接続待ち（ホスト側）
-     * @param port 待ち受けポート番号
-     * @return bool 待ち受け開始に成功した場合はtrue、失敗した場合はfalse
-     * @details 指定したポートで他のクライアントからの接続を待機する。
-     */
     bool Listen(int port);
 
-    /**
-     * @brief 通信状態の更新
-     * @details 新規接続の受付など、毎フレーム行う必要のあるネットワーク状態の更新処理を行う。
-     */
-    void UpdateConnection();
+    // Web（WebSocket）通信
+    bool ConnectWeb(const std::string& host, int port, const std::string& roomCode, bool isHost, bool useSSL);
 
-    /**
-     * @brief 接続の切断
-     * @details 現在のネットワーク接続を切断し、初期状態に戻す。
-     */
+    void UpdateConnection();
     void Disconnect();
 
-    /**
-     * @brief 接続状態の取得
-     * @return bool 接続中の場合はtrue
-     */
     bool IsConnected() const { return m_isConnected; }
-
-    /**
-     * @brief ホスト判定
-     * @return bool 自身がホストである場合はtrue
-     */
     bool IsHost() const { return m_isHost; }
-
-    /**
-     * @brief 接続待ち状態の取得
-     * @return bool 接続待ち中の場合はtrue
-     */
     bool IsListening() const { return m_isListening; }
+    NetworkMode GetMode() const { return m_networkMode; }
+    std::string GetRoomCode() const { return m_roomCode; }
+    bool HasGuestJoined() const { return m_hasGuestJoined; }
 
-    /**
-     * @brief パケットの送信
-     * @param data 送信するデータのポインタ
-     * @param size 送信するデータのサイズ
-     * @details 接続先の相手に対してデータを送信する。
-     */
     void SendPacket(const void* data, int size);
-    
-    /**
-     * @brief パケットの受信
-     * @return std::vector<std::vector<uint8_t>> 受信したパケットのリスト
-     * @details 溜まっている受信データを全て取得し、パケット単位のリストとして返す。
-     */
     std::vector<std::vector<uint8_t>> ReceivePackets();
 };

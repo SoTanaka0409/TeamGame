@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Status.h"
@@ -46,6 +46,15 @@ public:
     void SetColliderRadius(float rad);
     float GetModelScale() const { return m_modelScale; }
     void SetModelScale(float scale);
+    std::string characterName = "Unit";        ///< キャラクター表示名
+    std::string lastAttackerName = "";        ///< 最後に攻撃を与えたキャラクター名
+    int lastAttackerTeamId = -1;              ///< 最後に攻撃を与えたチームID
+
+    const std::string& GetCharacterName() const { return characterName; }
+    void SetCharacterName(const std::string& name) { characterName = name; }
+    void SetLastAttacker(const std::string& name, int tId) { lastAttackerName = name; lastAttackerTeamId = tId; }
+    const std::string& GetLastAttackerName() const { return lastAttackerName; }
+    int GetLastAttackerTeamId() const { return lastAttackerTeamId; }
 
     bool IsInBush() const { return m_isInBush; }
     void SetInBush(bool val) { m_isInBush = val; }

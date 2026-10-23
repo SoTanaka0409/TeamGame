@@ -5,15 +5,23 @@
 
 bool GameBalanceManager::LoadFromCSV(const std::string& filePath)
 {
-    std::ifstream file(filePath);
+    std::vector<std::string> searchPaths = {
+        filePath,
+        "Resource/CSV/" + filePath,
+        "Resource/" + filePath,
+        "TeamGame/Resource/CSV/" + filePath,
+        "TeamGame/Resource/" + filePath
+    };
+    std::ifstream file;
+    for (const auto& path : searchPaths)
+    {
+        file.open(path);
+        if (file.is_open()) break;
+    }
+
     if (!file.is_open())
     {
-        std::string backupPath = "Resource/" + filePath;
-        file.open(backupPath);
-        if (!file.is_open())
-        {
-            return false;
-        }
+        return false;
     }
 
     std::string line;
@@ -35,15 +43,24 @@ bool GameBalanceManager::LoadFromCSV(const std::string& filePath)
 
         if (!std::getline(ss, key, ',')) continue;
         if (!std::getline(ss, valStr, ',')) continue;
+        std::getline(ss, desc, ',');
 
-        try {
-            float fVal = std::stof(valStr);
-            int iVal = std::stoi(valStr);
-            floatValues[key] = fVal;
-            intValues[key] = iVal;
+        if (key.empty()) continue;
+
+        try
+        {
+            if (valStr.find('.') != std::string::npos)
+            {
+                floatValues[key] = std::stof(valStr);
+            }
+            else
+            {
+                intValues[key] = std::stoi(valStr);
+            }
         }
-        catch (...) {
-            // パース失敗時はスキップ
+        catch (...)
+        {
+            // パースエラーは無視してスキップ
         }
     }
 
@@ -51,20 +68,20 @@ bool GameBalanceManager::LoadFromCSV(const std::string& filePath)
     return true;
 }
 
-int GameBalanceManager::GetInt(const std::string& key, int defaultValue) const
+float GameBalanceManager::GetFloat(const std::string& key, float defaultValue) const
 {
-    auto it = intValues.find(key);
-    if (it != intValues.end())
+    auto it = floatValues.find(key);
+    if (it != floatValues.end())
     {
         return it->second;
     }
     return defaultValue;
 }
 
-float GameBalanceManager::GetFloat(const std::string& key, float defaultValue) const
+int GameBalanceManager::GetInt(const std::string& key, int defaultValue) const
 {
-    auto it = floatValues.find(key);
-    if (it != floatValues.end())
+    auto it = intValues.find(key);
+    if (it != intValues.end())
     {
         return it->second;
     }

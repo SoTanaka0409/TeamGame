@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <vector>
+#include <cmath>
 
 /**
  * @brief 単一エフェクトを管理する基底クラス (抽象クラス)
@@ -53,6 +54,11 @@ class Effect
     bool IsDead() const
     {
         return lifeTimer <= 0;
+    }
+
+    virtual bool IsGroundLayer() const
+    {
+        return false;
     }
 };
 
@@ -181,6 +187,47 @@ class SparkParticle : public Effect
 };
 
 /**
+ * @brief 風のスジ・突風気流パーティクル
+ */
+class WindGustParticle : public Effect
+{
+  public:
+    float vx, vy;
+    float length;
+    float thickness;
+    float angle;
+    unsigned int color;
+
+    WindGustParticle(float startX, float startY, float velX, float velY, float len, float thick, int life, unsigned int col)
+        : Effect(startX, startY, life), vx(velX), vy(velY), length(len), thickness(thick), color(col)
+    {
+        angle = static_cast<float>(std::atan2(vy, vx));
+    }
+
+    void Update() override;
+    void Draw() override;
+};
+
+/**
+ * @brief 突風・風の衝撃波エフェクト（Clean time用）
+ */
+class WindShockwaveEffect : public Effect
+{
+  public:
+    float maxRadius;
+    unsigned int color;
+    float startAngle;
+
+    WindShockwaveEffect(float startX, float startY, float maxR = 300.0f, int life = 24, unsigned int col = 0)
+        : Effect(startX, startY, life), maxRadius(maxR), color(col), startAngle(0.0f)
+    {
+    }
+
+    void Update() override;
+    void Draw() override;
+};
+
+/**
  * @brief ソナー波（音波ピン探知）エフェクト
  */
 class SonarWaveEffect : public Effect
@@ -201,6 +248,50 @@ class SonarWaveEffect : public Effect
  * @brief 全てのエフェクトを管理するクラス
  * @details パーティクルや斬撃などのエフェクトを生成・更新・描画・破棄する機能を提供する。
  */
+/**
+ * @brief 肉片・骨片・残虐ゴア破片パーティクル
+ */
+class FleshGoreParticle : public Effect
+{
+  public:
+    float vx, vy;
+    float size;
+    float rotAngle;
+    float rotSpeed;
+    unsigned int color;
+
+    FleshGoreParticle(float startX, float startY, float velX, float velY, float pSize, int life, unsigned int col)
+        : Effect(startX, startY, life), vx(velX), vy(velY), size(pSize), rotAngle(0.0f), color(col)
+    {
+        rotSpeed = ((rand() % 100) / 100.0f - 0.5f) * 0.4f;
+    }
+
+    void Update() override;
+    void Draw() override;
+};
+
+/**
+ * @brief 地面にこびり付く残虐な血糊・スプラッター痕エフェクト（長時間残留）
+ */
+class BloodStainEffect : public Effect
+{
+  public:
+    float baseRadius;
+    struct Drop {
+        float ox, oy;
+        float r;
+    };
+    std::vector<Drop> drops;
+    unsigned int color;
+
+    BloodStainEffect(float startX, float startY, float radius = 35.0f, int life = 300);
+
+    bool IsGroundLayer() const override { return true; }
+
+    void Update() override;
+    void Draw() override;
+};
+
 class EffectManager
 {
   private:
@@ -258,6 +349,19 @@ class EffectManager
      * @param color 波の色
      */
     void AddSonarWaveEffect(float worldX, float worldY, unsigned int color = 0);
+
+    /**
+     * @brief 風の衝撃波・突風エフェクトの追加（主婦スキル Clean time 用）
+     * @param worldX 中心X座標
+     * @param worldY 中心Y座標
+     * @param maxRadius 最大半径
+     */
+    void AddWindShockwaveEffect(float worldX, float worldY, float maxRadius = 300.0f);
+    /**
+     * @brief 指揮者用 残虐自爆・肉片飛散ゴアエフェクト
+     */
+    void AddCruelExplosionEffect(float worldX, float worldY, float blastRadius = 90.0f);
+
     
     /**
      * @brief 画面全体のガンフラッシュ効果のトリガー
@@ -298,6 +402,8 @@ class EffectManager
      * @details 画面全体のフラッシュ効果と、各エフェクトの描画処理を呼び出す。
      */
     void Draw();
+    void DrawGround();
+    void DrawForeground();
     
     /**
      * @brief 全てのエフェクトをクリア
