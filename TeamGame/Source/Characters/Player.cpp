@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -37,7 +37,7 @@ Player::Player(float startX, float startY)
     }
     else
     {
-        status.Init(100, 4.2f, 10);
+        status.Init(33, 4.2f, 10);
         if (collider) collider->SetRadius(8.9f);
         radius = 8.9f;
     }

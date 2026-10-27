@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -37,7 +37,7 @@ Enemy::Enemy(float startX, float startY, int tId)
     }
     else
     {
-        status.Init(100, 3.6f, 10);
+        status.Init(33, 3.6f, 10);
         collider->SetRadius(8.9f);
         radius = 8.9f;
     }

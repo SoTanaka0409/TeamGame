@@ -66,7 +66,7 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
         }
     }
     if (!found) {
-        bot->status.Init(100, 3.6f, 10);
+        bot->status.Init(33, 3.6f, 10);
         bot->SetColliderRadius(8.9f);
         bot->SetModelScale(0.3f);
         bot->SetCharacterName((teamId == 0) ? "[味方] ボット" : "[敵] ボット");
