@@ -60,7 +60,12 @@ int Scene::LoadGraphWithSearch(const std::string& fileName)
     const std::vector<std::string> baseDirs = {
         "Resource/",
         "TeamGame/Resource/",
+        "TeamGame/TeamGame/Resource/",
         "../Resource/",
+        "../../Resource/",
+        "../TeamGame/Resource/",
+        "../../TeamGame/Resource/",
+        "../../TeamGame/TeamGame/Resource/",
         "Resource/Images/",
         "TeamGame/Resource/Images/",
         "../Resource/Images/",

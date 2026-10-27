@@ -501,9 +501,8 @@ void TitleScene::Draw()
     }
 
     // =========================================================================
-    // 2. タイトルロゴまたはタイトルの文字描画 (miuraの過去タイトルロゴ表示)
+    // 2. タイトルロゴおよび作品名表示 (miuraの過去タイトル: 血痕スプラッター ＋ 作品名「Blind Zone」)
     // =========================================================================
-    int logoHandle = Get2DImage(titleLogoIndex);
     if (state == TitleState::SETTINGS)
     {
         // 設定画面ヘッダー
@@ -511,30 +510,33 @@ void TitleScene::Draw()
         DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(0, 180, 255), FALSE);
         DrawString(1920 / 2 - 90, 200, "=== SETTINGS ===", GetColor(255, 255, 255));
     }
-    else if (logoHandle != -1)
-    {
-        // タイトルロゴ画像 (Title02.png 等) が存在する場合、画面上部中央に配置
-        int logoW = 0, logoH = 0;
-        GetGraphSize(logoHandle, &logoW, &logoH);
-        int logoX = (1920 - logoW) / 2;
-        int logoY = 40;
-        DrawGraph(logoX, logoY, logoHandle, TRUE);
-    }
     else
     {
+        // 1. 背面の血痕スプラッターエンブレム (Title02.png)
+        int logoHandle = Get2DImage(titleLogoIndex);
+        if (logoHandle != -1)
+        {
+            int logoW = 0, logoH = 0;
+            GetGraphSize(logoHandle, &logoW, &logoH);
+            int logoX = (1920 - logoW) / 2;
+            int logoY = 55;
+            DrawGraph(logoX, logoY, logoHandle, TRUE);
+        }
+
+        // 2. 作品名ロゴ「Blind Zone」(Title2.png) - 血痕エンブレムの中央に重ねて表示
         int logoHandle2 = Get2DImage(titleLogoIndex2);
         if (logoHandle2 != -1)
         {
-            int logoW = 0, logoH = 0;
-            GetGraphSize(logoHandle2, &logoW, &logoH);
-            int logoX = (1920 - logoW) / 2;
-            int logoY = 80;
-            DrawGraph(logoX, logoY, logoHandle2, TRUE);
+            int logoW2 = 0, logoH2 = 0;
+            GetGraphSize(logoHandle2, &logoW2, &logoH2);
+            int logoX2 = (1920 - logoW2) / 2;
+            int logoY2 = (logoHandle != -1) ? 148 : 120;
+            DrawGraph(logoX2, logoY2, logoHandle2, TRUE);
         }
-        else
+        else if (logoHandle == -1)
         {
-            // ロゴ画像がない場合はテキストタイトルを描画
-            DrawString(1920 / 2 - 150, 200, "=== TEAM GAME ===", GetColor(255, 255, 255));
+            // 画像が両方ない場合のテキストタイトルフォールバック
+            DrawString(1920 / 2 - 150, 200, "=== BLIND ZONE ===", GetColor(255, 255, 255));
         }
     }
 
