@@ -155,19 +155,26 @@ void CharacterSelectScene::Draw() {
         }
     }
 
-    // 画面下部の詳細説明枠（UITextWindow による描画）
+    // 画面下部の詳細説明枠 (キャラクターの性能・特徴・スキルを確実に表示)
     if (m_selectedIndex >= 0 && m_selectedIndex < count) {
         const auto& curChara = m_characters[m_selectedIndex];
         int infoX = 360;
-        int infoY = 670;
+        int infoY = 665;
+        int infoW = 1200;
+        int infoH = 120;
 
-        char titleBuf[128];
-        sprintf_s(titleBuf, sizeof(titleBuf), "【%s】 %s", curChara.name.c_str(), curChara.typeName.c_str());
-        m_detailWindow.SetTitle(titleBuf, GetColor(255, 220, 0));
-        m_detailWindow.SetText(curChara.description);
-        m_detailWindow.SetBoxColor(GetColor(25, 32, 45), curChara.themeColor, 200);
+        // 背景半透明パネル
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, GetColor(20, 28, 42), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, curChara.themeColor, FALSE);
 
-        m_detailWindow.Draw(infoX, infoY);
+        // ヘッダー（名前とタイプ）
+        FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 22, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());
+        DrawLine(infoX + 35, infoY + 48, infoX + infoW - 35, infoY + 48, GetColor(60, 90, 130));
+
+        // 本文詳細説明文
+        FontManager::GetInstance().DrawString(infoX + 35, infoY + 62, curChara.description.c_str(), GetColor(225, 235, 245), 20);
     }
 }
 
