@@ -1,4 +1,5 @@
 ﻿#include "Camera.h"
+#include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -1130,9 +1131,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
             DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset - len), lockColor, 2);
 
             // LOCK-ON テキスト
-            SetFontSize(16);
-            DrawString(static_cast<int>(tScreenX - 32), static_cast<int>(tScreenY - offset - 18), "LOCK ON", lockColor);
-            SetFontSize(32);
+            FontManager::GetInstance().DrawString(static_cast<int>(tScreenX - 32), static_cast<int>(tScreenY - offset - 18), "LOCK ON", lockColor, 16);
         }
     }
 }
@@ -1183,9 +1182,7 @@ void Player::DrawUI(int screenX, int screenY)
         char weaponTitle[64];
         snprintf(weaponTitle, sizeof(weaponTitle), "SLOT [%d]  %s", currentWeaponIndex + 1, currentWeapon->GetName().c_str());
 
-        SetFontSize(18);
-        DrawString(screenX + marginX + 10, curY + 7, weaponTitle, GetColor(240, 245, 255));
-        SetFontSize(16);
+        FontManager::GetInstance().DrawString(screenX + marginX + 10, curY + 7, weaponTitle, GetColor(240, 245, 255), 18);
         curY += 44;
     }
 
@@ -1193,14 +1190,10 @@ void Player::DrawUI(int screenX, int screenY)
     int currentAmmo = currentWeapon->GetCurrentAmmo();
     int maxAmmo = currentWeapon->GetMaxAmmo();
 
-    SetFontSize(15);
-    DrawString(screenX + marginX, curY, "AMMO", GetColor(180, 190, 210));
-    SetFontSize(16);
+    FontManager::GetInstance().DrawString(screenX + marginX, curY, "AMMO", GetColor(180, 190, 210), 15);
 
     if (currentWeapon->IsReloading()) {
-        SetFontSize(18);
-        DrawString(screenX + marginX + 70, curY - 1, "RELOADING...", GetColor(255, 200, 50));
-        SetFontSize(16);
+        FontManager::GetInstance().DrawString(screenX + marginX + 70, curY - 1, "RELOADING...", GetColor(255, 200, 50), 18);
     } else {
         char ammoText[64];
         snprintf(ammoText, sizeof(ammoText), "%d", currentAmmo);
@@ -1209,11 +1202,11 @@ void Player::DrawUI(int screenX, int screenY)
 
         unsigned int ammoColor = (currentAmmo == 0) ? GetColor(255, 60, 60) : GetColor(255, 220, 40);
 
-        SetFontSize(22);
-        DrawString(screenX + marginX + 70, curY - 5, ammoText, ammoColor);
-        int numW = GetDrawStringWidth(ammoText, static_cast<int>(strlen(ammoText)));
-        SetFontSize(16);
-        DrawString(screenX + marginX + 70 + numW, curY, maxAmmoText, GetColor(160, 170, 180));
+        int font22 = FontManager::GetInstance().GetFont(22);
+        int font16 = FontManager::GetInstance().GetFont(16);
+        DrawStringToHandle(screenX + marginX + 70, curY - 5, ammoText, ammoColor, font22);
+        int numW = GetDrawStringWidthToHandle(ammoText, static_cast<int>(strlen(ammoText)), font22);
+        DrawStringToHandle(screenX + marginX + 70 + numW, curY, maxAmmoText, GetColor(160, 170, 180), font16);
     }
     curY += 34;
 
@@ -1224,11 +1217,9 @@ void Player::DrawUI(int screenX, int screenY)
     if (hpRatio < 0.0f) hpRatio = 0.0f;
     if (hpRatio > 1.0f) hpRatio = 1.0f;
 
-    SetFontSize(15);
     char hpStr[32];
     snprintf(hpStr, sizeof(hpStr), "HP  %d / %d", curHp, maxHp);
-    DrawString(screenX + marginX, curY, hpStr, GetColor(200, 220, 240));
-    SetFontSize(16);
+    FontManager::GetInstance().DrawString(screenX + marginX, curY, hpStr, GetColor(200, 220, 240), 15);
 
     curY += 20;
     int barW = panelW - marginX * 2 - 10;
@@ -1250,9 +1241,7 @@ void Player::DrawUI(int screenX, int screenY)
     Skill* skill = GetEquippedSkill();
     if (skill)
     {
-        SetFontSize(15);
-        DrawString(screenX + marginX, curY, "SKILL", GetColor(180, 190, 210));
-        SetFontSize(16);
+        FontManager::GetInstance().DrawString(screenX + marginX, curY, "SKILL", GetColor(180, 190, 210), 15);
 
         int ct = skill->GetCoolTimeTimer();
         int activeFrames = 0;
@@ -1297,16 +1286,14 @@ void Player::DrawUI(int screenX, int screenY)
     // 2P等のオートエイム状態インジケーター表示
     if (m_inputType != PlayerInputType::KEYBOARD_MOUSE)
     {
-        SetFontSize(16);
         if (m_autoAimTarget)
         {
-            DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: LOCKED ON ]", GetColor(255, 80, 80));
+            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: LOCKED ON ]", GetColor(255, 80, 80), 16);
         }
         else
         {
-            DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: SEARCHING ]", GetColor(80, 220, 100));
+            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: SEARCHING ]", GetColor(80, 220, 100), 16);
         }
-        SetFontSize(32);
     }
 }
 
