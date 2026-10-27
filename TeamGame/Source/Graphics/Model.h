@@ -19,10 +19,11 @@ private:
     float m_facingAngle;                        ///< 照準方向角度 (ラジアン)
     float m_pitchAngle;                         ///< ピッチ角 (ラジアン、デフォルト0.0f)
     float m_tiltAngle;                          ///< 画面手前方向への2.5Dチルト角度 (ラジアン、デフォルト約24度)
+    mutable bool m_matrixDirty;                 ///< 行列再計算が必要かどうかのフラグ
     std::unique_ptr<Animation> m_animation;     ///< アニメーション制御コンポーネント
 
     void SetupMaterials();                      ///< Blenderモデルのマテリアル明度補正
-    void UpdateMatrix();                        ///< スケール・向き・2.5Dチルト・位置の行列合成更新
+    void UpdateMatrix() const;                  ///< スケール・向き・2.5Dチルト・位置の行列合成更新
 
 public:
     static constexpr float DEFAULT_SCALE = 0.3f; ///< 3Dモデルの共通標準スケール

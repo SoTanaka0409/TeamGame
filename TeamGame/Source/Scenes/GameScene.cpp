@@ -393,7 +393,41 @@ void GameScene::Update()
                 return;
             }
 
+            DebugManager::GetInstance().Update();
 
+            if (DebugManager::GetInstance().IsDebugMode())
+            {
+                if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_L))
+                {
+                    stageManager.NextVariation();
+                    if (player)
+                    {
+                        const Stage& stage = stageManager.GetCurrentStage();
+                        float cellW = 1920.0f / stage.GetWidth();
+                        float cellH = 1080.0f / stage.GetHeight();
+                        float cellSize = (cellW < cellH) ? cellW : cellH;
+                        Point2D startGrid = stage.GetPlayerStartPos();
+                        player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+                        player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+                        SpawnEnemiesRandomly(5);
+                    }
+                }
+                if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
+                {
+                    stageManager.NextTheme();
+                    if (player)
+                    {
+                        const Stage& stage = stageManager.GetCurrentStage();
+                        float cellW = 1920.0f / stage.GetWidth();
+                        float cellH = 1080.0f / stage.GetHeight();
+                        float cellSize = (cellW < cellH) ? cellW : cellH;
+                        Point2D startGrid = stage.GetPlayerStartPos();
+                        player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+                        player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
+                        SpawnEnemiesRandomly(5);
+                    }
+                }
+            }
 
             if (NetworkManager::GetInstance().IsConnected() && player)
             {
@@ -434,18 +468,19 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PAUSED;
         if (currUp && !prevUp) settingsMenuCursor--;
         if (currDown && !prevDown) settingsMenuCursor++;
-        if (settingsMenuCursor < 0) settingsMenuCursor = 4;
-        if (settingsMenuCursor > 4) settingsMenuCursor = 0;
+        if (settingsMenuCursor < 0) settingsMenuCursor = 5;
+        if (settingsMenuCursor > 5) settingsMenuCursor = 0;
 
         bool actionTriggered = (currEnter && !prevEnter) || (currLeft && !prevLeft) || (currRight && !prevRight);
 
         if (actionTriggered)
         {
             if (settingsMenuCursor == 0) GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
-            else if (settingsMenuCursor == 1) GameSettings::GetInstance().isBloodSplatterEnabled = !GameSettings::GetInstance().isBloodSplatterEnabled;
-            else if (settingsMenuCursor == 2) { stageManager.NextTheme(); }
-            else if (settingsMenuCursor == 3) { stageManager.NextVariation(); }
-            else if (settingsMenuCursor == 4) state = GameState::PAUSED;
+            else if (settingsMenuCursor == 1) DebugManager::GetInstance().ToggleDebugMode();
+            else if (settingsMenuCursor == 2) GameSettings::GetInstance().isBloodSplatterEnabled = !GameSettings::GetInstance().isBloodSplatterEnabled;
+            else if (settingsMenuCursor == 3) { stageManager.NextTheme(); }
+            else if (settingsMenuCursor == 4) { stageManager.NextVariation(); }
+            else if (settingsMenuCursor == 5) state = GameState::PAUSED;
         }
     }
 
@@ -459,7 +494,7 @@ void GameScene::Update()
 
 void GameScene::Draw()
 {
-    bool isDebugView = false;
+    bool isDebugView = DebugManager::GetInstance().IsDebugMode();
     const Stage& stage = stageManager.GetCurrentStage();
     std::string stageName = stageManager.GetCurrentStageName();
     float cellW = 1920.0f / stage.GetWidth();
@@ -505,8 +540,9 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f / 4.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
         Scene::Draw();
+        stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
 
         // 画面分割 (2P - 右半分)
         SetDrawArea(1920 / 2, 0, 1920, 1080);
@@ -518,8 +554,9 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f * 0.75f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(p2Pos.x, p2Pos.y, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
         Scene::Draw();
+        stage.DrawForegroundGrass(p2Pos.x, p2Pos.y, zoomCellSize, worldCellSize);
         
         // 描画エリアリセット
         SetDrawArea(0, 0, 1920, 1080);
@@ -570,9 +607,11 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f / 2.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
 
         Scene::Draw();
+
+        stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
     }
 
     float brightRatio = 0.0f;
@@ -589,7 +628,7 @@ void GameScene::Draw()
         }
     }
 
-    if (player && player->IsActive())
+    if (!DebugManager::GetInstance().IsDebugMode() && player && player->IsActive())
     {
         if (introTimer <= 0.0f) 
         {
@@ -682,12 +721,13 @@ void GameScene::Draw()
         {
             std::string items[] = { 
                 std::string("視点固定モード (Eキー) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (ON)" : "切り替え (OFF)"),
+                std::string("デバッグ表示 : ") + (isDebugView ? "ON" : "OFF"), 
                 std::string("血しぶき枠表示 : ") + (GameSettings::GetInstance().isBloodSplatterEnabled ? "ON" : "OFF"), 
                 "テーマ変更", 
                 "マップ変更", 
                 "戻る" 
             };
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 unsigned int color = (i == settingsMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
                 if (i == settingsMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);

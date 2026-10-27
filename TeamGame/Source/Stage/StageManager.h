@@ -48,6 +48,11 @@ private:
     int m_hWallBlockGraph = -1; // 壁・木箱画像
     int m_hOuterWallGraph = -1; // 外枠壁画像
     int m_hGrassGraph = -1;     // 草むら画像
+    int m_hGrassModel = -1;     // 3D草むらモデルハンドル (grass.mv1)
+    float m_grassModelBaseSize = 1.2f; // 3D草むらモデルの自動計測ベースサイズ
+    int m_hRockModels[4] = { -1, -1, -1, -1 }; // 3D岩モデルハンドル (rock_01〜04.mv1)
+    int m_hRockTextures[4] = { -1, -1, -1, -1 }; // 3D岩テクスチャハンドル (rock_01〜04_diffuse.png)
+    float m_rockModelBaseSizes[4] = { 5.0f, 5.0f, 5.0f, 5.0f }; // 3D岩モデルの自動計測水平サイズ
     int m_hWaterGraph = -1;     // 水場画像
     int m_hCactusGraph = -1;    // サボテン・岩画像
     int m_hStarGraph = -1;      // 中央スター画像
