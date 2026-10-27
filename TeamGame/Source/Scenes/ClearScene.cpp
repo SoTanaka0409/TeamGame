@@ -101,15 +101,15 @@ void ClearScene::Draw()
     {
         // 画像がない場合は暗いグラデーション背景
         DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+    }
 
-        // 装飾背景ライン
-        for (int i = 0; i < 10; ++i)
-        {
-            int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 30);
-            DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        }
+    // 装飾背景ライン (走査線アニメーション演出 - sou からの復元)
+    for (int i = 0; i < 10; ++i)
+    {
+        int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+        DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
     const int centerX = 1920 / 2;

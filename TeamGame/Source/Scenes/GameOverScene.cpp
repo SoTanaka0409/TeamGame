@@ -100,15 +100,15 @@ void GameOverScene::Draw()
     {
         // 暗い赤基調のグラデーション背景
         DrawBox(0, 0, 1920, 1080, GetColor(20, 5, 5), TRUE);
+    }
 
-        // 装飾背景ライン (赤色の警告ライン風)
-        for (int i = 0; i < 10; ++i)
-        {
-            int y = (i * 120 + static_cast<int>(animTimer * 40.0f)) % 1080;
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 30);
-            DrawLine(0, y, 1920, y, GetColor(255, 50, 50), 1);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        }
+    // 装飾背景ライン (赤色の警告ライン風 走査線アニメーション演出 - sou からの復元)
+    for (int i = 0; i < 10; ++i)
+    {
+        int y = (i * 120 + static_cast<int>(animTimer * 40.0f)) % 1080;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+        DrawLine(0, y, 1920, y, GetColor(255, 50, 50), 1);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
     const int centerX = 1920 / 2;

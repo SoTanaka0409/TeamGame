@@ -735,12 +735,13 @@ void TitleScene::Draw()
         }
     }
 
-    // UITextWindow による通知・エラーメッセージ描画
-    if (statusMessageTimer > 0 && !statusMessage.empty() && messageWindow)
+    // エラー・通知メッセージの赤バナー警告表示 (sou からの復元)
+    if (statusMessageTimer > 0 && !statusMessage.empty())
     {
-        messageWindow->SetText(statusMessage);
-        int winW = messageWindow->GetWindowWidth();
-        int winH = messageWindow->GetWindowHeight();
-        messageWindow->Draw((1920 - winW) / 2, 1080 - winH - 40);
+        int msgWidth = GetDrawStringWidth(statusMessage.c_str(), -1);
+        int halfW = (std::max)(350, msgWidth / 2 + 30);
+        DrawBox(1920 / 2 - halfW, 1080 - 100, 1920 / 2 + halfW, 1080 - 50, GetColor(160, 30, 30), TRUE);
+        DrawBox(1920 / 2 - halfW, 1080 - 100, 1920 / 2 + halfW, 1080 - 50, GetColor(255, 150, 150), FALSE);
+        DrawString(1920 / 2 - msgWidth / 2, 1080 - 80, statusMessage.c_str(), GetColor(255, 255, 255));
     }
 }

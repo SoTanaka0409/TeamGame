@@ -39,6 +39,8 @@ void ResultScene::Update()
 {
     Scene::Update();
 
+    animTimer += 0.016f; // ~60 FPS 走査線アニメーション更新
+
     if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_RETURN) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE))
     {
         SceneManager::GetInstance().ChangeScene(std::make_shared<TitleScene>());
@@ -61,6 +63,15 @@ void ResultScene::Draw()
     else
     {
         DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    }
+
+    // 装飾背景ライン (走査線アニメーション演出 - sou からの復元)
+    for (int i = 0; i < 10; ++i)
+    {
+        int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+        DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
     // 2. リザルトロゴ/バナー画像の描画（配列番号から呼び出し）
