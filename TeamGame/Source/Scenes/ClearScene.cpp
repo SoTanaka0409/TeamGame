@@ -101,15 +101,15 @@ void ClearScene::Draw()
     {
         // 画像がない場合は暗いグラデーション背景
         DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+    }
 
-        // 装飾背景ライン
-        for (int i = 0; i < 10; ++i)
-        {
-            int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 30);
-            DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        }
+    // 装飾背景ライン (走査線アニメーション演出 - sou からの復元)
+    for (int i = 0; i < 10; ++i)
+    {
+        int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+        DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
     const int centerX = 1920 / 2;
@@ -119,11 +119,24 @@ void ClearScene::Draw()
     int titleY = static_cast<int>(150 + pulse);
 
     SetFontSize(48);
-    int titleWidth = GetDrawStringWidth("STAGE CLEAR!", -1);
+    std::string headerText = "STAGE CLEAR!";
+    unsigned int headerColor = GetColor(255, 215, 0);
+    if (stats.rankName == "1P WIN")
+    {
+        headerText = "1P (青) VICTORY!";
+        headerColor = GetColor(80, 200, 255);
+    }
+    else if (stats.rankName == "2P WIN")
+    {
+        headerText = "2P (赤) VICTORY!";
+        headerColor = GetColor(255, 80, 80);
+    }
+
+    int titleWidth = GetDrawStringWidth(headerText.c_str(), -1);
     // タイトル文字シャドウ
-    DrawString(centerX - titleWidth / 2 + 4, titleY + 4, "STAGE CLEAR!", GetColor(0, 0, 0));
+    DrawString(centerX - titleWidth / 2 + 4, titleY + 4, headerText.c_str(), GetColor(0, 0, 0));
     // メインタイトル文字
-    DrawString(centerX - titleWidth / 2, titleY, "STAGE CLEAR!", GetColor(255, 215, 0));
+    DrawString(centerX - titleWidth / 2, titleY, headerText.c_str(), headerColor);
 
     // リザルト枠（UITextWindow による描画）
     int panelW = 700;

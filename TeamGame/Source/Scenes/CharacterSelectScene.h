@@ -2,7 +2,7 @@
 #include "Scene.h"
 #include <vector>
 #include "../Core/PlayerSelection.h"
-#include "../UITextWindow.h"
+#include "../UI/UITextWindow.h"
 
 /**
  * @brief キャラクター選択画面シーン

@@ -1,0 +1,6 @@
+﻿﻿Id,Name,Description,ImagePath,MajorTag,MinorTag,EffectValue,Duration,CoolTime
+1,Homing Kill,味方Botを敵の手前で爆発させて殺す,Assets/UI/heal_icon.png,Debuff,HomingKill,120,0,180
+2,Transparency,敵からも味方からも見えなくなる,Assets/UI/atk_icon.png,StatusBuff,Transparency,0,300,480
+3,Panic shoot,敵味方の区別ができなくなり、味方も敵も撃てるようになる,Assets/UI/flash_icon.png,Debuff,PanicShoot,600,360,480
+4,Clean time,周囲のあらゆる物を吹き飛ばす,Assets/UI/stun_icon.png,Debuff,CleanTime,200,30,300
+5,High risk high return,敵の位置が分かるようになるが永続して音を発生させる,Assets/UI/stun_icon.png,StatusBuff,HighRisk,0,360,450

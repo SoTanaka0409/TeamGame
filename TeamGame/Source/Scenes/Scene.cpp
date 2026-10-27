@@ -1,4 +1,5 @@
 ﻿#include "Scene.h"
+#include "DebugManager.h"
 #include "DxLib.h"
 #include <vector>
 #include <unordered_map>
@@ -31,8 +32,20 @@ void Scene::Update()
 
 void Scene::Draw()
 {
+    if (effectManager)
+    {
+        effectManager->DrawGround();
+    }
     objectManager->Draw();
     effectManager->Draw();
+    if (DebugManager::GetInstance().IsDebugMode() && colliderManager)
+    {
+        colliderManager->DrawDebug();
+    }
+    if (effectManager)
+    {
+        effectManager->DrawForeground();
+    }
 }
 
 int Scene::LoadGraphWithSearch(const std::string& fileName)
@@ -141,4 +154,5 @@ void Scene::Clear2DImages()
     s_2DImageArray.clear();
     s_pathTo2DIndex.clear();
 }
+
 

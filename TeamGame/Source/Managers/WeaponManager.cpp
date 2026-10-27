@@ -1,4 +1,4 @@
-#include "WeaponManager.h"
+﻿#include "WeaponManager.h"
 #include "DxLib.h"
 #include <fstream>
 #include <sstream>
@@ -6,6 +6,7 @@
 void WeaponManager::LoadFromCSV(const std::string& filePath)
 {
     std::vector<std::string> searchPaths = {
+        "Resource/CSV/" + filePath,
         "Resource/" + filePath,
         "TeamGame/Resource/" + filePath,
         filePath

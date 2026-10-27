@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Scene.h"
-#include "../UITextWindow.h"
+#include "../UI/UITextWindow.h"
 
 /**
  * @brief リザルト画面を管理するシーンクラス
@@ -44,4 +44,6 @@ class ResultScene : public Scene
 
     // UITextWindow によるリザルトパネル枠描画
     UI::UITextWindow* resultPanelWindow = nullptr; ///< リザルト結果用テキストウィンドウ
+
+    float animTimer = 0.0f;                       ///< 走査線アニメーション用タイマー (sou からの復元)
 };

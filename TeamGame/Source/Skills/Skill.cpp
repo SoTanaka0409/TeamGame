@@ -145,13 +145,13 @@ void Skill::ApplyDebuff(Character* user)
         return;
     }
 
-    // --- 4. Clean time: 周囲のあらゆる物（敵・味方・弾丸）を強力に吹き飛ばす ---
+    // --- 4. Clean time: 周囲のあらゆる物（敵・味方・弾丸）を強力に吹き飛ばす（突風・風の衝撃波） ---
     if (data->minorTag == SkillMinorTag::CleanTime)
     {
         if (scene->GetEffectManager())
         {
-            scene->GetEffectManager()->AddSonarWaveEffect(user->GetPosition().x, user->GetPosition().y, GetColor(100, 200, 255));
-            scene->GetEffectManager()->AddMuzzleFlashEffect(user->GetPosition().x, user->GetPosition().y, 0.0f, effectRadius);
+            // 風の衝撃波リングと四方八方へ吹き抜ける突風気流エフェクト
+            scene->GetEffectManager()->AddWindShockwaveEffect(user->GetPosition().x, user->GetPosition().y, effectRadius);
         }
 
         for (auto* obj : objects)
@@ -190,7 +190,42 @@ void Skill::ApplyDebuff(Character* user)
         return;
     }
 
-    // --- 3. Panic shoot / その他Debuff（Flashbangなど） ---
+    // --- 3. Panic shoot（バトルロワイヤル：プレイヤー以外の全Botを全員敵同士・単独孤立化） ---
+    if (data->minorTag == SkillMinorTag::PanicShoot)
+    {
+        int panicCount = 0;
+        for (auto* obj : objects)
+        {
+            if (!obj || !obj->IsActive() || obj == user) continue;
+
+            Character* targetChar = dynamic_cast<Character*>(obj);
+            if (targetChar && !targetChar->status.IsDead())
+            {
+                // 生存中のプレイヤー以外の全Bot（味方Bot・敵Bot全員）に錯乱を付与
+                targetChar->AddActiveEffect(data->minorTag, data->duration, data->effectValue);
+                panicCount++;
+
+                // 各Botの足元・頭上に錯乱発生パルス波を発生
+                if (scene->GetEffectManager())
+                {
+                    scene->GetEffectManager()->AddSonarWaveEffect(targetChar->GetPosition().x, targetChar->GetPosition().y, GetColor(255, 30, 180));
+                }
+            }
+        }
+
+        if (scene->GetEffectManager())
+        {
+            // 発動者周囲に特大の紫・ピンク・赤ショックウェーブを展開
+            scene->GetEffectManager()->AddSonarWaveEffect(user->GetPosition().x, user->GetPosition().y, GetColor(255, 0, 220));
+            scene->GetEffectManager()->AddSonarWaveEffect(user->GetPosition().x, user->GetPosition().y, GetColor(200, 40, 255));
+            scene->GetEffectManager()->AddSonarWaveEffect(user->GetPosition().x, user->GetPosition().y, GetColor(255, 80, 50));
+        }
+
+        std::cout << "[Skill Effect: Battle Royale] 全マップのBot " << panicCount << " 体をバトルロワイヤル状態（全員孤立・敵同士）に移行!" << std::endl;
+        return;
+    }
+
+    // その他Debuff（Flashbangなど汎用）
     int hitCount = 0;
     for (auto* obj : objects)
     {
@@ -209,11 +244,6 @@ void Skill::ApplyDebuff(Character* user)
                 hitCount++;
             }
         }
-    }
-
-    if (data->minorTag == SkillMinorTag::PanicShoot && scene->GetEffectManager())
-    {
-        scene->GetEffectManager()->AddSonarWaveEffect(user->GetPosition().x, user->GetPosition().y, GetColor(255, 0, 150));
     }
 
     std::cout << "[Skill Effect: Debuff] 周囲の敵 " << hitCount << " 体にデバフ効果を付与" << std::endl;

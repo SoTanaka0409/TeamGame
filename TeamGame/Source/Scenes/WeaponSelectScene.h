@@ -2,7 +2,7 @@
 
 #include "Scene.h"
 #include "../Core/PlayerSelection.h"
-#include "../UITextWindow.h"
+#include "../UI/UITextWindow.h"
 #include <vector>
 
 /**
