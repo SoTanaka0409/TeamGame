@@ -1,4 +1,5 @@
 ﻿#include "Camera.h"
+#include "FontManager.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -1173,8 +1174,8 @@ void Enemy::Draw()
         unsigned int nameColor = (IsPanic()) ? GetColor(255, 120, 240) :
                                  (teamId == 0) ? GetColor(130, 220, 255) : GetColor(255, 120, 120);
 
-        SetFontSize(12);
-        int strW = GetDrawStringWidth(displayName.c_str(), static_cast<int>(displayName.length()));
+        int font12 = FontManager::GetInstance().GetFont(12);
+        int strW = GetDrawStringWidthToHandle(displayName.c_str(), static_cast<int>(displayName.length()), font12);
         int textX = static_cast<int>(screenX) - strW / 2;
 
         // ネーム背景帯
@@ -1182,7 +1183,7 @@ void Enemy::Draw()
         DrawBox(textX - 3, static_cast<int>(tagY) - 1, textX + strW + 3, static_cast<int>(tagY) + 13, GetColor(10, 15, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawString(textX, static_cast<int>(tagY), displayName.c_str(), nameColor);
+        DrawStringToHandle(textX, static_cast<int>(tagY), displayName.c_str(), nameColor, font12);
 
         // HPバー描画
         int maxHp = status.GetMaxHp();
@@ -1196,8 +1197,6 @@ void Enemy::Draw()
         unsigned int hpColor = (teamId == 0) ? GetColor(50, 220, 120) : GetColor(255, 60, 60);
         DrawBox(barX, hpY, barX + static_cast<int>(barW * hpRate), hpY + barH, hpColor, TRUE);
         DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(80, 80, 80), FALSE);
-
-        SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
     // HomingKill 特攻突撃中の残虐・暴走演出（全身が血のように赤黒く脈動し、頭上に死のカウントダウンと赤黒いオーラ）

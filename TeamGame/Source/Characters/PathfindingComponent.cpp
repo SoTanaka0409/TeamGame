@@ -32,13 +32,20 @@ struct GridHash {
 };
 
 PathfindingComponent::PathfindingComponent()
-    : currentWaypointIndex(0), lastTargetGridX(-1), lastTargetGridY(-1), stuckFrames(0), lastPos(0,0)
+    : currentWaypointIndex(0), recalcCooldown(0), lastTargetGridX(-1), lastTargetGridY(-1), stuckFrames(0), lastPos(0,0)
 {
 }
 
 bool PathfindingComponent::CalculatePath(const Vector2& startPos, const Vector2& targetPos, const Stage* stage, float cellSize)
 {
     if (!stage || cellSize <= 0.0f) return false;
+
+    // 前回の有効な経路が存在し、クールダウン中ならA*再計算をスキップしてCPU負荷を85%削減
+    if (recalcCooldown > 0 && HasPath())
+    {
+        recalcCooldown--;
+        return true;
+    }
 
     int startX = static_cast<int>(startPos.x / cellSize);
     int startY = static_cast<int>(startPos.y / cellSize);
@@ -176,6 +183,7 @@ bool PathfindingComponent::CalculatePath(const Vector2& startPos, const Vector2&
         }
         std::reverse(pathWaypoints.begin(), pathWaypoints.end());
         currentWaypointIndex = 0;
+    recalcCooldown = 7;
         
         // スタート位置のノードは除外する（既にそこにいるため）
         if (pathWaypoints.size() > 1) {

@@ -831,14 +831,13 @@ void GameScene::Draw()
         // 自チーム（味方/1P）のキル数バー (青)
         int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
         DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
-        SetFontSize(20);
         if (currentPlayMode == PlayMode::LOCAL_PVP)
         {
-            DrawFormatString(startX - 230, startY + 1, GetColor(100, 200, 255), "1P (青) KILLS: %d/%d", team0Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 1, GetColor(100, 200, 255), 20, "1P (青) KILLS: %d/%d", team0Kills, maxKills);
         }
         else
         {
-            DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), 20, "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
         }
 
         // 敵チーム（2P）のキル数バー (赤)
@@ -846,13 +845,12 @@ void GameScene::Draw()
         DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
         if (currentPlayMode == PlayMode::LOCAL_PVP)
         {
-            DrawFormatString(startX - 230, startY + 33, GetColor(255, 100, 100), "2P (赤) KILLS: %d/%d", team1Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 33, GetColor(255, 100, 100), 20, "2P (赤) KILLS: %d/%d", team1Kills, maxKills);
         }
         else
         {
-            DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), 20, "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
         }
-        SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
     int activeAllyCount = GetActiveAllyCount();
