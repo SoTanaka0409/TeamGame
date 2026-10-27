@@ -954,7 +954,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
     
 
-    const int resolutionStep = 4; // 高速4pxステップ
+    const int resolutionStep = 8; // 8pxステップで高精細かつ大幅軽量化
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
 
@@ -962,32 +962,48 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float globalBrightVal = brightRatio * 0.05f;
     float maxDarkAlpha = 248.0f * (1.0f - brightRatio * 0.10f);
 
+    float maxSpotDistSq = maxSpotDist * maxSpotDist;
+    float closeRadiusSq = closeRadius * closeRadius;
+
+    // 扇形コサイン事前計算
+    float cosHalfAngle = std::cos(m_fanAngleHalf);
+    float cosHalfAngleSq = cosHalfAngle * cosHalfAngle;
+
+    unsigned int darkColor = GetColor(4, 5, 10);
+    int currentBlendAlpha = -1;
+
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
     {
+        int bottomY = (std::min)(py + resolutionStep, rectY + rectH);
+        int runStartX = -1;
+        int runAlpha = -1;
+
         for (int px = rectX; px < rectX + rectW; px += resolutionStep)
         {
-            float dx = px - playerPixelX;
-            float dy = py - playerPixelY;
-            float dist = std::sqrt(dx * dx + dy * dy);
+            float dx = (px + resolutionStep * 0.5f) - playerPixelX;
+            float dy = (py + resolutionStep * 0.5f) - playerPixelY;
+            float distSq = dx * dx + dy * dy;
 
             float lightVal = 0.0f;
 
             // A. プレイヤー周囲の足元明かり
-            if (dist < closeRadius)
+            if (distSq < closeRadiusSq)
             {
+                float dist = std::sqrt(distSq);
                 float ambientLight = 0.38f * (1.0f - (dist / closeRadius) * 0.6f);
                 lightVal = (std::max)(lightVal, ambientLight);
             }
 
             // B. 前方60°扇形スポットライト
-            if (m_isLightOn && dist < maxSpotDist)
+            if (m_isLightOn && distSq < maxSpotDistSq)
             {
-                float cellAngle = std::atan2(dy, dx);
-                float angleDiff = std::abs(cellAngle - lightAngle);
-                while (angleDiff > 3.14159265f) angleDiff = std::abs(angleDiff - 2.0f * 3.14159265f);
+                // 向きベクトルとの内積（前方方向への投影）
+                float forwardProj = dx * facingDir.x + dy * facingDir.y;
 
-                if (angleDiff < m_fanAngleHalf)
+                // 前方かつ扇形角度内（cosの比較による高速内外判定）
+                if (forwardProj > 0.0f && (forwardProj * forwardProj >= cosHalfAngleSq * distSq))
                 {
+                    float dist = std::sqrt(distSq);
                     bool isBlocked = false;
 
                     if (dist > zoomCellSize * 0.8f)
@@ -1023,7 +1039,11 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                     {
                         float distFade = 1.0f - (dist / maxSpotDist);
                         distFade = distFade * distFade;
+
+                        float angleCos = forwardProj / dist;
+                        float angleDiff = std::acos((std::min)(1.0f, (std::max)(-1.0f, angleCos)));
                         float angleFade = 1.0f - (angleDiff / m_fanAngleHalf);
+                        if (angleFade < 0.0f) angleFade = 0.0f;
                         float spotLight = distFade * angleFade * 0.95f;
 
                         lightVal = (std::max)(lightVal, spotLight);
@@ -1033,15 +1053,41 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             float effectiveLightVal = (std::max)(lightVal, globalBrightVal);
 
+            int alpha = 0;
             if (effectiveLightVal < 0.98f)
             {
-                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, effectiveLightVal)) * maxDarkAlpha);
-                if (alpha > 8)
-                {
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-                    DrawBox(px, py, px + resolutionStep, py + resolutionStep, GetColor(4, 5, 10), TRUE);
-                }
+                alpha = static_cast<int>((1.0f - (std::min)(1.0f, effectiveLightVal)) * maxDarkAlpha);
+                if (alpha <= 8) alpha = 0;
             }
+
+            // アルファ値のクオンタイズ（微細な差をまとめてDrawBoxのランレングス結合率を最大化）
+            int qAlpha = (alpha / 4) * 4;
+
+            if (qAlpha != runAlpha)
+            {
+                if (runAlpha > 0 && runStartX >= 0)
+                {
+                    if (currentBlendAlpha != runAlpha)
+                    {
+                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                        currentBlendAlpha = runAlpha;
+                    }
+                    DrawBox(runStartX, py, px, bottomY, darkColor, TRUE);
+                }
+                runStartX = px;
+                runAlpha = qAlpha;
+            }
+        }
+
+        // 行末のランをフラッシュ描画
+        if (runAlpha > 0 && runStartX >= 0)
+        {
+            if (currentBlendAlpha != runAlpha)
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                currentBlendAlpha = runAlpha;
+            }
+            DrawBox(runStartX, py, rectX + rectW, bottomY, darkColor, TRUE);
         }
     }
 
