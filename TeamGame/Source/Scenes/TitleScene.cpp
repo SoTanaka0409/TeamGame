@@ -16,7 +16,19 @@ namespace {
 
 TitleScene::TitleScene()
 {
-    // ==================================================================
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理 - miuraのタイトル画像設定】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    titleBgIndex       = Load2DImage("Titleu.jpg");
+    if (titleBgIndex == -1) titleBgIndex = Load2DImage("title_bg.png");
+    titleLogoIndex     = Load2DImage("Title02.png");
+    if (titleLogoIndex == -1) titleLogoIndex = Load2DImage("Title.png");
+    titleLogoIndex2    = Load2DImage("Title2.png");
+    settingsBgIndex    = Load2DImage("settings_bg.png");
+    modeSelectBgIndex  = Load2DImage("mode_select_bg.png");
+    windowFrameIndex   = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
     LoadServerConfig();
 }
 
@@ -489,7 +501,7 @@ void TitleScene::Draw()
     }
 
     // =========================================================================
-    // 2. タイトルロゴまたはタイトルの文字描画
+    // 2. タイトルロゴまたはタイトルの文字描画 (miuraの過去タイトルロゴ表示)
     // =========================================================================
     int logoHandle = Get2DImage(titleLogoIndex);
     if (state == TitleState::SETTINGS)
@@ -501,38 +513,29 @@ void TitleScene::Draw()
     }
     else if (logoHandle != -1)
     {
-        // タイトルロゴ画像が存在する場合、中央揃えで描画
+        // タイトルロゴ画像 (Title02.png 等) が存在する場合、画面上部中央に配置
         int logoW = 0, logoH = 0;
         GetGraphSize(logoHandle, &logoW, &logoH);
         int logoX = (1920 - logoW) / 2;
-        int logoY = 150;
+        int logoY = 40;
         DrawGraph(logoX, logoY, logoHandle, TRUE);
     }
     else
     {
-        // ロゴ画像がない場合は従来のテキストタイトルを描画
-        DrawString(1920 / 2 - 150, 200, "=== TEAM GAME ===", GetColor(255, 255, 255));
-    }
-
-    // =========================================================================
-    // 2. タイトルロゴまたはタイトルの文字描画
-    // =========================================================================
-    int logoHandle2 = Get2DImage(titleLogoIndex2);
-    if (state == TitleState::SETTINGS)
-    {
-        // 設定画面ヘッダー
-        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(20, 30, 45), TRUE);
-        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(0, 180, 255), FALSE);
-        DrawString(1920 / 2 - 90, 200, "=== SETTINGS ===", GetColor(255, 255, 255));
-    }
-    else if (logoHandle2 != -1)
-    {
-        // タイトルロゴ画像が存在する場合、中央揃えで描画
-        int logoW = 0, logoH = 0;
-        GetGraphSize(logoHandle2, &logoW, &logoH);
-        int logoX = (1920 - logoW) / 2;
-        int logoY = 150+50;
-        DrawGraph(logoX, logoY, logoHandle2, TRUE);
+        int logoHandle2 = Get2DImage(titleLogoIndex2);
+        if (logoHandle2 != -1)
+        {
+            int logoW = 0, logoH = 0;
+            GetGraphSize(logoHandle2, &logoW, &logoH);
+            int logoX = (1920 - logoW) / 2;
+            int logoY = 80;
+            DrawGraph(logoX, logoY, logoHandle2, TRUE);
+        }
+        else
+        {
+            // ロゴ画像がない場合はテキストタイトルを描画
+            DrawString(1920 / 2 - 150, 200, "=== TEAM GAME ===", GetColor(255, 255, 255));
+        }
     }
 
     // =========================================================================

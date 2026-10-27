@@ -161,19 +161,19 @@ void UITextWindow::RecalculateLayout() {
 
             size_t nextByteIdx = currentByteIdx + charLen;
 
-            // 先頭から nextByteIdx バイト分を試算
-            int testWidth = GetDrawStringWidthToHandle(
-                pStart + currentLineStartByte,
-                static_cast<int>(nextByteIdx - currentLineStartByte),
-                m_fontHandle
-            );
+            // 先頭から nextByteIdx バイト分を試算 (m_fontHandleが-1の場合はデフォルトフォント関数を使用)
+            int testWidth = (m_fontHandle >= 0)
+                ? GetDrawStringWidthToHandle(pStart + currentLineStartByte, static_cast<int>(nextByteIdx - currentLineStartByte), m_fontHandle)
+                : GetDrawStringWidth(pStart + currentLineStartByte, static_cast<int>(nextByteIdx - currentLineStartByte));
 
             if (testWidth > m_maxTextWidth && currentByteIdx > currentLineStartByte) {
                 // 最大幅を超えたため、currentByteIdx の位置で改行
                 std::string lineSegment = lineStr.substr(currentLineStartByte, currentByteIdx - currentLineStartByte);
                 m_wrappedLines.push_back(lineSegment);
 
-                int lineW = GetDrawStringWidthToHandle(lineSegment.c_str(), static_cast<int>(lineSegment.length()), m_fontHandle);
+                int lineW = (m_fontHandle >= 0)
+                    ? GetDrawStringWidthToHandle(lineSegment.c_str(), static_cast<int>(lineSegment.length()), m_fontHandle)
+                    : GetDrawStringWidth(lineSegment.c_str(), static_cast<int>(lineSegment.length()));
                 if (lineW > m_calculatedTextWidth) {
                     m_calculatedTextWidth = lineW;
                 }
@@ -189,7 +189,9 @@ void UITextWindow::RecalculateLayout() {
             std::string lineSegment = lineStr.substr(currentLineStartByte);
             m_wrappedLines.push_back(lineSegment);
 
-            int lineW = GetDrawStringWidthToHandle(lineSegment.c_str(), static_cast<int>(lineSegment.length()), m_fontHandle);
+            int lineW = (m_fontHandle >= 0)
+                ? GetDrawStringWidthToHandle(lineSegment.c_str(), static_cast<int>(lineSegment.length()), m_fontHandle)
+                : GetDrawStringWidth(lineSegment.c_str(), static_cast<int>(lineSegment.length()));
             if (lineW > m_calculatedTextWidth) {
                 m_calculatedTextWidth = lineW;
             }
@@ -330,16 +332,24 @@ void UITextWindow::Draw(int x, int y) const {
 
     // 2. タイトル文字列の描画（設定されている場合）
     if (!m_title.empty()) {
-        DrawStringToHandle(drawX, currentY, m_title.c_str(), m_titleColor, m_fontHandle);
+        if (m_fontHandle >= 0) {
+            DrawStringToHandle(drawX, currentY, m_title.c_str(), m_titleColor, m_fontHandle);
+        } else {
+            DrawString(drawX, currentY, m_title.c_str(), m_titleColor);
+        }
         currentY += fontHeight + 6;
         DrawLine(drawX, currentY, x + m_windowWidth - m_padding.right, currentY, m_boxBorderColor);
         currentY += m_lineSpacing + 6;
     }
 
-    // 3. 本文テキストの描画
+    // 3. 本文テキストの描画 (m_fontHandleが-1の場合はDrawStringを使用)
     for (const auto& line : m_wrappedLines) {
         if (!line.empty()) {
-            DrawStringToHandle(drawX, currentY, line.c_str(), m_textColor, m_fontHandle);
+            if (m_fontHandle >= 0) {
+                DrawStringToHandle(drawX, currentY, line.c_str(), m_textColor, m_fontHandle);
+            } else {
+                DrawString(drawX, currentY, line.c_str(), m_textColor);
+            }
         }
         currentY += fontHeight + m_lineSpacing;
     }
