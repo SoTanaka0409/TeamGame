@@ -1240,6 +1240,7 @@ void Enemy::Draw()
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
         m_model->SetFacingDir(facingDir);
+        m_model->SetScaleUniform(m_modelScale * (Camera::ZoomScale / 2.0f));
         m_model->DrawWithOpacity(opacity);
     }
     else

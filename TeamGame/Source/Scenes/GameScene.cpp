@@ -373,7 +373,8 @@ void GameScene::Draw()
     float worldCellSize = (cellW < cellH) ? cellW : cellH;
 
     bool isDebugView = DebugManager::GetInstance().IsDebugMode();
-    float zoomCellSize = worldCellSize * 2.0f;
+    // 画面に見える範囲を2/3に拡大（カメラズーム倍率を1.5倍にしてキャラクターとマップを大きく表示）
+    float zoomCellSize = worldCellSize * 3.0f;
 
     if (introTimer > 0.0f)
     {
@@ -385,7 +386,7 @@ void GameScene::Draw()
         {
             float t = (180.0f - introTimer) / 180.0f;
             t = t * t * (3.0f - 2.0f * t);
-            float introZoom = worldCellSize + (worldCellSize * 2.0f - worldCellSize) * t;
+            float introZoom = worldCellSize + (worldCellSize * 3.0f - worldCellSize) * t;
             zoomCellSize = introZoom;
         }
     }
