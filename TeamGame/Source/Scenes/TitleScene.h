@@ -29,8 +29,6 @@ class TitleScene : public Scene
     enum class TitleState { 
         MAIN,               ///< メイン画面
         MODE_SELECT,        ///< プレイモード選択画面
-        WEB_SELECT,         ///< Web対戦選択画面（部屋作成 / 部屋参加）
-        WEB_HOST_WAITING,   ///< Web対戦ホスト待機画面
         LAN_SELECT,         ///< LAN対戦選択画面（Host / Join）
         JOIN_SELECT,        ///< LAN参加先選択画面
         SETTINGS,           ///< 設定画面
@@ -44,23 +42,16 @@ class TitleScene : public Scene
     
     int udpHandle = -1;                  ///< UDP通信用のハンドル
     char ipBuffer[64] = "";              ///< 入力するIPアドレスのバッファ（初期値は空）
-    char roomCodeBuffer[16] = "";        ///< 部屋番号入力バッファ
-    
-    std::string serverHost = "localhost";///< Webサーバーホスト
-    int serverPort = 8080;               ///< Webサーバーポート
-    bool serverUseSSL = false;           ///< WebサーバーSSL使用フラグ
-    
+
     std::string statusMessage = "";      ///< 通知・エラーメッセージ
     int statusMessageTimer = 0;          ///< 通知メッセージの表示タイマー
     int copyNotifyTimer = 0;             ///< コピー完了通知タイマー
     std::string copiedIP = "";           ///< コピーしたIP/部屋番号
-    
+
     bool prevUp = false;                 ///< 前フレームでの上入力状態
     bool prevDown = false;               ///< 前フレームでの下入力状態
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
     bool prevC = false;                  ///< 前フレームでのCキー入力状態
-    
-    void LoadServerConfig();             ///< server_config.ini の読み込み
 
     // ========================================================
     // 【画像差し込み用設定】
