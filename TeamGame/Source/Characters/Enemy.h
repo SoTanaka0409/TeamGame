@@ -48,7 +48,10 @@ class Enemy : public Character
 {
 private:
     PathfindingComponent pathfinder; ///< A*経路探索コンポーネント
-    int moveToCenterTimer;           ///< 中央移動タイマー（5秒＝300フレーム）
+    int moveToCenterTimer;           ///< 散開移動タイマー（10秒＝600フレーム。旧: 中央集合タイマー）
+    Vector2 dispersalTarget;         ///< 散開先ウェイポイント（マップ全域に分散）
+    bool hasDispersalTarget = false; ///< 散開先が決定済みか
+    float baseMoveSpeed = 0.0f;      ///< 初期移動速度（鈍足デバフ判定の基準）
 
 private:
     int damageColorTimer;             ///< 被弾時イエロー点滅タイマー
@@ -219,9 +222,15 @@ public:
     void SetTargetPlayer(class Character *p) { targetCharacter = p; }
 
     /**
-     * @brief 中央移動タイマーを5秒（300フレーム）にリセット
+     * @brief 散開タイマーを10秒（600フレーム）にリセットし、次回マップ全域のランダム地点を散開先に再選定する
+     * @details 以前は全ボットが中央へ集合していたが、戦略性向上のためマップ全域へ散開する仕様に変更。
      */
-    void ResetMoveToCenter() { moveToCenterTimer = 300; }
+    void ResetMoveToCenter() { moveToCenterTimer = 600; hasDispersalTarget = false; }
+
+    /**
+     * @brief マップ全域から散開先ウェイポイントをランダムに選定する（区画ローテーション＋草むら優先）
+     */
+    void PickDispersalTarget();
 
     /**
      * @brief 指定ターゲットへの視線（Line of Sight）遮蔽チェック
@@ -235,7 +244,12 @@ public:
      */
     bool CheckLineOfSightToPlayer() const { return CheckLineOfSightToTarget(); }
 
-    void MoveSmart(const Vector2 &desiredDir);
+    /**
+     * @brief 壁・他キャラを避けながら移動する
+     * @param desiredDir 希望移動方向
+     * @param speedScale 移動速度倍率（戦闘中のカニ歩きなどで減速させる用途）
+     */
+    void MoveSmart(const Vector2 &desiredDir, float speedScale = 1.0f);
 
     /**
      * @brief HomingKillスキルによる特攻状態を開始

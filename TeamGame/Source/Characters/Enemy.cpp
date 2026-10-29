@@ -1,4 +1,5 @@
-#include "Camera.h"
+﻿#include "Camera.h"
+#include "FontManager.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -14,11 +15,11 @@
 #include <cstdlib>
 
 Enemy::Enemy(float startX, float startY, int tId)
-    : Character(ObjectTag::Enemy, startX, startY, 8.9f), damageColorTimer(0),
+    : Character(ObjectTag::Enemy, startX, startY, 14.0f), damageColorTimer(0),
       currentStage(nullptr), cellSize(1.0f), targetCharacter(nullptr),
       aiState(EnemyAIState::PATROL), facingDir(0.0f, 1.0f), moveDir(0.0f, 1.0f),
       lastKnownPos(startX, startY), patrolChangeTimer(0),
-      moveToCenterTimer(300), investigateTimer(0), shootCooldown(0),
+      moveToCenterTimer(600), investigateTimer(0), shootCooldown(0),
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
@@ -26,6 +27,7 @@ Enemy::Enemy(float startX, float startY, int tId)
     std::string botType = (teamId == 0) ? "AllyBot" : "EnemyBot";
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData(botType);
     if (!data && teamId != 0) data = CharacterManager::GetInstance().GetCharacterData("EnemyBot");
+    if (!data) data = CharacterManager::GetInstance().GetCharacterDataById(1);
 
     if (data)
     {
@@ -37,19 +39,69 @@ Enemy::Enemy(float startX, float startY, int tId)
     }
     else
     {
-        status.Init(100, 3.6f, 10);
-        collider->SetRadius(8.9f);
-        radius = 8.9f;
+        // 暗闇戦に集中できるよう移動速度を抑え(3.6→2.6)、当たり判定を実寸大に拡大(8.9→14.0)
+        status.Init(33, 2.6f, 10);
+        collider->SetRadius(14.0f);
+        radius = 14.0f;
     }
+    baseMoveSpeed = status.GetSpeed();
     collider->SetTag((teamId == 0) ? "AllyBot" : "EnemyBot");
     SetModelPath("Resource/GreenCharacter/character.mv1");
     UpdatePersonality();
     UpdateWeaponTactic();
 }
 
+void Enemy::PickDispersalTarget()
+{
+    hasDispersalTarget = true;
+    dispersalTarget = position;
+    if (!currentStage || cellSize <= 0.0f) return;
+
+    // 区画ローテーション：マップを4x3の区画に分割し、ボットごとに異なる区画へ割り振って全域に散開させる
+    static int s_sectorCounter = 0;
+    const int cols = 4, rows = 3;
+    int w = currentStage->GetWidth();
+    int h = currentStage->GetHeight();
+    if (w <= 4 || h <= 4) return;
+
+    int sector = (s_sectorCounter++ + std::rand()) % (cols * rows);
+    int secCol = sector % cols;
+    int secRow = sector / cols;
+    int x0 = 1 + (w - 2) * secCol / cols;
+    int x1 = 1 + (w - 2) * (secCol + 1) / cols;
+    int y0 = 1 + (h - 2) * secRow / rows;
+    int y1 = 1 + (h - 2) * (secRow + 1) / rows;
+    if (x1 <= x0) x1 = x0 + 1;
+    if (y1 <= y0) y1 = y0 + 1;
+
+    int bestX = -1, bestY = -1;
+    for (int i = 0; i < 24; ++i)
+    {
+        int gx = x0 + std::rand() % (x1 - x0);
+        int gy = y0 + std::rand() % (y1 - y0);
+        if (currentStage->IsOutOfBounds(gx, gy) || currentStage->IsSolidWall(gx, gy)) continue;
+
+        bestX = gx;
+        bestY = gy;
+        // 草むら潜伏を好む性格は草むらセルを優先（見つかり次第採用）
+        if (!personality.preferBush || currentStage->GetCell(gx, gy) == CellType::BUSH) break;
+    }
+    if (bestX >= 0)
+    {
+        dispersalTarget = Vector2((bestX + 0.5f) * cellSize, (bestY + 0.5f) * cellSize);
+    }
+}
+
 void Enemy::SetCharacterId(int id)
 {
     m_characterId = id;
+    const CharacterData* data = CharacterManager::GetInstance().GetCharacterDataById(id);
+    if (data)
+    {
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+        if (collider) collider->SetRadius(data->colliderRadius);
+        radius = data->colliderRadius;
+    }
     UpdatePersonality();
 }
 
@@ -437,7 +489,7 @@ bool Enemy::CheckLineOfSightToTarget(Character* target) const
 }
 
 // 【賢いナビゲーション】 壁角に引っかからず滑らかに回避・スライド移動する関数
-void Enemy::MoveSmart(const Vector2 &desiredDir)
+void Enemy::MoveSmart(const Vector2 &desiredDir, float speedScale)
 {
     float len = std::sqrt(desiredDir.x * desiredDir.x + desiredDir.y * desiredDir.y);
     if (len < 0.0001f)
@@ -449,8 +501,9 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
     if (m_model) m_model->PlayWalk();
 
     Vector2 normDir(desiredDir.x / len, desiredDir.y / len);
-    float velX = normDir.x * status.GetSpeed();
-    float velY = normDir.y * status.GetSpeed();
+    float moveSpeed = status.GetSpeed() * speedScale;
+    float velX = normDir.x * moveSpeed;
+    float velY = normDir.y * moveSpeed;
 
     if (!currentStage || cellSize <= 0.0f)
     {
@@ -461,6 +514,8 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
 
     // 接触判定対象（プレイヤーおよび他の敵キャラクター）の座標と当たり判定半径を取得
     std::vector<std::pair<Vector2, float>> otherInfos;
+    Vector2 separation(0.0f, 0.0f); // 味方ボット同士の相互反発（1箇所に固まらず散開させる）
+    const float separationRange = (cellSize > 0.0f ? cellSize : 50.0f) * 3.0f;
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetObjectManager())
     {
@@ -473,8 +528,34 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
                     Character *c = dynamic_cast<Character *>(obj);
                     float oRad = c ? c->GetRadius() : radius;
                     otherInfos.push_back({obj->GetPosition(), oRad});
+
+                    if (c && obj->GetObjectTag() == ObjectTag::Enemy && c->teamId == teamId)
+                    {
+                        float sx = position.x - obj->GetPosition().x;
+                        float sy = position.y - obj->GetPosition().y;
+                        float sd = std::sqrt(sx * sx + sy * sy);
+                        if (sd > 0.001f && sd < separationRange)
+                        {
+                            float w = 1.0f - (sd / separationRange);
+                            separation.x += (sx / sd) * w;
+                            separation.y += (sy / sd) * w;
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    // 味方との距離が近い場合は反発ベクトルを合成して散開（強さは希望方向の約0.7倍まで）
+    if (separation.x != 0.0f || separation.y != 0.0f)
+    {
+        float bx = normDir.x + separation.x * 0.7f;
+        float by = normDir.y + separation.y * 0.7f;
+        float bl = std::sqrt(bx * bx + by * by);
+        if (bl > 0.0001f)
+        {
+            velX = (bx / bl) * moveSpeed;
+            velY = (by / bl) * moveSpeed;
         }
     }
 
@@ -734,7 +815,7 @@ void Enemy::Update()
     // --- 危機管理・低HP・デバフによる撤退（RETREAT）判定 ---
     float hpRatio = (status.GetMaxHp() > 0) ? (static_cast<float>(status.GetCurrentHp()) / status.GetMaxHp()) : 1.0f;
     bool isLowHp = (personality.retreatHpRatio > 0.0f && hpRatio <= personality.retreatHpRatio);
-    bool isSeverelyDebuffed = (status.GetSpeed() < 3.2f); // 鈍足デバフ
+    bool isSeverelyDebuffed = (baseMoveSpeed > 0.0f && status.GetSpeed() < baseMoveSpeed * 0.89f); // 鈍足デバフ
 
     if (!IsPanic() && targetCharacter && targetCharacter->IsActive() && (isLowHp || (isSeverelyDebuffed && hpRatio <= 0.6f)))
     {
@@ -878,7 +959,7 @@ void Enemy::Update()
                 strafeTimer--;
                 if (strafeTimer <= 0) { strafeDirection = (rand() % 2 == 0) ? 1 : -1; strafeTimer = 25; }
                 Vector2 closeStrafe(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-                MoveSmart(closeStrafe);
+                MoveSmart(closeStrafe, 0.5f);
             }
         }
         else if (weaponTactic.circleStrafe)
@@ -895,7 +976,7 @@ void Enemy::Update()
             Vector2 circleDir = tangentDir + facingDir * (distError > 0 ? 0.4f : -0.3f);
             float cLen = std::sqrt(circleDir.x * circleDir.x + circleDir.y * circleDir.y);
             if (cLen > 0.001f) circleDir = Vector2(circleDir.x / cLen, circleDir.y / cLen);
-            MoveSmart(circleDir);
+            MoveSmart(circleDir, 0.55f);
         }
         else
         {
@@ -924,7 +1005,7 @@ void Enemy::Update()
                     strafeTimer = 40 + (rand() % 40);
                 }
                 Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-                MoveSmart(strafeDir);
+                MoveSmart(strafeDir, 0.5f);
             }
         }
 
@@ -1026,20 +1107,19 @@ void Enemy::Update()
     else
     {
         // PATROL
+        // 【散開行動】 全員が中央へ集合せず、マップ全域に割り振られたウェイポイントへ分散移動する
         if (moveToCenterTimer > 0 && currentStage)
         {
             moveToCenterTimer--;
-            float centerX = (currentStage->GetWidth() * cellSize) / 2.0f;
-            float centerY = (currentStage->GetHeight() * cellSize) / 2.0f;
-            Vector2 centerPos(centerX, centerY);
-            
-            float dx = centerX - position.x;
-            float dy = centerY - position.y;
+            if (!hasDispersalTarget) PickDispersalTarget();
+
+            float dx = dispersalTarget.x - position.x;
+            float dy = dispersalTarget.y - position.y;
             float dist = std::sqrt(dx * dx + dy * dy);
-            
-            if (dist > cellSize * 2.0f)
+
+            if (dist > cellSize * 1.5f)
             {
-                pathfinder.CalculatePath(position, centerPos, currentStage, cellSize);
+                pathfinder.CalculatePath(position, dispersalTarget, currentStage, cellSize);
                 Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
                 if (pathDir.x != 0 || pathDir.y != 0) {
                     moveDir = pathDir;
@@ -1054,13 +1134,22 @@ void Enemy::Update()
             }
             else
             {
+                // 到着：周辺を警戒しながら待ち伏せ・巡回へ移行
                 moveToCenterTimer = 0;
+                hasDispersalTarget = false;
             }
         }
         else
         {
             patrolChangeTimer--;
-            if (patrolChangeTimer <= 0)
+            if (patrolChangeTimer <= 0 && (std::rand() % 100) < 45)
+            {
+                // 約半分の確率でマップ内の別エリアへ移動（一箇所に留まって乱戦になるのを防ぐ）
+                moveToCenterTimer = 600;
+                hasDispersalTarget = false;
+                patrolChangeTimer = 30;
+            }
+            else if (patrolChangeTimer <= 0)
             {
                 patrolChangeTimer = 60 + (std::rand() % 90);
                 int dirType = std::rand() % 8;
@@ -1173,8 +1262,8 @@ void Enemy::Draw()
         unsigned int nameColor = (IsPanic()) ? GetColor(255, 120, 240) :
                                  (teamId == 0) ? GetColor(130, 220, 255) : GetColor(255, 120, 120);
 
-        SetFontSize(12);
-        int strW = GetDrawStringWidth(displayName.c_str(), static_cast<int>(displayName.length()));
+        int font12 = FontManager::GetInstance().GetFont(12);
+        int strW = GetDrawStringWidthToHandle(displayName.c_str(), static_cast<int>(displayName.length()), font12);
         int textX = static_cast<int>(screenX) - strW / 2;
 
         // ネーム背景帯
@@ -1182,7 +1271,7 @@ void Enemy::Draw()
         DrawBox(textX - 3, static_cast<int>(tagY) - 1, textX + strW + 3, static_cast<int>(tagY) + 13, GetColor(10, 15, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawString(textX, static_cast<int>(tagY), displayName.c_str(), nameColor);
+        DrawStringToHandle(textX, static_cast<int>(tagY), displayName.c_str(), nameColor, font12);
 
         // HPバー描画
         int maxHp = status.GetMaxHp();
@@ -1196,8 +1285,6 @@ void Enemy::Draw()
         unsigned int hpColor = (teamId == 0) ? GetColor(50, 220, 120) : GetColor(255, 60, 60);
         DrawBox(barX, hpY, barX + static_cast<int>(barW * hpRate), hpY + barH, hpColor, TRUE);
         DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(80, 80, 80), FALSE);
-
-        SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
     // HomingKill 特攻突撃中の残虐・暴走演出（全身が血のように赤黒く脈動し、頭上に死のカウントダウンと赤黒いオーラ）

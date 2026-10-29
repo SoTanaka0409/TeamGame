@@ -9,8 +9,26 @@
 #include <string>
 #include <random>
 
+namespace {
+    constexpr int LAN_PORT = 30000;
+    constexpr int LAN_UDP_PORT = 30000;
+}
+
 TitleScene::TitleScene()
 {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理 - miuraのタイトル画像設定】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    titleBgIndex       = Load2DImage("Titleu.jpg");
+    if (titleBgIndex == -1) titleBgIndex = Load2DImage("title_bg.png");
+    titleLogoIndex     = Load2DImage("Title02.png");
+    if (titleLogoIndex == -1) titleLogoIndex = Load2DImage("Title.png");
+    titleLogoIndex2    = Load2DImage("Title2.png");
+    settingsBgIndex    = Load2DImage("settings_bg.png");
+    modeSelectBgIndex  = Load2DImage("mode_select_bg.png");
+    windowFrameIndex   = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
     LoadServerConfig();
 }
 
@@ -23,8 +41,16 @@ void TitleScene::LoadServerConfig()
     serverUseSSL = (GetPrivateProfileIntA("Server", "UseSSL", 0, ".\\server_config.ini") != 0);
 }
 
+
 TitleScene::~TitleScene()
 {
+    // UITextWindow の解放
+    delete messageWindow;
+    messageWindow = nullptr;
+
+    delete settingsWindow;
+    settingsWindow = nullptr;
+
     if (udpHandle != -1)
     {
         DeleteUDPSocket(udpHandle);
@@ -204,7 +230,7 @@ void TitleScene::Update()
         {
             if (cursor == 0) // Host LAN
             {
-                if (NetworkManager::GetInstance().Listen(9876))
+                if (NetworkManager::GetInstance().Listen(LAN_PORT))
                 {
                     udpHandle = MakeUDPSocket(-1);
                     state = TitleState::WAITING;
@@ -233,7 +259,7 @@ void TitleScene::Update()
         {
             if (cursor == 0) // Join LAN Auto
             {
-                udpHandle = MakeUDPSocket(9877);
+                udpHandle = MakeUDPSocket(LAN_UDP_PORT);
                 state = TitleState::JOINING_LAN;
                 waitTimer = 0;
             }
@@ -261,7 +287,7 @@ void TitleScene::Update()
                         DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", targetIP.c_str());
                         ScreenFlip();
 
-                        if (NetworkManager::GetInstance().Connect(targetIP.c_str(), 9876))
+                        if (NetworkManager::GetInstance().Connect(targetIP.c_str(), LAN_PORT))
                         {
                             SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
                             return;
@@ -300,7 +326,7 @@ void TitleScene::Update()
                     DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", ipBuffer);
                     ScreenFlip();
 
-                    if (NetworkManager::GetInstance().Connect(ipBuffer, 9876))
+                    if (NetworkManager::GetInstance().Connect(ipBuffer, LAN_PORT))
                     {
                         SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
                         return;
@@ -378,7 +404,7 @@ void TitleScene::Update()
         {
             // Global broadcast
             IPDATA ip = {255, 255, 255, 255};
-            NetWorkSendUDP(udpHandle, ip, 9877, "HOST", 4);
+            NetWorkSendUDP(udpHandle, ip, LAN_UDP_PORT, "HOST", 4);
             
             // Subnet broadcast fallback
             IPDATA myip[10];
@@ -389,7 +415,7 @@ void TitleScene::Update()
                 {
                     IPDATA bcast = myip[i];
                     bcast.d4 = 255;
-                    NetWorkSendUDP(udpHandle, bcast, 9877, "HOST", 4);
+                    NetWorkSendUDP(udpHandle, bcast, LAN_UDP_PORT, "HOST", 4);
                 }
             }
         }
@@ -413,7 +439,7 @@ void TitleScene::Update()
             {
                 char ipStr[64];
                 sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", hostIP.d1, hostIP.d2, hostIP.d3, hostIP.d4);
-                if (NetworkManager::GetInstance().Connect(ipStr, 9876))
+                if (NetworkManager::GetInstance().Connect(ipStr, LAN_PORT))
                 {
                     DeleteUDPSocket(udpHandle);
                     udpHandle = -1;
@@ -433,14 +459,102 @@ void TitleScene::Update()
 void TitleScene::Draw()
 {
     Scene::Draw();
-    DrawString(1920 / 2 - 150, 200, "=== TEAM GAME ===", GetColor(255, 255, 255));
 
+    // =========================================================================
+    // 1. 背景画像の描画（配列番号から呼び出し）
+    // =========================================================================
+    if (state == TitleState::SETTINGS)
+    {
+        if (settingsBgIndex != -1)
+        {
+            // 設定画面用の背景画像を配列番号から描画
+            DrawFullScreen2DImage(settingsBgIndex, false);
+        }
+        else if (titleBgIndex != -1)
+        {
+            // 設定画像がない場合はタイトル背景に暗幕フィルターを重ねて描画
+            DrawFullScreen2DImage(titleBgIndex, false);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160);
+            DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
+        else
+        {
+            // 画像がない場合のデフォルト背景
+            DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+        }
+    }
+    else if (state == TitleState::MODE_SELECT && modeSelectBgIndex != -1)
+    {
+        // モード選択画面専用の背景画像を配列番号から描画
+        DrawFullScreen2DImage(modeSelectBgIndex, false);
+    }
+    else if (titleBgIndex != -1)
+    {
+        // タイトル画面全般の背景画像を配列番号から描画
+        DrawFullScreen2DImage(titleBgIndex, false);
+    }
+    else
+    {
+        // 画像がない場合のデフォルト背景
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+    }
+
+    // =========================================================================
+    // 2. タイトルロゴおよび作品名表示 (miuraの過去タイトル: 血痕スプラッター ＋ 作品名「Blind Zone」)
+    // =========================================================================
+    if (state == TitleState::SETTINGS)
+    {
+        // 設定画面ヘッダー
+        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(20, 30, 45), TRUE);
+        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(0, 180, 255), FALSE);
+        DrawString(1920 / 2 - 90, 200, "=== SETTINGS ===", GetColor(255, 255, 255));
+    }
+    else
+    {
+        // 1. 背面の血痕スプラッターエンブレム (Title02.png)
+        int logoHandle = Get2DImage(titleLogoIndex);
+        if (logoHandle != -1)
+        {
+            int logoW = 0, logoH = 0;
+            GetGraphSize(logoHandle, &logoW, &logoH);
+            int logoX = (1920 - logoW) / 2;
+            int logoY = 55;
+            DrawGraph(logoX, logoY, logoHandle, TRUE);
+        }
+
+        // 2. 作品名ロゴ「Blind Zone」(Title2.png) - 血痕エンブレムの中央に重ねて表示
+        int logoHandle2 = Get2DImage(titleLogoIndex2);
+        if (logoHandle2 != -1)
+        {
+            int logoW2 = 0, logoH2 = 0;
+            GetGraphSize(logoHandle2, &logoW2, &logoH2);
+            int logoX2 = (1920 - logoW2) / 2;
+            int logoY2 = (logoHandle != -1) ? 148 : 120;
+            DrawGraph(logoX2, logoY2, logoHandle2, TRUE);
+        }
+        else if (logoHandle == -1)
+        {
+            // 画像が両方ない場合のテキストタイトルフォールバック
+            DrawString(1920 / 2 - 150, 200, "=== BLIND ZONE ===", GetColor(255, 255, 255));
+        }
+    }
+
+    // =========================================================================
+    // 3. 各種メニュー描画（文字の視認性向上のため背面に透過プレートを敷く）
+    // =========================================================================
     const int menuStartX = 1920 / 2 - 100;
     const int menuStartY = 400;
     const int menuSpacing = 60;
 
     if (state == TitleState::MAIN)
     {
+        // メニュー用半透明プレート
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 250, menuStartY + 3 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 250, menuStartY + 3 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+
         const char* items[] = { "GAME START", "SETTINGS", "EXIT" };
         for (int i = 0; i < 3; i++)
         {
@@ -451,6 +565,11 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::MODE_SELECT)
     {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(menuStartX - 110, menuStartY - 20, menuStartX + 420, menuStartY + 6 * menuSpacing + 80, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 110, menuStartY - 20, menuStartX + 420, menuStartY + 6 * menuSpacing + 80, GetColor(60, 80, 110), FALSE);
+
         const char* items[] = { 
             "1. Solo Brawl (ソロ・AIデスマッチ)", 
             "2. Local PvP (画面分割 1P vs 2P対戦)", 
@@ -536,6 +655,7 @@ void TitleScene::Draw()
             "Back" 
         };
         for (int i = 0; i < 3; i++)
+
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
             if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -544,6 +664,11 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::JOIN_SELECT)
     {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 420, menuStartY + 4 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 420, menuStartY + 4 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+
         const char* items[] = { 
             "Join LAN (Auto Search)", 
             "Paste IP & Connect (クリップボードから接続)", 
@@ -559,6 +684,11 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::SETTINGS)
     {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(15, 20, 35), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(0, 160, 240), FALSE);
+
         std::string items[] = {
             std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
             "Back"
@@ -584,7 +714,8 @@ void TitleScene::Draw()
                 sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
                 DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (i * 25), (std::string("Your IP: ") + ipStr).c_str(), GetColor(255, 255, 255));
             }
-            DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 15, "[C] キー: 自分のIPアドレスをクリップボードにコピー", GetColor(100, 255, 100));
+            DrawFormatString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 10, GetColor(180, 220, 255), "Port: %d", LAN_PORT);
+            DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 35, "[C] キー: 自分のIPアドレスをクリップボードにコピー", GetColor(100, 255, 100));
         }
 
         if (copyNotifyTimer > 0)
@@ -609,10 +740,13 @@ void TitleScene::Draw()
         }
     }
 
+    // エラー・通知メッセージの赤バナー警告表示 (sou からの復元)
     if (statusMessageTimer > 0 && !statusMessage.empty())
     {
-        DrawBox(1920 / 2 - 350, 1080 - 100, 1920 / 2 + 350, 1080 - 50, GetColor(160, 30, 30), TRUE);
-        DrawBox(1920 / 2 - 350, 1080 - 100, 1920 / 2 + 350, 1080 - 50, GetColor(255, 150, 150), FALSE);
-        DrawString(1920 / 2 - 330, 1080 - 80, statusMessage.c_str(), GetColor(255, 255, 255));
+        int msgWidth = GetDrawStringWidth(statusMessage.c_str(), -1);
+        int halfW = (std::max)(350, msgWidth / 2 + 30);
+        DrawBox(1920 / 2 - halfW, 1080 - 100, 1920 / 2 + halfW, 1080 - 50, GetColor(160, 30, 30), TRUE);
+        DrawBox(1920 / 2 - halfW, 1080 - 100, 1920 / 2 + halfW, 1080 - 50, GetColor(255, 150, 150), FALSE);
+        DrawString(1920 / 2 - msgWidth / 2, 1080 - 80, statusMessage.c_str(), GetColor(255, 255, 255));
     }
 }

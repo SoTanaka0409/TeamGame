@@ -1,7 +1,6 @@
 ﻿#include "GameOverScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
-#include "DebugManager.h"
 #include "SceneManager.h"
 #include "GameScene.h"
 #include "TitleScene.h"
@@ -10,10 +9,31 @@
 GameOverScene::GameOverScene()
     : menuCursor(0), animTimer(0.0f)
 {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    gameOverBgIndex = Load2DImage("gameover_bg.png");
+    if (gameOverBgIndex == -1) {
+        gameOverBgIndex = Load2DImage("result_gameover_bg.png");
+    }
+    windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // UITextWindow によるパネル枠の初期化
+    defeatWindow = new UI::UITextWindow();
+    defeatWindow->SetFixedSize(560, 260);
+    defeatWindow->SetMaxTextWidth(500);
+    defeatWindow->SetPadding(UI::Margin(35, 20, 35, 20));
+    defeatWindow->SetBoxColor(GetColor(35, 10, 10), GetColor(200, 50, 50), 190);
+    if (windowFrameIndex != -1) {
+        defeatWindow->SetBgGraphHandle(Get2DImage(windowFrameIndex));
+    }
 }
 
 GameOverScene::~GameOverScene()
 {
+    delete defeatWindow;
+    defeatWindow = nullptr;
 }
 
 void GameOverScene::Init()
@@ -68,14 +88,25 @@ void GameOverScene::Draw()
 {
     Scene::Draw();
 
-    // 暗い赤基調のグラデーション背景
-    DrawBox(0, 0, 1920, 1080, GetColor(20, 5, 5), TRUE);
+    // 背景描画（配列番号から呼び出し）
+    if (gameOverBgIndex != -1)
+    {
+        DrawFullScreen2DImage(gameOverBgIndex, false);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 110);
+        DrawBox(0, 0, 1920, 1080, GetColor(30, 5, 5), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+    else
+    {
+        // 暗い赤基調のグラデーション背景
+        DrawBox(0, 0, 1920, 1080, GetColor(20, 5, 5), TRUE);
+    }
 
-    // 装飾背景ライン (赤色の警告ライン風)
+    // 装飾背景ライン (赤色の警告ライン風 走査線アニメーション演出 - sou からの復元)
     for (int i = 0; i < 10; ++i)
     {
         int y = (i * 120 + static_cast<int>(animTimer * 40.0f)) % 1080;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 30);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
         DrawLine(0, y, 1920, y, GetColor(255, 50, 50), 1);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
@@ -91,16 +122,23 @@ void GameOverScene::Draw()
     // メインテキスト (赤色)
     DrawString(centerX - 180, titleY, "=== GAME OVER ===", GetColor(255, 60, 60));
 
-    // パネル枠
-    int panelW = 500;
-    int panelH = 250;
+    // パネル枠（UITextWindow による描画）
+    int panelW = 560;
+    int panelH = 260;
     int panelX = centerX - panelW / 2;
-    int panelY = 420;
+    int panelY = 410;
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(35, 10, 10), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(200, 50, 50), FALSE);
+    if (defeatWindow)
+    {
+        defeatWindow->Draw(panelX, panelY);
+    }
+    else
+    {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(35, 10, 10), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(200, 50, 50), FALSE);
+    }
 
     // メニュー選択肢
     const char* options[] = {
@@ -125,16 +163,7 @@ void GameOverScene::Draw()
         DrawString(centerX - 120, itemY, options[i], color);
     }
 
-    if (animTimer < 2.0f)
-    {
-        if (DebugManager::GetInstance().IsDebugMode())
-        {
-            char waitMsg[64];
-            snprintf(waitMsg, sizeof(waitMsg), "[ DEBUG: 決定操作ロック中... (あと %.1f 秒) ]", 2.0f - animTimer);
-            DrawString(centerX - 210, 850, waitMsg, GetColor(255, 120, 120));
-        }
-    }
-    else
+    if (animTimer >= 2.0f)
     {
         DrawString(centerX - 160, 850, "[ W / S ] 選択   [ Enter / クリック ] 決定", GetColor(180, 120, 120));
     }

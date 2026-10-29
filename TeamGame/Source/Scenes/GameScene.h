@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "Scene.h"
 #include "StageManager.h"
-#include "DebugManager.h"
 #include "../Core/Vector2.h"
 #include <vector>
 

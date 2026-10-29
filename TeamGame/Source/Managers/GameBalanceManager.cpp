@@ -26,7 +26,7 @@ bool GameBalanceManager::LoadFromCSV(const std::string& filePath)
 
     std::string line;
     // ヘッダー行を読み飛ばす
-    if (!std::getline(file, line))
+    if (!std::getline(file, line)) 
     {
         return false;
     }
@@ -40,6 +40,7 @@ bool GameBalanceManager::LoadFromCSV(const std::string& filePath)
 
         std::stringstream ss(line);
         std::string key, valStr, desc;
+        
 
         if (!std::getline(ss, key, ',')) continue;
         if (!std::getline(ss, valStr, ',')) continue;

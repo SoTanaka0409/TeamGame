@@ -436,5 +436,53 @@
     <None Include="Resource\Textures\Grass1.png">
       <Filter>リソース ファイル</Filter>
     </None>
+    <None Include="Resource\GreenCharacter\character.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.glb">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.fbx">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.blend">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\preview.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\grass.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\grass_02_plain_dark.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_01.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_02.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_03.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_04.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title02.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title2.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Titleu.jpg">
+      <Filter>リソース ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>

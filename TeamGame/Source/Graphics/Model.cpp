@@ -32,7 +32,19 @@ Model::Model(const std::string& path)
         if (baseHandle == -1)
         {
             // 実行時のカレントディレクトリの違いを吸収するためのフォールバック探索
+            std::string subPath = path;
+            if (subPath.rfind("Resource/", 0) == 0) {
+                subPath = subPath.substr(9);
+            }
             std::vector<std::string> fallbacks = {
+                "Resource/" + subPath,
+                "TeamGame/Resource/" + subPath,
+                "TeamGame/TeamGame/Resource/" + subPath,
+                "../Resource/" + subPath,
+                "../../Resource/" + subPath,
+                "../TeamGame/Resource/" + subPath,
+                "../../TeamGame/Resource/" + subPath,
+                "../../TeamGame/TeamGame/Resource/" + subPath,
                 "Resource/" + path,
                 "TeamGame/" + path,
                 "TeamGame/TeamGame/" + path,

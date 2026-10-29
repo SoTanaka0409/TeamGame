@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
+#include "../UI/UITextWindow.h"
 #include <string>
 
 /**
@@ -60,6 +61,28 @@ class TitleScene : public Scene
     bool prevC = false;                  ///< 前フレームでのCキー入力状態
     
     void LoadServerConfig();             ///< server_config.ini の読み込み
+
+    // ========================================================
+    // 【画像差し込み用設定】
+    // タイトル画面・設定画面にお好みの画像を表示できます。
+    // 画像ファイルは Resource/ フォルダに配置するか、TitleScene.cpp 内のファイル名を変更してください。
+    // （画像ファイルが存在しない場合は、従来の標準UIが自動描画されます）
+    // ========================================================
+
+    // ========================================================
+    // 【2D画像配列キャッシュ & 番号（インデックス）管理】
+    // 一度読み込まれた画像は配列にキャッシュされ、番号（インデックス）で呼び出せます。
+    // ========================================================
+    int titleBgIndex = -1;       ///< タイトル背景画像の配列番号
+    int titleLogoIndex = -1;     ///< タイトルロゴ画像の配列番号
+    int titleLogoIndex2 = -1;     ///< タイトルロゴ画像の配列番号
+    int settingsBgIndex = -1;    ///< 設定画面背景画像の配列番号
+    int modeSelectBgIndex = -1;  ///< モード選択背景画像の配列番号
+    int windowFrameIndex = -1;   ///< UITextWindow用枠画像の配列番号
+
+    // UITextWindow によるメッセージ・情報枠描画
+    mutable class UI::UITextWindow* messageWindow = nullptr; ///< 通知メッセージ用テキストウィンドウ
+    mutable class UI::UITextWindow* settingsWindow = nullptr;///< 設定画面用テキストウィンドウ
 
     /**
      * @brief タイトルシーンの更新処理
