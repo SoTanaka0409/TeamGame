@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -127,6 +127,11 @@ void Enemy::UpdateTarget()
     Character* visibleEnemy = nullptr;
 
     bool selfPanic = this->IsPanic();
+    Character* nearestVisible = nullptr;
+    float minVisibleDist = 999999.0f;
+    Character* nearestAny = nullptr;
+    float minAnyDist = 999999.0f;
+
     for (auto obj : scene->GetObjectManager()->GetObjects())
     {
         Character* c = dynamic_cast<Character*>(obj);
@@ -135,32 +140,32 @@ void Enemy::UpdateTarget()
             // 透明化中のキャラは敵・味方問わず視界外・不可視として扱う
             if (c->IsTransparent()) continue;
 
-            // パニック（バトルロワイヤル）中ならチーム関係なく、マップ上の最も近いキャラクターを無差別ロックオン
-            if (selfPanic)
+            float dx = c->GetPosition().x - position.x;
+            float dy = c->GetPosition().y - position.y;
+            float dist = dx * dx + dy * dy;
+
+            bool isTargetable = selfPanic || (c->teamId != this->teamId);
+            if (isTargetable)
             {
-                float dx = c->GetPosition().x - position.x;
-                float dy = c->GetPosition().y - position.y;
-                float dist = dx * dx + dy * dy;
-                // 遮蔽物があってもバトロワ中は最短の対象へ向かって追跡・交戦する
-                if (dist < minDist) {
-                    minDist = dist;
-                    visibleEnemy = c;
-                }
-            }
-            else if (c->teamId != this->teamId)
-            {
-                if (CheckLineOfSightToTarget(c)) {
-                    float dx = c->GetPosition().x - position.x;
-                    float dy = c->GetPosition().y - position.y;
-                    float dist = dx * dx + dy * dy;
-                    if (dist < minDist) {
-                        minDist = dist;
-                        visibleEnemy = c;
+                if (CheckLineOfSightToTarget(c))
+                {
+                    if (dist < minVisibleDist)
+                    {
+                        minVisibleDist = dist;
+                        nearestVisible = c;
                     }
+                }
+                if (dist < minAnyDist)
+                {
+                    minAnyDist = dist;
+                    nearestAny = c;
                 }
             }
         }
     }
+
+    // 視界が通っている対象を最優先、見当たらない場合は最短の対象（パニック時など）
+    visibleEnemy = nearestVisible ? nearestVisible : (selfPanic ? nearestAny : nullptr);
 
     if (visibleEnemy) {
         targetCharacter = visibleEnemy;
@@ -590,6 +595,7 @@ void Enemy::Update()
 
         if (dist > 0.0001f)
         {
+            // 標的が存在する交戦中は、常に標的の方向を向く（移動方向で上書きして反転回転させない）
             facingDir = Vector2(dx / dist, dy / dist);
         }
 
@@ -597,11 +603,11 @@ void Enemy::Update()
 
         if (!canHitDirectly)
         {
+            // 射線が通っていない／射程外なら標的へ向かって接近・移動
             if (currentStage) {
                 pathfinder.CalculatePath(position, pPos, currentStage, cellSize);
                 Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
                 if (pathDir.x != 0 || pathDir.y != 0) {
-                    facingDir = pathDir;
                     MoveSmart(pathDir);
                 } else {
                     MoveSmart(facingDir);
@@ -612,14 +618,39 @@ void Enemy::Update()
         }
         else
         {
+            // 射程内で標的を捉えている時の戦術的移動（引き撃ち／詰め／サイドステップ）
             strafeTimer--;
             if (strafeTimer <= 0)
             {
                 strafeDirection = (rand() % 2 == 0) ? 1 : -1;
-                strafeTimer = 40 + (rand() % 40);
+                strafeTimer = 60 + (rand() % 60); // 1.0〜2.0秒間安定して同一方向へ移動
             }
-            Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-            MoveSmart(strafeDir);
+
+            // 標的への直交ベクトル（横移動）
+            Vector2 lateralDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+
+            // 適正交戦距離の維持（近すぎたら後退、遠すぎたら前進）
+            float optimalDist = GetEffectiveRange() * 0.65f;
+            Vector2 forwardDir(facingDir.x, facingDir.y);
+            Vector2 moveComb;
+
+            if (dist < optimalDist * 0.7f)
+            {
+                // 近すぎる場合は斜め後ろに下がりながら撃つ（引き撃ち・カイト）
+                moveComb = Vector2(lateralDir.x * 0.7f - forwardDir.x * 0.7f, lateralDir.y * 0.7f - forwardDir.y * 0.7f);
+            }
+            else if (dist > optimalDist * 1.2f)
+            {
+                // 遠めの場合は斜め前に詰めながら撃つ（間合い詰め）
+                moveComb = Vector2(lateralDir.x * 0.6f + forwardDir.x * 0.6f, lateralDir.y * 0.6f + forwardDir.y * 0.6f);
+            }
+            else
+            {
+                // 適正距離なら横移動で相手のエイムをずらす（ストレイフ）
+                moveComb = lateralDir;
+            }
+
+            MoveSmart(moveComb);
         }
 
         if (shootCooldown <= 0 && aimDelayTimer <= 0 && canHitDirectly)
@@ -701,7 +732,10 @@ void Enemy::Update()
         }
         else
         {
-            float scanAng = std::atan2(facingDir.y, facingDir.x) + 0.1f;
+            // その場での高速回転を防ぐため、最後に目撃した方向を中心に滑らかに左右を索敵する
+            float baseAng = std::atan2(lastKnownPos.y - position.y, lastKnownPos.x - position.x);
+            float sweep = std::sin((60 - investigateTimer) * 0.08f) * 0.7f;
+            float scanAng = baseAng + sweep;
             facingDir = Vector2(std::cos(scanAng), std::sin(scanAng));
 
             if (investigateTimer <= 0)

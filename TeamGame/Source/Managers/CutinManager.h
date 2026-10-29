@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <vector>
@@ -52,7 +52,7 @@ private:
 
     bool m_isActive = false;
     int m_timer = 0;
-    int m_maxFrames = 54; // 約0.9秒間の高密度演出
+    int m_maxFrames = 26; // 約0.43秒間のスピーディな演出
 
     int m_charaId = 1;
     std::string m_charaName;

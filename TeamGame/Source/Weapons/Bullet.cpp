@@ -130,7 +130,8 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
     {
         Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
         bool canHit = false;
-        if (target && target->teamId != -1)
+        // 射撃者自身への自爆判定を防止
+        if (target && target->teamId != -1 && (shooterName.empty() || target->GetCharacterName() != shooterName))
         {
             if (target->teamId != this->teamId)
             {
@@ -145,14 +146,15 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
 
         if (canHit)
         {
+            int actualDamage = (this->isPanicBullet || (target && target->IsPanic())) ? (this->damage * 25) : (this->damage * 20);
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
+                if (enemy) enemy->Damage(actualDamage, this->shooterName, this->teamId);
             } else if (target->GetObjectTag() == ObjectTag::Player) {
                 Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
+                if (player) player->TakeDamage(actualDamage, this->shooterName, this->teamId);
             }
-            
+
             // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す
             float hitX = position.x;
             float hitY = position.y;
