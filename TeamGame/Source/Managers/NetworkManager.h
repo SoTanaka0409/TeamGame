@@ -61,7 +61,7 @@ private:
 
 public:
     /**
-     * @brief 通信ログを network_log.txt (カレントディレクトリ) に追記する (スレッドセーフ)
+     * @brief 通信ログを network_log.txt (実行ファイルと同じフォルダ) に追記する (スレッドセーフ)
      */
     static void Log(const char* fmt, ...);
 

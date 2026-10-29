@@ -4,6 +4,7 @@
 #include "NetworkManager.h"
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <chrono>
 
 #pragma comment(lib, "winhttp.lib")
@@ -29,15 +30,25 @@ void NetworkManager::Log(const char* fmt, ...)
     snprintf(line, sizeof(line), "[%02d:%02d:%02d.%03d] %s\n",
         st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, body);
 
+    // ログは実行ファイル(.exe)と同じフォルダに出力する (カレントディレクトリの変更に左右されない)
+    static char s_logPath[MAX_PATH] = { 0 };
+    if (s_logPath[0] == '\0')
+    {
+        DWORD len = GetModuleFileNameA(NULL, s_logPath, MAX_PATH);
+        char* lastSep = (len > 0) ? strrchr(s_logPath, '\\') : nullptr;
+        if (lastSep) strcpy_s(lastSep + 1, MAX_PATH - (lastSep + 1 - s_logPath), "network_log.txt");
+        else strcpy_s(s_logPath, "network_log.txt");
+    }
+
     static bool s_firstWrite = true;
     FILE* fp = nullptr;
-    if (fopen_s(&fp, "network_log.txt", s_firstWrite ? "w" : "a") == 0 && fp)
+    if (fopen_s(&fp, s_logPath, s_firstWrite ? "w" : "a") == 0 && fp)
     {
         if (s_firstWrite)
         {
             char cwd[MAX_PATH] = { 0 };
             GetCurrentDirectoryA(MAX_PATH, cwd);
-            fprintf(fp, "===== TeamGame network log (cwd: %s) =====\n", cwd);
+            fprintf(fp, "===== TeamGame network log (file: %s, cwd: %s) =====\n", s_logPath, cwd);
             s_firstWrite = false;
         }
         fputs(line, fp);
