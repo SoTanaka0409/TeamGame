@@ -875,6 +875,11 @@ void GameScene::ProcessNetworkPackets()
         
         if (header->type == PacketType::STAGE_INIT && !NetworkManager::GetInstance().IsHost())
         {
+            // ホストはイントロ中にSTAGE_INITを再送するため、最初の1回だけ処理する
+            if (stageInitReceived) continue;
+            if (data.size() < sizeof(PacketStageInit)) continue;
+            stageInitReceived = true;
+
             const PacketStageInit* packet = reinterpret_cast<const PacketStageInit*>(data.data());
             
             stageManager.Regenerate(packet->seed);

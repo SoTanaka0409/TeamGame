@@ -51,6 +51,10 @@ private:
     std::mutex m_queueMutex;
     std::queue<std::vector<uint8_t>> m_recvQueue;
 
+    // LAN(TCP)受信用: パケット境界をまたいで届いたバイト列を溜めておく
+    std::vector<uint8_t> m_lanRecvBuffer;
+    static size_t GetPacketSize(uint8_t type);
+
     void WebSocketReceiveLoop();
 
     // 通信診断用カウンタ

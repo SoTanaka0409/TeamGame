@@ -152,6 +152,19 @@ static int ProbeTcp(const char* ip, int port, int timeoutMs)
     return result;
 }
 
+// パケット種別から固定長のパケットサイズを返す (未知の種別は0)
+size_t NetworkManager::GetPacketSize(uint8_t type)
+{
+    switch (static_cast<PacketType>(type))
+    {
+    case PacketType::STAGE_INIT:   return sizeof(PacketStageInit);
+    case PacketType::PLAYER_STATE: return sizeof(PacketPlayerState);
+    case PacketType::ENEMY_STATE:  return sizeof(PacketEnemyState);
+    case PacketType::SHOOT:        return sizeof(PacketShoot);
+    }
+    return 0;
+}
+
 NetworkManager::NetworkManager()
     : m_networkMode(NetworkMode::NONE),
       m_isConnected(false),
@@ -464,6 +477,7 @@ void NetworkManager::Disconnect()
             m_isListening = false;
         }
     }
+    m_lanRecvBuffer.clear();
 
     m_isConnected = false;
     m_isHost = false;
@@ -526,13 +540,33 @@ std::vector<std::vector<uint8_t>> NetworkManager::ReceivePackets()
             Log("[RECV] connection LOST detected: lostHandle=%d (my handle=%d) -> peer closed or network dropped", lost, m_netHandle);
         }
 
+        // TCPはストリームなので、届いたバイト列を溜めてパケット種別ごとのサイズで切り出す
         while (GetNetWorkDataLength(m_netHandle) > 0)
         {
             int dataLength = GetNetWorkDataLength(m_netHandle);
-            std::vector<uint8_t> buffer(dataLength);
-            NetWorkRecv(m_netHandle, buffer.data(), dataLength);
-            packets.push_back(buffer);
+            size_t oldSize = m_lanRecvBuffer.size();
+            m_lanRecvBuffer.resize(oldSize + dataLength);
+            NetWorkRecv(m_netHandle, m_lanRecvBuffer.data() + oldSize, dataLength);
         }
+
+        size_t offset = 0;
+        while (offset < m_lanRecvBuffer.size())
+        {
+            size_t packetSize = GetPacketSize(m_lanRecvBuffer[offset]);
+            if (packetSize == 0)
+            {
+                // 未知の種別: 以降の区切りが分からないため破棄して同期を取り直す
+                Log("[RECV] unknown packet type=%d, discarding %d buffered bytes",
+                    static_cast<int>(m_lanRecvBuffer[offset]), static_cast<int>(m_lanRecvBuffer.size() - offset));
+                offset = m_lanRecvBuffer.size();
+                break;
+            }
+            if (m_lanRecvBuffer.size() - offset < packetSize) break; // 続きが未着
+
+            packets.emplace_back(m_lanRecvBuffer.begin() + offset, m_lanRecvBuffer.begin() + offset + packetSize);
+            offset += packetSize;
+        }
+        m_lanRecvBuffer.erase(m_lanRecvBuffer.begin(), m_lanRecvBuffer.begin() + offset);
     }
 
     m_recvCount += static_cast<int>(packets.size());

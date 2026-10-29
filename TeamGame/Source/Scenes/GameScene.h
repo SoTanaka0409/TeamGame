@@ -72,6 +72,7 @@ class GameScene : public Scene
      * @details 受信したパケットを解析し、他のプレイヤーの移動やステージ生成などをゲームに反映させます。
      */
     void ProcessNetworkPackets();
+    bool stageInitReceived = false;      ///< ゲスト側: STAGE_INITを処理済みか（再送分で敵が重複生成されるのを防ぐ）
 
   public:
     /**
