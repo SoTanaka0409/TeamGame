@@ -27,6 +27,7 @@ Enemy::Enemy(float startX, float startY, int tId)
     std::string botType = (teamId == 0) ? "AllyBot" : "EnemyBot";
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData(botType);
     if (!data && teamId != 0) data = CharacterManager::GetInstance().GetCharacterData("EnemyBot");
+    if (!data) data = CharacterManager::GetInstance().GetCharacterDataById(1);
 
     if (data)
     {
@@ -51,6 +52,13 @@ Enemy::Enemy(float startX, float startY, int tId)
 void Enemy::SetCharacterId(int id)
 {
     m_characterId = id;
+    const CharacterData* data = CharacterManager::GetInstance().GetCharacterDataById(id);
+    if (data)
+    {
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+        if (collider) collider->SetRadius(data->colliderRadius);
+        radius = data->colliderRadius;
+    }
     UpdatePersonality();
 }
 

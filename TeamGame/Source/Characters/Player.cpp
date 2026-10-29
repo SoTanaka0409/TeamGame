@@ -30,6 +30,8 @@ Player::Player(float startX, float startY)
     
     // CharacterManager(characters.csv)からパラメータを適用
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData("Player");
+    if (!data) data = CharacterManager::GetInstance().GetCharacterDataById(1);
+
     if (data)
     {
         status.Init(data->maxHp, data->moveSpeed, data->attackPower);

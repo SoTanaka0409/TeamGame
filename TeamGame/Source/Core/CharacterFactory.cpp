@@ -19,7 +19,7 @@ Player* CharacterFactory::CreatePlayer(float startX, float startY, Stage* stage,
     const auto& selection = PlayerSelectionManager::GetInstance().GetSelection();
     const auto& charaData = selection.selectedCharacter;
 
-    player->status.Init(charaData.maxHp, charaData.moveSpeed, 10);
+    player->status.Init(charaData.maxHp, charaData.moveSpeed, charaData.attackPower);
     player->SetThemeColor(charaData.themeColor);
     player->SetColliderRadius(charaData.colliderRadius);
     player->SetModelScale(charaData.modelScale);
@@ -48,12 +48,11 @@ Enemy* CharacterFactory::CreateBot(float startX, float startY, int teamId, int c
     bool found = false;
     for (const auto& chara : availableCharas) {
         if (chara.id == characterId) {
-            // Botの移動速度をプレイヤーと同等の適正範囲 (3.2〜3.8) に調整
+            // Botのステータス(CSV設定値)を適用
             float botSpeed = chara.moveSpeed;
-            if (botSpeed > 3.8f) botSpeed = 3.8f;
-            if (botSpeed < 3.2f) botSpeed = 3.2f;
+            if (botSpeed <= 0.1f) botSpeed = 1.0f; // 異常値防止ガード
 
-            bot->status.Init(chara.maxHp, botSpeed, 10);
+            bot->status.Init(chara.maxHp, botSpeed, chara.attackPower);
             bot->SetColliderRadius(chara.colliderRadius);
             bot->SetModelScale(chara.modelScale);
             std::string teamPrefix = (teamId == 0) ? "[味方] " : "[敵] ";
