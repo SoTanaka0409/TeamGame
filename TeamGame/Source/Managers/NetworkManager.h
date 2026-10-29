@@ -53,7 +53,18 @@ private:
 
     void WebSocketReceiveLoop();
 
+    // 通信診断用カウンタ
+    int m_logTick = 0;
+    int m_sendCount = 0;
+    int m_recvCount = 0;
+    int m_sendFailCount = 0;
+
 public:
+    /**
+     * @brief 通信ログを network_log.txt (実行ファイルと同じフォルダ) に追記する (スレッドセーフ)
+     */
+    static void Log(const char* fmt, ...);
+
     static NetworkManager& GetInstance()
     {
         static NetworkManager instance;
