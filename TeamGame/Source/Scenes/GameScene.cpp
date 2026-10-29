@@ -1,10 +1,10 @@
 ﻿#include "GameScene.h"
 #include "Camera.h"
-#include "DebugManager.h"
 #include "EffectManager.h"
 #include "SoundManager.h"
 #include "CutinManager.h"
 #include "GameBalanceManager.h"
+#include "DebugManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "../Objects/Item.h"
@@ -41,11 +41,35 @@ int GameScene::GetActiveEnemyCount() const
 {
     if (!objectManager) return 0;
     int count = 0;
+    int myTeam = player ? player->teamId : 0;
     for (auto obj : objectManager->GetObjects())
     {
-        if (obj && obj->GetObjectTag() == ObjectTag::Enemy && obj->IsActive())
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c->IsActive() && !c->status.IsDead())
         {
-            count++;
+            if (c->teamId != myTeam && c != remotePlayer)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+int GameScene::GetActiveAllyCount() const
+{
+    if (!objectManager) return 0;
+    int count = 0;
+    int myTeam = player ? player->teamId : 0;
+    for (auto obj : objectManager->GetObjects())
+    {
+        Character* c = dynamic_cast<Character*>(obj);
+        if (c && c->IsActive() && !c->status.IsDead())
+        {
+            if (c->teamId == myTeam && c != player)
+            {
+                count++;
+            }
         }
     }
     return count;
@@ -388,7 +412,6 @@ void GameScene::Update()
                         SpawnEnemiesRandomly(5);
                     }
                 }
-
                 if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_T))
                 {
                     stageManager.NextTheme();
@@ -477,7 +500,26 @@ void GameScene::Draw()
     float cellW = 1920.0f / stage.GetWidth();
     float cellH = 1080.0f / stage.GetHeight();
     float worldCellSize = (cellW < cellH) ? cellW : cellH;
-    float zoomCellSize = 75.0f;
+
+    // カメラの表示セルサイズ（イントロ時は全体を見渡す75.0f、追従プレイ時は狭めて集中できる110.0f）
+    float introZoom = 75.0f;
+    float playZoom = 110.0f;
+    float zoomCellSize = playZoom;
+
+    if (introTimer > 0.0f)
+    {
+        if (introTimer < 60.0f)
+        {
+            // イントロ最後の1秒間（60フレーム）でスムーズにプレイヤーへズームイン
+            float zoomT = 1.0f - (introTimer / 60.0f);
+            zoomT = zoomT * zoomT * (3.0f - 2.0f * zoomT); // smoothstep補間
+            zoomCellSize = introZoom + (playZoom - introZoom) * zoomT;
+        }
+        else
+        {
+            zoomCellSize = introZoom;
+        }
+    }
 
     float playerWorldX = 0.0f, playerWorldY = 0.0f;
     if (player && player->IsActive())
@@ -498,8 +540,9 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f / 4.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
         Scene::Draw();
+        stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
 
         // 画面分割 (2P - 右半分)
         SetDrawArea(1920 / 2, 0, 1920, 1080);
@@ -511,8 +554,9 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f * 0.75f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(p2Pos.x, p2Pos.y, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
         Scene::Draw();
+        stage.DrawForegroundGrass(p2Pos.x, p2Pos.y, zoomCellSize, worldCellSize);
         
         // 描画エリアリセット
         SetDrawArea(0, 0, 1920, 1080);
@@ -563,9 +607,11 @@ void GameScene::Draw()
         Camera::ScreenCenterX = 1920.0f / 2.0f;
         Camera::ScreenCenterY = 1080.0f / 2.0f;
         Camera::ZoomScale = zoomCellSize / worldCellSize;
-        stage.DrawZoomCamera(Camera::TargetWorldX, Camera::TargetWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
+        stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
 
         Scene::Draw();
+
+        stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
     }
 
     float brightRatio = 0.0f;
@@ -720,6 +766,7 @@ void GameScene::Draw()
         DrawString(ruleX, ruleY + 520, "[ ルール ]", GetColor(255, 200, 0));
         DrawString(ruleX, ruleY + 530, "- 10キル先取したチームの勝利！（両チーム: プレイヤー＋Bot2体）", GetColor(255, 255, 255));
         DrawString(ruleX, ruleY + 560, "- 草むらや暗闇を活用してステルス攻撃", GetColor(255, 255, 255));
+
     }
 
     int activeEnemyCount = GetActiveEnemyCount();
@@ -784,14 +831,13 @@ void GameScene::Draw()
         // 自チーム（味方/1P）のキル数バー (青)
         int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
         DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
-        SetFontSize(20);
         if (currentPlayMode == PlayMode::LOCAL_PVP)
         {
-            DrawFormatString(startX - 230, startY + 1, GetColor(100, 200, 255), "1P (青) KILLS: %d/%d", team0Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 1, GetColor(100, 200, 255), 20, "1P (青) KILLS: %d/%d", team0Kills, maxKills);
         }
         else
         {
-            DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), 20, "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
         }
 
         // 敵チーム（2P）のキル数バー (赤)
@@ -799,22 +845,23 @@ void GameScene::Draw()
         DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
         if (currentPlayMode == PlayMode::LOCAL_PVP)
         {
-            DrawFormatString(startX - 230, startY + 33, GetColor(255, 100, 100), "2P (赤) KILLS: %d/%d", team1Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 33, GetColor(255, 100, 100), 20, "2P (赤) KILLS: %d/%d", team1Kills, maxKills);
         }
         else
         {
-            DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+            FontManager::GetInstance().DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), 20, "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
         }
-        SetFontSize(32); // デフォルトフォントサイズに戻す
     }
 
-    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount);
+    int activeAllyCount = GetActiveAllyCount();
+    DebugManager::GetInstance().DrawDebugOverlay(stageName, playerWorldX, playerWorldY, activeEnemyCount, activeAllyCount);
 
     // キルログ・デスログ通知バナーの描画
     MatchManager::GetInstance().DrawKillNotifications();
 
     // スキル発動時のペルソナ5風スタイリッシュカットイン描画（最前面オーバーレイ）
     CutinManager::GetInstance().Draw();
+
 }
 
 void GameScene::ProcessNetworkPackets()

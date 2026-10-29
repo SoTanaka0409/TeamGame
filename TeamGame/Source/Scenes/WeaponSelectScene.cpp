@@ -10,6 +10,26 @@ WeaponSelectScene::WeaponSelectScene() {
 }
 
 void WeaponSelectScene::Init() {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    m_bgImageIndex = Load2DImage("weapon_select_bg.png");
+    if (m_bgImageIndex == -1) {
+        m_bgImageIndex = Load2DImage("select_bg.png");
+    }
+    m_windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // UITextWindow による出撃確認枠の設定
+    m_summaryWindow.SetFixedSize(1520, 110);
+    m_summaryWindow.SetMaxTextWidth(1460);
+    m_summaryWindow.SetPadding(UI::Margin(40, 18, 40, 18));
+    m_summaryWindow.SetLineSpacing(6);
+    m_summaryWindow.SetBoxColor(GetColor(25, 35, 55), GetColor(0, 200, 255), 200);
+    if (m_windowFrameIndex != -1) {
+        m_summaryWindow.SetBgGraphHandle(Get2DImage(m_windowFrameIndex));
+    }
+
     m_slot1Weapon = PlayerSelectionManager::GetFixedSlot1Weapon();
     m_slot2Options = PlayerSelectionManager::GetAvailableSlot2Weapons();
     m_selectedSlot2Index = 0;
@@ -46,7 +66,15 @@ void WeaponSelectScene::Update() {
 }
 
 void WeaponSelectScene::Draw() {
-    DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    // 背景画像の描画（配列番号から呼び出し）
+    if (m_bgImageIndex != -1) {
+        DrawFullScreen2DImage(m_bgImageIndex, false);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    } else {
+        DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    }
 
     FontManager::GetInstance().DrawStringCenter(960, 60, "WEAPON SELECT", GetColor(255, 220, 0), 48);
     FontManager::GetInstance().DrawStringCenter(960, 100, "( [←][→] / [A][D] で武器選択、[Z] / [Enter] で出撃、[Esc] でキャラ選択に戻る )", GetColor(190, 205, 220), 18);
@@ -124,18 +152,19 @@ void WeaponSelectScene::Draw() {
         }
     }
 
-    // 出撃確認サマリー情報
+    // 出撃確認サマリー情報（UITextWindow による描画）
     if (m_selectedSlot2Index >= 0 && m_selectedSlot2Index < count) {
         const auto& selSlot2 = m_slot2Options[m_selectedSlot2Index];
+        int summaryX = 200;
         int summaryY = 780;
-        DrawBox(200, summaryY, 1720, summaryY + 110, GetColor(25, 35, 55), TRUE);
-        DrawBox(200, summaryY, 1720, summaryY + 110, GetColor(0, 200, 255), FALSE);
 
-        FontManager::GetInstance().DrawString(240, summaryY + 18, "【最終出撃装備】", GetColor(255, 220, 0), 20);
-        FontManager::GetInstance().DrawFormatString(240, summaryY + 55, GetColor(255, 255, 255), 22,
-            "キャラ: %s   |   Slot 1: %s   |   Slot 2: %s",
-            selChar.name.c_str(), m_slot1Weapon.name.c_str(), selSlot2.name.c_str()
-        );
+        char buf[256];
+        sprintf_s(buf, sizeof(buf), "キャラ: %s   |   Slot 1: %s   |   Slot 2: %s",
+            selChar.name.c_str(), m_slot1Weapon.name.c_str(), selSlot2.name.c_str());
+
+        m_summaryWindow.SetTitle("【最終出撃装備】", GetColor(255, 220, 0));
+        m_summaryWindow.SetText(buf);
+        m_summaryWindow.Draw(summaryX, summaryY);
     }
 }
 

@@ -12,7 +12,16 @@
  * @brief SniperRifleのコンストラクタ
  * @details 親クラスWeaponを"SniperRifle"という名前で初期化する
  */
-SniperRifle::SniperRifle() : Weapon("SniperRifle") {}
+SniperRifle::SniperRifle() : Weapon("SniperRifle")
+{
+    barrelVisual.barrelLength = 55.0f;
+    barrelVisual.barrelWidth = 3;
+    barrelVisual.barrelColor = 0x222B35;
+    barrelVisual.accentColor = 0x00E5FF;
+    barrelVisual.hasMuzzleBrake = true;
+    barrelVisual.muzzleColor = 0x11161B;
+    barrelVisual.muzzleWidthOffset = 2.0f;
+}
 
 /**
  * @brief スナイパーの弾を発射する実装

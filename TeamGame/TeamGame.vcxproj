@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -119,6 +119,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetPath)" "$(SolutionDir)TeamGame.exe" &gt;nul 2&gt;&amp;1 &amp; copy /Y "$(TargetPath)" "$(ProjectDir)TeamGame.exe" &gt;nul 2&gt;&amp;1</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -137,6 +140,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\DxLib_VC\プロジェクトに追加すべきファイル_VC用;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetPath)" "$(SolutionDir)TeamGame.exe" &gt;nul 2&gt;&amp;1 &amp; copy /Y "$(TargetPath)" "$(ProjectDir)TeamGame.exe" &gt;nul 2&gt;&amp;1</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -277,7 +283,7 @@
     <ClCompile Include="Source\Stage\StageTest_main.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="Source\UITextWindow.cpp">
+    <ClCompile Include="Source\UI\UITextWindow.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Weapons\Bullet.cpp">
@@ -296,6 +302,9 @@
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Weapons\Weapon.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\SubmachineGun.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Animation.cpp">
@@ -358,20 +367,38 @@
     <ClInclude Include="Source\Stage\StageGenerator.h" />
     <ClInclude Include="Source\Stage\StageManager.h" />
     <ClInclude Include="Source\Stage\StageTypes.h" />
-    <ClInclude Include="Source\UITextWindow.h" />
+    <ClInclude Include="Source\UI\UITextWindow.h" />
     <ClInclude Include="Source\Weapons\Bullet.h" />
     <ClInclude Include="Source\Weapons\EnemyBullet.h" />
     <ClInclude Include="Source\Weapons\Handgun.h" />
     <ClInclude Include="Source\Weapons\Shotgun.h" />
     <ClInclude Include="Source\Weapons\SniperRifle.h" />
     <ClInclude Include="Source\Weapons\Weapon.h" />
+    <ClInclude Include="Source\Weapons\SubmachineGun.h" />
+    <ClInclude Include="Source\Weapons\BulletVisualConfig.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resource\characters.csv" />
-    <None Include="Resource\game_balance.csv" />
-    <None Include="Resource\items.csv" />
-    <None Include="Resource\skills.csv" />
-    <None Include="Resource\weapons.csv" />
-    <None Include="Resource\Grass1.png" />
+    <None Include="Resource\CSV\characters.csv" />
+    <None Include="Resource\CSV\game_balance.csv" />
+    <None Include="Resource\CSV\items.csv" />
+    <None Include="Resource\CSV\skills.csv" />
+    <None Include="Resource\CSV\weapons.csv" />
+    <None Include="Resource\Textures\Grass1.png" />
+    <None Include="Resource\GreenCharacter\character.mv1" />
+    <None Include="Resource\GreenCharacter\character.glb" />
+    <None Include="Resource\GreenCharacter\character.fbx" />
+    <None Include="Resource\GreenCharacter\character.blend" />
+    <None Include="Resource\GreenCharacter\preview.png" />
+    <None Include="Resource\grass.mv1" />
+    <None Include="Resource\grass_02_plain_dark.mv1" />
+    <None Include="Resource\rock.mv1" />
+    <None Include="Resource\rock_01.mv1" />
+    <None Include="Resource\rock_02.mv1" />
+    <None Include="Resource\rock_03.mv1" />
+    <None Include="Resource\rock_04.mv1" />
+    <None Include="Resource\Title.png" />
+    <None Include="Resource\Title02.png" />
+    <None Include="Resource\Title2.png" />
+    <None Include="Resource\Titleu.jpg" />
   </ItemGroup>
 </Project>

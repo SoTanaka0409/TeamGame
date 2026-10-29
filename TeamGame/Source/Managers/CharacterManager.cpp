@@ -7,6 +7,7 @@ bool CharacterManager::LoadFromCSV(const std::string& filePath)
 {
     std::vector<std::string> searchPaths = {
         filePath,
+        "Resource/CSV/" + filePath,
         "Resource/" + filePath,
         "Source/Characters/" + filePath
     };

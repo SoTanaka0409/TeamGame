@@ -1,4 +1,5 @@
 ﻿#include "Camera.h"
+#include "FontManager.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -22,10 +23,11 @@ Enemy::Enemy(float startX, float startY, int tId)
       aimDelayTimer(0), strafeDirection(1), strafeTimer(0)
 {
     teamId = tId;
-    characterName = (teamId == 0) ? "味方ボット" : "敵ボット";
+    characterName = (teamId == 0) ? "[味方] ボット" : "[敵] ボット";
     std::string botType = (teamId == 0) ? "AllyBot" : "EnemyBot";
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData(botType);
     if (!data && teamId != 0) data = CharacterManager::GetInstance().GetCharacterData("EnemyBot");
+    if (!data) data = CharacterManager::GetInstance().GetCharacterDataById(1);
 
     if (data)
     {
@@ -37,12 +39,193 @@ Enemy::Enemy(float startX, float startY, int tId)
     }
     else
     {
-        status.Init(100, 3.8f, 10);
+        status.Init(33, 3.6f, 10);
         collider->SetRadius(8.9f);
         radius = 8.9f;
     }
-    collider->SetTag("Enemy");
+    collider->SetTag((teamId == 0) ? "AllyBot" : "EnemyBot");
     SetModelPath("Resource/GreenCharacter/character.mv1");
+    UpdatePersonality();
+    UpdateWeaponTactic();
+}
+
+void Enemy::SetCharacterId(int id)
+{
+    m_characterId = id;
+    const CharacterData* data = CharacterManager::GetInstance().GetCharacterDataById(id);
+    if (data)
+    {
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+        if (collider) collider->SetRadius(data->colliderRadius);
+        radius = data->colliderRadius;
+    }
+    UpdatePersonality();
+}
+
+void Enemy::UpdatePersonality()
+{
+    switch (m_characterId)
+    {
+    case 1: // 指揮者 (Tactical): 冷静・自衛重視・味方フォーカス集中砲火
+        personality.retreatHpRatio = 0.40f;
+        personality.aggression = 0.8f;
+        personality.teamworkDistance = 320.0f;
+        personality.focusLowHpTarget = false;
+        personality.preferBush = false;
+        personality.defensiveChokePoint = false;
+        break;
+    case 2: // 反逆者 (Speed): ステルス奇襲・スピード暗殺・即時離脱
+        personality.retreatHpRatio = 0.35f;
+        personality.aggression = 1.3f;
+        personality.teamworkDistance = 0.0f;
+        personality.focusLowHpTarget = false;
+        personality.preferBush = true;
+        personality.defensiveChokePoint = false;
+        break;
+    case 3: // バカ (Assault / Berserker): 猪突猛進・HP無視・撤退なし死なば諸共
+        personality.retreatHpRatio = 0.0f; // 撤退なし！
+        personality.aggression = 2.5f;
+        personality.teamworkDistance = 0.0f;
+        personality.focusLowHpTarget = false;
+        personality.preferBush = false;
+        personality.defensiveChokePoint = false;
+        break;
+    case 4: // 主婦 (Heavy / Guardian): 拠点防衛・近接迎撃
+        personality.retreatHpRatio = 0.25f;
+        personality.aggression = 0.7f;
+        personality.teamworkDistance = 0.0f;
+        personality.focusLowHpTarget = false;
+        personality.preferBush = false;
+        personality.defensiveChokePoint = true;
+        break;
+    case 5: // 悪魔 (Sniper / Executioner): 弱者処刑・瀕死の敵を最優先狙撃
+        personality.retreatHpRatio = 0.30f;
+        personality.aggression = 0.6f;
+        personality.teamworkDistance = 0.0f;
+        personality.focusLowHpTarget = true; // 瀕死優先
+        personality.preferBush = false;
+        personality.defensiveChokePoint = false;
+        break;
+    default:
+        personality = BotPersonality();
+        break;
+    }
+}
+
+void Enemy::UpdateWeaponTactic()
+{
+    if (!equippedWeapon)
+    {
+        weaponTactic = WeaponAITactic();
+        return;
+    }
+
+    std::string wName = equippedWeapon->GetName();
+    if (wName.find("Sniper") != std::string::npos)
+    {
+        // スナイパー: 遠距離狙撃・接近されたら全力後退引き撃ち
+        weaponTactic.optimalRangeMin = 500.0f;
+        weaponTactic.optimalRangeMax = 850.0f;
+        weaponTactic.disengageDistance = 380.0f;
+        weaponTactic.allowRetreatKiting = true;
+        weaponTactic.circleStrafe = false;
+        weaponTactic.recklessRush = false;
+        effectiveRangeCells = 12.0f;
+    }
+    else if (wName.find("Shotgun") != std::string::npos)
+    {
+        // ショットガン: 超至近距離肉薄・突撃
+        weaponTactic.optimalRangeMin = 50.0f;
+        weaponTactic.optimalRangeMax = 180.0f;
+        weaponTactic.disengageDistance = 0.0f;
+        weaponTactic.allowRetreatKiting = false;
+        weaponTactic.circleStrafe = false;
+        weaponTactic.recklessRush = true;
+        effectiveRangeCells = 5.0f;
+    }
+    else if (wName.find("Submachine") != std::string::npos || wName.find("SMG") != std::string::npos)
+    {
+        // サブマシンガン: 中近距離サークル旋回・弾幕制圧
+        weaponTactic.optimalRangeMin = 180.0f;
+        weaponTactic.optimalRangeMax = 380.0f;
+        weaponTactic.disengageDistance = 140.0f;
+        weaponTactic.allowRetreatKiting = false;
+        weaponTactic.circleStrafe = true;
+        weaponTactic.recklessRush = false;
+        effectiveRangeCells = 7.5f;
+    }
+    else
+    {
+        // ハンドガン / その他標準
+        weaponTactic.optimalRangeMin = 250.0f;
+        weaponTactic.optimalRangeMax = 450.0f;
+        weaponTactic.disengageDistance = 160.0f;
+        weaponTactic.allowRetreatKiting = false;
+        weaponTactic.circleStrafe = false;
+        weaponTactic.recklessRush = false;
+        effectiveRangeCells = 9.0f;
+    }
+}
+
+Vector2 Enemy::FindCoverPosition(const Vector2& threatPos)
+{
+    if (!currentStage || cellSize <= 0.0f) return position;
+
+    int curGx = static_cast<int>(position.x / cellSize);
+    int curGy = static_cast<int>(position.y / cellSize);
+    int threatGx = static_cast<int>(threatPos.x / cellSize);
+    int threatGy = static_cast<int>(threatPos.y / cellSize);
+
+    Vector2 bestCover = position;
+    float bestScore = 999999.0f;
+
+    // 周囲2~5マスの中から、敵からの射線が通らない安全なマスを探索
+    for (int dy = -4; dy <= 4; ++dy)
+    {
+        for (int dx = -4; dx <= 4; ++dx)
+        {
+            int gx = curGx + dx;
+            int gy = curGy + dy;
+            if (currentStage->IsOutOfBounds(gx, gy) || currentStage->IsSolidWall(gx, gy)) continue;
+
+            // 敵からの射線チェック（壁で遮蔽されているか）
+            float testWx = (gx + 0.5f) * cellSize;
+            float testWy = (gy + 0.5f) * cellSize;
+            float tdx = testWx - threatPos.x;
+            float tdy = testWy - threatPos.y;
+            float tdist = std::sqrt(tdx * tdx + tdy * tdy);
+            if (tdist < cellSize * 1.5f) continue; // 敵に近すぎる地点は除外
+
+            int steps = static_cast<int>(tdist / (cellSize * 0.4f));
+            if (steps < 2) steps = 2;
+            float stepX = tdx / steps;
+            float stepY = tdy / steps;
+            bool hitWall = false;
+
+            for (int s = 1; s < steps; ++s)
+            {
+                int cgx = static_cast<int>((threatPos.x + stepX * s) / cellSize);
+                int cgy = static_cast<int>((threatPos.y + stepY * s) / cellSize);
+                if (currentStage->IsOutOfBounds(cgx, cgy) || currentStage->IsSolidWall(cgx, cgy))
+                {
+                    hitWall = true;
+                    break;
+                }
+            }
+
+            if (hitWall) // 壁の陰になっていて敵から見えない安全な地点！
+            {
+                float distFromMe = std::sqrt(static_cast<float>(dx * dx + dy * dy));
+                if (distFromMe < bestScore)
+                {
+                    bestScore = distFromMe;
+                    bestCover = Vector2(testWx, testWy);
+                }
+            }
+        }
+    }
+
+    return bestCover;
 }
 
 Enemy::~Enemy()
@@ -54,6 +237,7 @@ void Enemy::SetEquippedWeapon(Weapon* w)
 {
     if (equippedWeapon) delete equippedWeapon;
     equippedWeapon = w;
+    UpdateWeaponTactic();
 }
 
 float Enemy::GetEffectiveRange() const
@@ -127,11 +311,6 @@ void Enemy::UpdateTarget()
     Character* visibleEnemy = nullptr;
 
     bool selfPanic = this->IsPanic();
-    Character* nearestVisible = nullptr;
-    float minVisibleDist = 999999.0f;
-    Character* nearestAny = nullptr;
-    float minAnyDist = 999999.0f;
-
     for (auto obj : scene->GetObjectManager()->GetObjects())
     {
         Character* c = dynamic_cast<Character*>(obj);
@@ -140,32 +319,40 @@ void Enemy::UpdateTarget()
             // 透明化中のキャラは敵・味方問わず視界外・不可視として扱う
             if (c->IsTransparent()) continue;
 
-            float dx = c->GetPosition().x - position.x;
-            float dy = c->GetPosition().y - position.y;
-            float dist = dx * dx + dy * dy;
-
-            bool isTargetable = selfPanic || (c->teamId != this->teamId);
-            if (isTargetable)
+            // パニック（バトルロワイヤル）中ならチーム関係なく、マップ上の最も近いキャラクターを無差別ロックオン
+            if (selfPanic)
             {
-                if (CheckLineOfSightToTarget(c))
-                {
-                    if (dist < minVisibleDist)
-                    {
-                        minVisibleDist = dist;
-                        nearestVisible = c;
-                    }
+                float dx = c->GetPosition().x - position.x;
+                float dy = c->GetPosition().y - position.y;
+                float dist = dx * dx + dy * dy;
+                // 遮蔽物があってもバトロワ中は最短の対象へ向かって追跡・交戦する
+                if (dist < minDist) {
+                    minDist = dist;
+                    visibleEnemy = c;
                 }
-                if (dist < minAnyDist)
-                {
-                    minAnyDist = dist;
-                    nearestAny = c;
+            }
+            else if (c->teamId != this->teamId)
+            {
+                if (CheckLineOfSightToTarget(c)) {
+                    float dx = c->GetPosition().x - position.x;
+                    float dy = c->GetPosition().y - position.y;
+                    float distSq = dx * dx + dy * dy;
+                    float score = distSq;
+
+                    // 悪魔 (ID 5): 瀕死（HPが低い）のターゲットを最優先でロックオン！
+                    if (personality.focusLowHpTarget) {
+                        float hpFactor = static_cast<float>(c->status.GetCurrentHp()) / (std::max)(1, c->status.GetMaxHp());
+                        score = distSq * (0.2f + hpFactor * 0.8f);
+                    }
+
+                    if (score < minDist) {
+                        minDist = score;
+                        visibleEnemy = c;
+                    }
                 }
             }
         }
     }
-
-    // 視界が通っている対象を最優先、見当たらない場合は最短の対象（パニック時など）
-    visibleEnemy = nearestVisible ? nearestVisible : (selfPanic ? nearestAny : nullptr);
 
     if (visibleEnemy) {
         targetCharacter = visibleEnemy;
@@ -366,8 +553,8 @@ void Enemy::MoveSmart(const Vector2 &desiredDir)
         position.y = nextY;
     }
 
-    // 正面が壁やキャラクターで引っかかった場合、角を回避するスライド移動を試みる
-    if (xBlocked || yBlocked)
+    // 両軸ともブロックされて完全に進行不可になった場合のみ、角を回避するスライド移動を試みる
+    if (xBlocked && yBlocked)
     {
         Vector2 slideDir1(normDir.y, -normDir.x);
         Vector2 slideDir2(-normDir.y, normDir.x);
@@ -553,9 +740,24 @@ void Enemy::Update()
     // 視界チェック
     bool canSeeTarget = CheckLineOfSightToTarget(targetCharacter);
 
+    // --- 危機管理・低HP・デバフによる撤退（RETREAT）判定 ---
+    float hpRatio = (status.GetMaxHp() > 0) ? (static_cast<float>(status.GetCurrentHp()) / status.GetMaxHp()) : 1.0f;
+    bool isLowHp = (personality.retreatHpRatio > 0.0f && hpRatio <= personality.retreatHpRatio);
+    bool isSeverelyDebuffed = (status.GetSpeed() < 3.2f); // 鈍足デバフ
+
+    if (!IsPanic() && targetCharacter && targetCharacter->IsActive() && (isLowHp || (isSeverelyDebuffed && hpRatio <= 0.6f)))
+    {
+        if (aiState != EnemyAIState::RETREAT)
+        {
+            aiState = EnemyAIState::RETREAT;
+            retreatTimer = 180; // 約3秒間退避行動
+            coverTargetPos = FindCoverPosition(targetCharacter->GetPosition());
+        }
+    }
+
     if (canSeeTarget)
     {
-        if (aiState != EnemyAIState::ALERT)
+        if (aiState != EnemyAIState::ALERT && aiState != EnemyAIState::RETREAT)
         {
             aiState = EnemyAIState::ALERT;
             aimDelayTimer = IsPanic() ? 5 : 25; // パニック中はエイム遅延ほぼゼロで即射撃
@@ -581,7 +783,63 @@ void Enemy::Update()
         aiState = EnemyAIState::PATROL;
     }
 
-    if (aiState == EnemyAIState::ALERT && targetCharacter && targetCharacter->IsActive())
+    // ----------------------------------------------------
+    // 撤退ステート (RETREAT): 遮蔽物へ避難しつつ牽制
+    // ----------------------------------------------------
+    if (aiState == EnemyAIState::RETREAT)
+    {
+        retreatTimer--;
+
+        if (targetCharacter && targetCharacter->IsActive())
+        {
+            float dx = targetCharacter->GetPosition().x - position.x;
+            float dy = targetCharacter->GetPosition().y - position.y;
+            float dist = std::sqrt(dx * dx + dy * dy);
+            if (dist > 0.001f) facingDir = Vector2(dx / dist, dy / dist);
+
+            // 敵から視線が通っており射程内なら後退牽制射撃
+            if (shootCooldown <= 0 && CheckLineOfSightToTarget(targetCharacter) && dist <= GetEffectiveRange())
+            {
+                Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f), position.y + facingDir.y * (radius + 5.0f));
+                if (equippedWeapon && equippedWeapon->CanFire())
+                {
+                    equippedWeapon->Fire(muzzlePos, facingDir, teamId, true, GetCharacterName(), false);
+                    if (m_model) m_model->PlayShoot();
+                    shootCooldown = (equippedWeapon->GetData()) ? equippedWeapon->GetData()->fireInterval + 20 : 90;
+                }
+            }
+        }
+
+        // 遮蔽地点へ移動
+        float cdx = coverTargetPos.x - position.x;
+        float cdy = coverTargetPos.y - position.y;
+        float cdist = std::sqrt(cdx * cdx + cdy * cdy);
+
+        if (cdist > cellSize * 0.6f && currentStage)
+        {
+            pathfinder.CalculatePath(position, coverTargetPos, currentStage, cellSize);
+            Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+            MoveSmart((pathDir.x != 0 || pathDir.y != 0) ? pathDir : Vector2(cdx / cdist, cdy / cdist));
+        }
+        else
+        {
+            // 遮蔽到達！弾薬補充リロード
+            if (equippedWeapon && equippedWeapon->GetCurrentAmmo() < equippedWeapon->GetMaxAmmo() && !equippedWeapon->IsReloading())
+            {
+                equippedWeapon->Reload();
+            }
+        }
+
+        if (retreatTimer <= 0)
+        {
+            aiState = EnemyAIState::PATROL;
+            patrolChangeTimer = 60;
+        }
+    }
+    // ----------------------------------------------------
+    // 警戒・戦闘ステート (ALERT): 武器・性格別の交戦移動
+    // ----------------------------------------------------
+    else if (aiState == EnemyAIState::ALERT && targetCharacter && targetCharacter->IsActive())
     {
         if (aimDelayTimer > 0)
         {
@@ -593,66 +851,99 @@ void Enemy::Update()
         float dy = pPos.y - position.y;
         float dist = std::sqrt(dx * dx + dy * dy);
 
-        if (dist > 0.0001f)
+        if (dist > 0.001f)
         {
-            // 標的が存在する交戦中は、常に標的の方向を向く（移動方向で上書きして反転回転させない）
             facingDir = Vector2(dx / dist, dy / dist);
         }
 
         bool canHitDirectly = (dist <= GetEffectiveRange()) && CheckLineOfSightToTarget(targetCharacter);
 
-        if (!canHitDirectly)
+        // --- 武器ごとの交戦間合い・移動戦術 ---
+        if (weaponTactic.allowRetreatKiting && dist < weaponTactic.disengageDistance)
         {
-            // 射線が通っていない／射程外なら標的へ向かって接近・移動
-            if (currentStage) {
-                pathfinder.CalculatePath(position, pPos, currentStage, cellSize);
-                Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
-                if (pathDir.x != 0 || pathDir.y != 0) {
-                    MoveSmart(pathDir);
-                } else {
+            // ★ スナイパー: 接近されたら敵の逆方向（後退）へ全力で引き撃ち！
+            Vector2 retreatDir = Vector2(-facingDir.x, -facingDir.y);
+            MoveSmart(retreatDir);
+        }
+        else if (weaponTactic.recklessRush)
+        {
+            // ★ ショットガン: 遮蔽や被弾を恐れず最短距離で敵の懐へ直進ダッシュ！
+            if (dist > 90.0f)
+            {
+                if (!canHitDirectly && currentStage)
+                {
+                    pathfinder.CalculatePath(position, pPos, currentStage, cellSize);
+                    Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+                    MoveSmart((pathDir.x != 0 || pathDir.y != 0) ? pathDir : facingDir);
+                }
+                else
+                {
                     MoveSmart(facingDir);
                 }
-            } else {
-                MoveSmart(facingDir);
+            }
+            else
+            {
+                // 至近距離到達時は微小なカニ歩き
+                strafeTimer--;
+                if (strafeTimer <= 0) { strafeDirection = (rand() % 2 == 0) ? 1 : -1; strafeTimer = 25; }
+                Vector2 closeStrafe(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+                MoveSmart(closeStrafe);
             }
         }
-        else
+        else if (weaponTactic.circleStrafe)
         {
-            // 射程内で標的を捉えている時の戦術的移動（引き撃ち／詰め／サイドステップ）
+            // ★ サブマシンガン: 敵の周囲を高速旋回（サークル移動）してエイム撹乱！
             strafeTimer--;
             if (strafeTimer <= 0)
             {
                 strafeDirection = (rand() % 2 == 0) ? 1 : -1;
-                strafeTimer = 60 + (rand() % 60); // 1.0〜2.0秒間安定して同一方向へ移動
+                strafeTimer = 60 + (rand() % 40);
             }
-
-            // 標的への直交ベクトル（横移動）
-            Vector2 lateralDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-
-            // 適正交戦距離の維持（近すぎたら後退、遠すぎたら前進）
-            float optimalDist = GetEffectiveRange() * 0.65f;
-            Vector2 forwardDir(facingDir.x, facingDir.y);
-            Vector2 moveComb;
-
-            if (dist < optimalDist * 0.7f)
+            Vector2 tangentDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+            float distError = dist - 260.0f; // 理想交戦距離
+            Vector2 circleDir = tangentDir + facingDir * (distError > 0 ? 0.4f : -0.3f);
+            float cLen = std::sqrt(circleDir.x * circleDir.x + circleDir.y * circleDir.y);
+            if (cLen > 0.001f) circleDir = Vector2(circleDir.x / cLen, circleDir.y / cLen);
+            MoveSmart(circleDir);
+        }
+        else
+        {
+            // ★ 通常 (ハンドガンなど)
+            if (!canHitDirectly)
             {
-                // 近すぎる場合は斜め後ろに下がりながら撃つ（引き撃ち・カイト）
-                moveComb = Vector2(lateralDir.x * 0.7f - forwardDir.x * 0.7f, lateralDir.y * 0.7f - forwardDir.y * 0.7f);
-            }
-            else if (dist > optimalDist * 1.2f)
-            {
-                // 遠めの場合は斜め前に詰めながら撃つ（間合い詰め）
-                moveComb = Vector2(lateralDir.x * 0.6f + forwardDir.x * 0.6f, lateralDir.y * 0.6f + forwardDir.y * 0.6f);
+                if (currentStage) {
+                    pathfinder.CalculatePath(position, pPos, currentStage, cellSize);
+                    Vector2 pathDir = pathfinder.GetMoveDirection(position, status.GetSpeed(), cellSize);
+                    if (pathDir.x != 0 || pathDir.y != 0) {
+                        facingDir = pathDir;
+                        MoveSmart(pathDir);
+                    } else {
+                        MoveSmart(facingDir);
+                    }
+                } else {
+                    MoveSmart(facingDir);
+                }
             }
             else
             {
-                // 適正距離なら横移動で相手のエイムをずらす（ストレイフ）
-                moveComb = lateralDir;
+                strafeTimer--;
+                if (strafeTimer <= 0)
+                {
+                    strafeDirection = (rand() % 2 == 0) ? 1 : -1;
+                    strafeTimer = 40 + (rand() % 40);
+                }
+                Vector2 strafeDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
+                MoveSmart(strafeDir);
             }
-
-            MoveSmart(moveComb);
         }
 
+        // 弾薬切れ時は自動リロード
+        if (equippedWeapon && equippedWeapon->GetCurrentAmmo() <= 0 && !equippedWeapon->IsReloading())
+        {
+            equippedWeapon->Reload();
+        }
+
+        // 射撃実行
         if (shootCooldown <= 0 && aimDelayTimer <= 0 && canHitDirectly)
         {
             Vector2 muzzlePos(position.x + facingDir.x * (radius + 5.0f),
@@ -732,10 +1023,7 @@ void Enemy::Update()
         }
         else
         {
-            // その場での高速回転を防ぐため、最後に目撃した方向を中心に滑らかに左右を索敵する
-            float baseAng = std::atan2(lastKnownPos.y - position.y, lastKnownPos.x - position.x);
-            float sweep = std::sin((60 - investigateTimer) * 0.08f) * 0.7f;
-            float scanAng = baseAng + sweep;
+            float scanAng = std::atan2(facingDir.y, facingDir.x) + 0.1f;
             facingDir = Vector2(std::cos(scanAng), std::sin(scanAng));
 
             if (investigateTimer <= 0)
@@ -829,22 +1117,25 @@ void Enemy::Draw()
         return;
     }
 
-    // チーム別カラー（通常：青/赤、バトルロワイヤル錯乱中：全員が敵扱いの紫・マゼンタ・警告オレンジ）
+    // チーム別カラー（味方：鮮明な青シアン、敵：赤、バトルロワイヤル錯乱中：マゼンタ）
     unsigned int bodyColor;
+    unsigned int accentColor;
     if (IsPanic()) {
-        // バトルロワイヤル単独孤立化：禍々しいマゼンタ・紫色に変化
         bodyColor = GetColor(220, 30, 160);
+        accentColor = GetColor(255, 80, 220);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
     } else if (teamId == 0) {
-        bodyColor = GetColor(30, 30, 180);
+        bodyColor = GetColor(20, 130, 240); // 鮮やかな味方ブルー
+        accentColor = GetColor(100, 210, 255);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
-        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(40, 40, 240);
-        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(30, 140, 230);
+        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(0, 170, 255);
+        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(30, 190, 225);
     } else {
-        bodyColor = GetColor(180, 30, 30);
+        bodyColor = GetColor(210, 35, 35); // 鮮やかな敵レッド
+        accentColor = GetColor(255, 90, 90);
         if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
-        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(240, 40, 40);
-        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 140, 30);
+        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(245, 45, 45);
+        else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 130, 30);
     }
 
     // 透明化中の描画制御（完全非表示、または味方なら極薄く表示）
@@ -859,12 +1150,12 @@ void Enemy::Draw()
     if (m_model && m_model->IsLoaded())
     {
         // 足元にチームカラーのガイド円を描画（半透明）
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 130);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius), bodyColor, TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+                   static_cast<int>(renderRadius), accentColor, FALSE);
 
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
@@ -876,7 +1167,44 @@ void Enemy::Draw()
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius), bodyColor, TRUE);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+                   static_cast<int>(renderRadius), accentColor, FALSE);
+    }
+
+    // 頭上の敵味方ネームタグ＆小型HPバーの描画
+    if (!status.IsDead())
+    {
+        float tagY = screenY - renderRadius - 26.0f;
+        int barW = 38;
+        int barH = 5;
+        int barX = static_cast<int>(screenX) - barW / 2;
+
+        std::string displayName = GetCharacterName();
+        unsigned int nameColor = (IsPanic()) ? GetColor(255, 120, 240) :
+                                 (teamId == 0) ? GetColor(130, 220, 255) : GetColor(255, 120, 120);
+
+        int font12 = FontManager::GetInstance().GetFont(12);
+        int strW = GetDrawStringWidthToHandle(displayName.c_str(), static_cast<int>(displayName.length()), font12);
+        int textX = static_cast<int>(screenX) - strW / 2;
+
+        // ネーム背景帯
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 170);
+        DrawBox(textX - 3, static_cast<int>(tagY) - 1, textX + strW + 3, static_cast<int>(tagY) + 13, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        DrawStringToHandle(textX, static_cast<int>(tagY), displayName.c_str(), nameColor, font12);
+
+        // HPバー描画
+        int maxHp = status.GetMaxHp();
+        int curHp = status.GetCurrentHp();
+        float hpRate = (maxHp > 0) ? ((float)curHp / (float)maxHp) : 0.0f;
+        if (hpRate < 0.0f) hpRate = 0.0f;
+        if (hpRate > 1.0f) hpRate = 1.0f;
+
+        int hpY = static_cast<int>(tagY) + 14;
+        DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(20, 20, 20), TRUE);
+        unsigned int hpColor = (teamId == 0) ? GetColor(50, 220, 120) : GetColor(255, 60, 60);
+        DrawBox(barX, hpY, barX + static_cast<int>(barW * hpRate), hpY + barH, hpColor, TRUE);
+        DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(80, 80, 80), FALSE);
     }
 
     // HomingKill 特攻突撃中の残虐・暴走演出（全身が血のように赤黒く脈動し、頭上に死のカウントダウンと赤黒いオーラ）
@@ -923,23 +1251,23 @@ void Enemy::Draw()
         DrawString(static_cast<int>(screenX) - 24, static_cast<int>(headY) - 10, "TARGET", GetColor(255, 60, 60));
     }
 
-    // 警戒（ALERT）状態のリング強調および有効射程ガイド円、【赤色でやや透明な弾道予測線】の描画
+    // 警戒（ALERT）状態のリング強調および有効射程ガイド円、弾道予測線の描画
     if (aiState == EnemyAIState::ALERT)
     {
+        unsigned int alertCol = (teamId == 0) ? GetColor(60, 190, 255) : GetColor(255, 80, 80);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius + 4.0f), GetColor(255, 80, 80), FALSE);
+                   static_cast<int>(renderRadius + 4.0f), alertCol, FALSE);
 
         // 有効射程を示す円（ガイドライン）描画
         float rangeScreenRadius = GetEffectiveRange() * Camera::ZoomScale;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 50);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 45);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(rangeScreenRadius), GetColor(255, 60, 60), FALSE);
+                   static_cast<int>(rangeScreenRadius), alertCol, FALSE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 赤色半透明の弾道予測線 (障害物まで伸ばす)
+        // 弾道予測線 (障害物まで伸ばす)
         if (currentStage && cellSize > 0.0f)
         {
-            
             float maxRange = GetEffectiveRange();
             float stepDist = cellSize * 0.4f;
             float currDist = radius + 5.0f;
@@ -963,13 +1291,13 @@ void Enemy::Draw()
             float hitScreenX = Camera::WorldToScreenX(hitPos.x);
             float hitScreenY = Camera::WorldToScreenY(hitPos.y);
 
-            // 半透明の赤い弾道予測線
+            // 弾道予測線（味方は青シアン、敵は赤）
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 115);
             DrawLine(static_cast<int>(screenX), static_cast<int>(screenY),
                      static_cast<int>(hitScreenX), static_cast<int>(hitScreenY),
-                     GetColor(255, 40, 40), 2);
+                     alertCol, 2);
             DrawCircle(static_cast<int>(hitScreenX), static_cast<int>(hitScreenY),
-                       4, GetColor(255, 80, 80), TRUE);
+                       4, alertCol, TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         }
     }
@@ -977,6 +1305,15 @@ void Enemy::Draw()
     {
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
                    static_cast<int>(renderRadius + 3.0f), GetColor(255, 180, 50), FALSE);
+    }
+    else if (aiState == EnemyAIState::RETREAT)
+    {
+        // 撤退・遮蔽退避中リング（点滅する黄色サークル）
+        float pulse = std::abs(std::sin(GetNowCount() / 150.0f));
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(120 + pulse * 100));
+        DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
+                   static_cast<int>(renderRadius + 4.0f), GetColor(255, 220, 40), FALSE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
     // 敵の視界扇形 (Vision Cone) の透明描画
@@ -986,10 +1323,17 @@ void Enemy::Draw()
         float facingAngle = std::atan2(facingDir.y, facingDir.x);
         float halfAngle = 0.3000f; // 17° (左右合計34°)
 
-        // AI状態に応じた視界コーンの色（通常：薄い黄色、警戒：赤橙色）
-        unsigned int visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(255, 80, 80) :
-                                   (aiState == EnemyAIState::INVESTIGATE) ? GetColor(255, 180, 60) :
-                                   GetColor(255, 230, 100);
+        // AI状態に応じた視界コーンの色（味方は青シアン系、敵は赤・橙系）
+        unsigned int visionColor;
+        if (teamId == 0) {
+            visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(60, 200, 255) :
+                          (aiState == EnemyAIState::INVESTIGATE) ? GetColor(80, 220, 240) :
+                          GetColor(100, 210, 255);
+        } else {
+            visionColor = (aiState == EnemyAIState::ALERT) ? GetColor(255, 80, 80) :
+                          (aiState == EnemyAIState::INVESTIGATE) ? GetColor(255, 180, 60) :
+                          GetColor(255, 230, 100);
+        }
         int coneAlpha = (aiState == EnemyAIState::ALERT) ? 65 : 40;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, coneAlpha);
@@ -1015,7 +1359,12 @@ void Enemy::Draw()
     int x2 = static_cast<int>(screenX + facingDir.x * lineLen);
     int y2 = static_cast<int>(screenY + facingDir.y * lineLen);
 
-    unsigned int lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(255, 50, 50) : GetColor(230, 160, 100);
+    unsigned int lineCol;
+    if (teamId == 0) {
+        lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(50, 180, 255) : GetColor(100, 200, 255);
+    } else {
+        lineCol = (aiState == EnemyAIState::ALERT) ? GetColor(255, 50, 50) : GetColor(230, 160, 100);
+    }
     DrawLine(x1, y1, x2, y2, lineCol, 2);
 }
 

@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "Scene.h"
 #include "StageManager.h"
-#include "DebugManager.h"
 #include "../Core/Vector2.h"
 #include <vector>
 
@@ -132,6 +131,7 @@ class GameScene : public Scene
      * @details フィールド上に存在し、まだ倒されていない敵キャラクターの数をカウントして返します。
      */
     int GetActiveEnemyCount() const;
+    int GetActiveAllyCount() const;
 
     /**
      * @brief 現在のステージを取得する

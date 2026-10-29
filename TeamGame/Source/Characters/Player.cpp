@@ -1,4 +1,5 @@
-#include "Camera.h"
+﻿#include "Camera.h"
+#include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
 #include "Stage.h"
@@ -29,6 +30,8 @@ Player::Player(float startX, float startY)
     
     // CharacterManager(characters.csv)からパラメータを適用
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterData("Player");
+    if (!data) data = CharacterManager::GetInstance().GetCharacterDataById(1);
+
     if (data)
     {
         status.Init(data->maxHp, data->moveSpeed, data->attackPower);
@@ -37,7 +40,7 @@ Player::Player(float startX, float startY)
     }
     else
     {
-        status.Init(100, 4.2f, 10);
+        status.Init(33, 4.2f, 10);
         if (collider) collider->SetRadius(8.9f);
         radius = 8.9f;
     }
@@ -600,26 +603,26 @@ void Player::Draw()
                    static_cast<int>(renderRadius), color, TRUE);
     }
 
-    // 向いている方角を線で描画
-    float lineLen = 50.0f; // 線の長さ
-    float len =
-        std::sqrt(facingDir.x * facingDir.x + facingDir.y * facingDir.y);
-    float nx = facingDir.x;
-    float ny = facingDir.y;
+    // 向いている方角の単位ベクトル
+    float dirLen = std::sqrt(facingDir.x * facingDir.x + facingDir.y * facingDir.y);
+    float nx = (dirLen > 0.0001f) ? (facingDir.x / dirLen) : facingDir.x;
+    float ny = (dirLen > 0.0001f) ? (facingDir.y / dirLen) : facingDir.y;
 
-    if (len > 0.0001f)
+    // 銃身（ガンバレル）の描画: 装備中の武器固有の描画アセットを描画
+    if (!weapons.empty() && weapons[currentWeaponIndex])
     {
-        nx /= len;
-        ny /= len;
+        weapons[currentWeaponIndex]->DrawBarrel(screenX, screenY, facingDir);
     }
-
-    int x1 = static_cast<int>(screenX);
-    int y1 = static_cast<int>(screenY);
-    int x2 = static_cast<int>(screenX + nx * lineLen);
-    int y2 = static_cast<int>(screenY + ny * lineLen);
-
-    // 白い線を描画（太さ2）
-    DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+    else
+    {
+        // 向いている方角を線で描画
+        float lineLen = 50.0f; // 線の長さ
+        int x1 = static_cast<int>(screenX);
+        int y1 = static_cast<int>(screenY);
+        int x2 = static_cast<int>(screenX + nx * lineLen);
+        int y2 = static_cast<int>(screenY + ny * lineLen);
+        DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+    }
 
     // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
     if (!weapons.empty() && weapons[currentWeaponIndex]) {
@@ -631,7 +634,7 @@ void Player::Draw()
     // 【サーチ的な感じでブレ幅（予測線）を描画】
     if (currentStage && cellSize > 0.0f)
     {
-        float zoomCellSize = 75.0f;
+        float zoomCellSize = cellSize * Camera::ZoomScale;
         float maxRange = cellSize * 12.0f;
         if (!weapons.empty() && weapons[currentWeaponIndex]->GetData()) {
             maxRange = weapons[currentWeaponIndex]->GetData()->range;
@@ -742,7 +745,7 @@ void Player::Draw()
 
         if (canKillEnemy)
         {
-            float zoomScale = 75.0f / (cellSize > 0.0f ? cellSize : 40.0f);
+            float zoomScale = Camera::ZoomScale;
             Vector2 ePos = canKillEnemy->GetPosition();
             float eScreenX = Camera::WorldToScreenX(ePos.x);
             float eScreenY = Camera::WorldToScreenY(ePos.y);
@@ -943,8 +946,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float playerPixelX = Camera::WorldToScreenX(position.x);
     float playerPixelY = Camera::WorldToScreenY(position.y);
 
-    float zoomCellSize = 75.0f;
-    float zoomScale = zoomCellSize / cellSize;
+    float zoomCellSize = cellSize * Camera::ZoomScale;
+    float zoomScale = Camera::ZoomScale;
 
     float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
     float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
@@ -954,7 +957,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
     
 
-    const int resolutionStep = 4; // 高速4pxステップ
+    const int resolutionStep = 8; // 8pxステップで高精細かつ大幅軽量化
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
 
@@ -962,32 +965,48 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float globalBrightVal = brightRatio * 0.05f;
     float maxDarkAlpha = 248.0f * (1.0f - brightRatio * 0.10f);
 
+    float maxSpotDistSq = maxSpotDist * maxSpotDist;
+    float closeRadiusSq = closeRadius * closeRadius;
+
+    // 扇形コサイン事前計算
+    float cosHalfAngle = std::cos(m_fanAngleHalf);
+    float cosHalfAngleSq = cosHalfAngle * cosHalfAngle;
+
+    unsigned int darkColor = GetColor(4, 5, 10);
+    int currentBlendAlpha = -1;
+
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
     {
+        int bottomY = (std::min)(py + resolutionStep, rectY + rectH);
+        int runStartX = -1;
+        int runAlpha = -1;
+
         for (int px = rectX; px < rectX + rectW; px += resolutionStep)
         {
-            float dx = px - playerPixelX;
-            float dy = py - playerPixelY;
-            float dist = std::sqrt(dx * dx + dy * dy);
+            float dx = (px + resolutionStep * 0.5f) - playerPixelX;
+            float dy = (py + resolutionStep * 0.5f) - playerPixelY;
+            float distSq = dx * dx + dy * dy;
 
             float lightVal = 0.0f;
 
             // A. プレイヤー周囲の足元明かり
-            if (dist < closeRadius)
+            if (distSq < closeRadiusSq)
             {
+                float dist = std::sqrt(distSq);
                 float ambientLight = 0.38f * (1.0f - (dist / closeRadius) * 0.6f);
                 lightVal = (std::max)(lightVal, ambientLight);
             }
 
             // B. 前方60°扇形スポットライト
-            if (m_isLightOn && dist < maxSpotDist)
+            if (m_isLightOn && distSq < maxSpotDistSq)
             {
-                float cellAngle = std::atan2(dy, dx);
-                float angleDiff = std::abs(cellAngle - lightAngle);
-                while (angleDiff > 3.14159265f) angleDiff = std::abs(angleDiff - 2.0f * 3.14159265f);
+                // 向きベクトルとの内積（前方方向への投影）
+                float forwardProj = dx * facingDir.x + dy * facingDir.y;
 
-                if (angleDiff < m_fanAngleHalf)
+                // 前方かつ扇形角度内（cosの比較による高速内外判定）
+                if (forwardProj > 0.0f && (forwardProj * forwardProj >= cosHalfAngleSq * distSq))
                 {
+                    float dist = std::sqrt(distSq);
                     bool isBlocked = false;
 
                     if (dist > zoomCellSize * 0.8f)
@@ -1023,7 +1042,11 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                     {
                         float distFade = 1.0f - (dist / maxSpotDist);
                         distFade = distFade * distFade;
+
+                        float angleCos = forwardProj / dist;
+                        float angleDiff = std::acos((std::min)(1.0f, (std::max)(-1.0f, angleCos)));
                         float angleFade = 1.0f - (angleDiff / m_fanAngleHalf);
+                        if (angleFade < 0.0f) angleFade = 0.0f;
                         float spotLight = distFade * angleFade * 0.95f;
 
                         lightVal = (std::max)(lightVal, spotLight);
@@ -1033,15 +1056,41 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             float effectiveLightVal = (std::max)(lightVal, globalBrightVal);
 
+            int alpha = 0;
             if (effectiveLightVal < 0.98f)
             {
-                int alpha = static_cast<int>((1.0f - (std::min)(1.0f, effectiveLightVal)) * maxDarkAlpha);
-                if (alpha > 8)
-                {
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-                    DrawBox(px, py, px + resolutionStep, py + resolutionStep, GetColor(4, 5, 10), TRUE);
-                }
+                alpha = static_cast<int>((1.0f - (std::min)(1.0f, effectiveLightVal)) * maxDarkAlpha);
+                if (alpha <= 8) alpha = 0;
             }
+
+            // アルファ値のクオンタイズ（微細な差をまとめてDrawBoxのランレングス結合率を最大化）
+            int qAlpha = (alpha / 4) * 4;
+
+            if (qAlpha != runAlpha)
+            {
+                if (runAlpha > 0 && runStartX >= 0)
+                {
+                    if (currentBlendAlpha != runAlpha)
+                    {
+                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                        currentBlendAlpha = runAlpha;
+                    }
+                    DrawBox(runStartX, py, px, bottomY, darkColor, TRUE);
+                }
+                runStartX = px;
+                runAlpha = qAlpha;
+            }
+        }
+
+        // 行末のランをフラッシュ描画
+        if (runAlpha > 0 && runStartX >= 0)
+        {
+            if (currentBlendAlpha != runAlpha)
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                currentBlendAlpha = runAlpha;
+            }
+            DrawBox(runStartX, py, rectX + rectW, bottomY, darkColor, TRUE);
         }
     }
 
@@ -1084,9 +1133,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
             DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset - len), lockColor, 2);
 
             // LOCK-ON テキスト
-            SetFontSize(16);
-            DrawString(static_cast<int>(tScreenX - 32), static_cast<int>(tScreenY - offset - 18), "LOCK ON", lockColor);
-            SetFontSize(32);
+            FontManager::GetInstance().DrawString(static_cast<int>(tScreenX - 32), static_cast<int>(tScreenY - offset - 18), "LOCK ON", lockColor, 16);
         }
     }
 }
@@ -1137,9 +1184,7 @@ void Player::DrawUI(int screenX, int screenY)
         char weaponTitle[64];
         snprintf(weaponTitle, sizeof(weaponTitle), "SLOT [%d]  %s", currentWeaponIndex + 1, currentWeapon->GetName().c_str());
 
-        SetFontSize(18);
-        DrawString(screenX + marginX + 10, curY + 7, weaponTitle, GetColor(240, 245, 255));
-        SetFontSize(16);
+        FontManager::GetInstance().DrawString(screenX + marginX + 10, curY + 7, weaponTitle, GetColor(240, 245, 255), 18);
         curY += 44;
     }
 
@@ -1147,14 +1192,10 @@ void Player::DrawUI(int screenX, int screenY)
     int currentAmmo = currentWeapon->GetCurrentAmmo();
     int maxAmmo = currentWeapon->GetMaxAmmo();
 
-    SetFontSize(15);
-    DrawString(screenX + marginX, curY, "AMMO", GetColor(180, 190, 210));
-    SetFontSize(16);
+    FontManager::GetInstance().DrawString(screenX + marginX, curY, "AMMO", GetColor(180, 190, 210), 15);
 
     if (currentWeapon->IsReloading()) {
-        SetFontSize(18);
-        DrawString(screenX + marginX + 70, curY - 1, "RELOADING...", GetColor(255, 200, 50));
-        SetFontSize(16);
+        FontManager::GetInstance().DrawString(screenX + marginX + 70, curY - 1, "RELOADING...", GetColor(255, 200, 50), 18);
     } else {
         char ammoText[64];
         snprintf(ammoText, sizeof(ammoText), "%d", currentAmmo);
@@ -1163,11 +1204,11 @@ void Player::DrawUI(int screenX, int screenY)
 
         unsigned int ammoColor = (currentAmmo == 0) ? GetColor(255, 60, 60) : GetColor(255, 220, 40);
 
-        SetFontSize(22);
-        DrawString(screenX + marginX + 70, curY - 5, ammoText, ammoColor);
-        int numW = GetDrawStringWidth(ammoText, static_cast<int>(strlen(ammoText)));
-        SetFontSize(16);
-        DrawString(screenX + marginX + 70 + numW, curY, maxAmmoText, GetColor(160, 170, 180));
+        int font22 = FontManager::GetInstance().GetFont(22);
+        int font16 = FontManager::GetInstance().GetFont(16);
+        DrawStringToHandle(screenX + marginX + 70, curY - 5, ammoText, ammoColor, font22);
+        int numW = GetDrawStringWidthToHandle(ammoText, static_cast<int>(strlen(ammoText)), font22);
+        DrawStringToHandle(screenX + marginX + 70 + numW, curY, maxAmmoText, GetColor(160, 170, 180), font16);
     }
     curY += 34;
 
@@ -1178,11 +1219,9 @@ void Player::DrawUI(int screenX, int screenY)
     if (hpRatio < 0.0f) hpRatio = 0.0f;
     if (hpRatio > 1.0f) hpRatio = 1.0f;
 
-    SetFontSize(15);
     char hpStr[32];
     snprintf(hpStr, sizeof(hpStr), "HP  %d / %d", curHp, maxHp);
-    DrawString(screenX + marginX, curY, hpStr, GetColor(200, 220, 240));
-    SetFontSize(16);
+    FontManager::GetInstance().DrawString(screenX + marginX, curY, hpStr, GetColor(200, 220, 240), 15);
 
     curY += 20;
     int barW = panelW - marginX * 2 - 10;
@@ -1204,9 +1243,7 @@ void Player::DrawUI(int screenX, int screenY)
     Skill* skill = GetEquippedSkill();
     if (skill)
     {
-        SetFontSize(15);
-        DrawString(screenX + marginX, curY, "SKILL", GetColor(180, 190, 210));
-        SetFontSize(16);
+        FontManager::GetInstance().DrawString(screenX + marginX, curY, "SKILL", GetColor(180, 190, 210), 15);
 
         int ct = skill->GetCoolTimeTimer();
         int activeFrames = 0;
@@ -1251,16 +1288,14 @@ void Player::DrawUI(int screenX, int screenY)
     // 2P等のオートエイム状態インジケーター表示
     if (m_inputType != PlayerInputType::KEYBOARD_MOUSE)
     {
-        SetFontSize(16);
         if (m_autoAimTarget)
         {
-            DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: LOCKED ON ]", GetColor(255, 80, 80));
+            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: LOCKED ON ]", GetColor(255, 80, 80), 16);
         }
         else
         {
-            DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: SEARCHING ]", GetColor(80, 220, 100));
+            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: SEARCHING ]", GetColor(80, 220, 100), 16);
         }
-        SetFontSize(32);
     }
 }
 

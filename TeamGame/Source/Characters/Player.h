@@ -241,8 +241,8 @@ private:
     bool prevAimLockKey = false; ///< 前フレームの視点固定キー状態
     PlayerInputType m_inputType = PlayerInputType::KEYBOARD_MOUSE; ///< 操作タイプ
 
-    float m_maxSpotDistCells = 14.0f; ///< 照射最大距離（セル）
-    float m_closeRadiusCells = 2.0f;  ///< 周囲可視半径（セル）
+    float m_maxSpotDistCells = 8.5f;  ///< 照射最大距離（セル：カメラズームに合わせ縮小）
+    float m_closeRadiusCells = 1.6f;  ///< 周囲可視半径（セル）
     float m_fanAngleHalf = 0.5236f;   ///< ライト半角
 
     mutable int m_flickerTimer = 0;          ///< チラつきタイマー
