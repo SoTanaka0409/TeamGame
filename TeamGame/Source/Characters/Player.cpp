@@ -88,7 +88,10 @@ void Player::Update()
             bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
             if (currMouseRight && !m_prevMouseRight)
             {
-                m_isLightOn = !m_isLightOn;
+                if (m_characterId != 1)
+                {
+                    m_isLightOn = !m_isLightOn;
+                }
             }
             m_prevMouseRight = currMouseRight;
         }
@@ -1006,8 +1009,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 lightVal = (std::max)(lightVal, ambientLight);
             }
 
-            // B. 前方60°扇形スポットライト
-            if (m_isLightOn && distSq < maxSpotDistSq)
+            // B. 前方60°扇形スポットライト（指揮者は無能キャラ仕様のためライトが一切見えない・光が照射されない）
+            if (m_characterId != 1 && m_isLightOn && distSq < maxSpotDistSq)
             {
                 // 向きベクトルとの内積（前方方向への投影）
                 float forwardProj = dx * facingDir.x + dy * facingDir.y;

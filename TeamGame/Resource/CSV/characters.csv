@@ -1,5 +1,5 @@
-﻿Id,Name,Type,MaxHp,MoveSpeed,AttackPower,SkillId,Description
-1,指揮者,Tactical,37,3.2,20,1,味方Botを敵の手前で爆発させる [Homing Kill] を操る冷徹な指揮者
+Id,Name,Type,MaxHp,MoveSpeed,AttackPower,SkillId,Description
+1,指揮者,Tactical,37,3.2,20,1,味方Botを特攻自爆させるが敵は無傷、自身もライトが見えず暗闇を彷徨う無能指揮者
 2,反逆者,Speed,28,4.2,18,2,敵味方双方から姿を消す [Transparency] を持つ神出鬼没な反逆者
 3,バカ,Assault,33,3.4,25,3,周囲を錯乱させ同士討ちを起こす [Panic shoot] を放つ暴走アタッカー
 4,主婦,Heavy,53,2.2,30,4,周囲の物や弾を綺麗サッパリ吹き飛ばす [Clean time] を持つ最強の主婦
