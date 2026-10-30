@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Enemy.h"
@@ -725,28 +725,13 @@ void Enemy::Update()
                     scene->GetEffectManager()->AddCruelExplosionEffect(position.x, position.y, 90.0f);
                 }
 
-                // 周囲の敵キャラクターにダメージ判定（半径90px。手前110pxで止まるため、動いている敵には外れることもある）
-                if (scene && scene->GetObjectManager())
-                {
-                    float blastRadiusSq = 90.0f * 90.0f;
-                    for (auto* obj : scene->GetObjectManager()->GetObjects())
-                    {
-                        Character* c = dynamic_cast<Character*>(obj);
-                        if (c && c != this && c->IsActive() && c->teamId != this->teamId)
-                        {
-                            float cdx = c->GetPosition().x - position.x;
-                            float cdy = c->GetPosition().y - position.y;
-                            if (cdx * cdx + cdy * cdy <= blastRadiusSq)
-                            {
-                                c->SetLastAttacker(GetCharacterName(), teamId);
-                                c->status.TakeDamage(100);
-                            }
-                        }
-                    }
-                }
+                // 指揮者スキルによる自爆特攻: 敵にダメージは当てない（TakeDamageは行わない）
+                // 爆散エフェクトのみ発生させる
 
                 // 爆破時に特攻状態を完全解除
                 StopHomingSuicide();
+                this->isSuicideDeath = true; // 自爆特攻による死亡（敵のキル数に反映させない）
+                SetLastAttacker("自爆特攻", teamId);
                 Damage(status.GetMaxHp()); // 自分自身も爆散・死亡
                 return;
             }

@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
@@ -956,21 +956,23 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float zoomCellSize = cellSize * Camera::ZoomScale;
     float zoomScale = Camera::ZoomScale;
 
+    bool isConductor = (m_characterId == 1); // 指揮者判定
+
     float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
-    float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
+    // 指揮者の時は足元の全方位明かりを自身の身体直近のみに抑え、前方ライト光以外は見えないようにする
+    float closeRadius = isConductor ? (radius * zoomScale + 4.0f) : (zoomCellSize * m_closeRadiusCells * GetSightMultiplier());
 
     int stageWidth = currentStage->GetWidth();
     int stageHeight = currentStage->GetHeight();
-
-    
 
     const int resolutionStep = 8; // 8pxステップで高精細かつ大幅軽量化
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
 
-    // 月明かり（薄明時間帯）の環境光ブーストと最大暗闇アルファの滑らかな緩和
-    float globalBrightVal = brightRatio * 0.05f;
-    float maxDarkAlpha = 248.0f * (1.0f - brightRatio * 0.10f);
+    // 月明かり（薄明時間帯）の環境光ブーストと最大暗闇アルファ
+    // 指揮者の時は完全な漆黒(255)かつ環境光ブーストなし（ライトの光以外は見えない）
+    float globalBrightVal = isConductor ? 0.0f : (brightRatio * 0.05f);
+    float maxDarkAlpha = isConductor ? 255.0f : (248.0f * (1.0f - brightRatio * 0.10f));
 
     float maxSpotDistSq = maxSpotDist * maxSpotDist;
     float closeRadiusSq = closeRadius * closeRadius;
@@ -979,7 +981,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float cosHalfAngle = std::cos(m_fanAngleHalf);
     float cosHalfAngleSq = cosHalfAngle * cosHalfAngle;
 
-    unsigned int darkColor = GetColor(4, 5, 10);
+    unsigned int darkColor = isConductor ? GetColor(0, 0, 0) : GetColor(4, 5, 10);
     int currentBlendAlpha = -1;
 
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
@@ -1072,6 +1074,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             // アルファ値のクオンタイズ（微細な差をまとめてDrawBoxのランレングス結合率を最大化）
             int qAlpha = (alpha / 4) * 4;
+            if (alpha >= 250) qAlpha = 255;
 
             if (qAlpha != runAlpha)
             {
@@ -1079,7 +1082,14 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 {
                     if (currentBlendAlpha != runAlpha)
                     {
-                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                        if (runAlpha >= 255)
+                        {
+                            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                        }
+                        else
+                        {
+                            SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                        }
                         currentBlendAlpha = runAlpha;
                     }
                     DrawBox(runStartX, py, px, bottomY, darkColor, TRUE);
@@ -1094,7 +1104,14 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
         {
             if (currentBlendAlpha != runAlpha)
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                if (runAlpha >= 255)
+                {
+                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                }
+                else
+                {
+                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                }
                 currentBlendAlpha = runAlpha;
             }
             DrawBox(runStartX, py, rectX + rectW, bottomY, darkColor, TRUE);
