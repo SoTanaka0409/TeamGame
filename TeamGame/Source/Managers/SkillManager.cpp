@@ -31,6 +31,7 @@ bool SkillManager::TriggerSkill(Character* user) {
     // プレイヤーがスキル発動時: ペルソナ5風カットイン演出をトリガー
     Player* player = dynamic_cast<Player*>(user);
     if (player && skill->GetData()) {
+       
         const auto& selection = PlayerSelectionManager::GetInstance().GetSelection();
         std::string cName = selection.selectedCharacter.name.empty() ? "HERO" : selection.selectedCharacter.name;
         std::string sName = skill->GetData()->name;

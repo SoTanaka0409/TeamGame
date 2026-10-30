@@ -1,6 +1,7 @@
-﻿#include "PlayerSelection.h"
+#include "PlayerSelection.h"
 #include "../Managers/CharacterManager.h"
 #include "../Skills/SkillData.h"
+#include "../Managers/WeaponManager.h"
 
 PlayerSelectionManager& PlayerSelectionManager::GetInstance() {
     static PlayerSelectionManager instance;
@@ -103,13 +104,28 @@ std::vector<SelectionCharacterData> PlayerSelectionManager::GetAvailableCharacte
 }
 
 WeaponSelectData PlayerSelectionManager::GetFixedSlot1Weapon() {
-    return { 101, "Handgun", "Handgun", "Standard Handgun", 12, 25 };
+    auto data = WeaponManager::GetInstance().GetWeaponData("Handgun");
+    int dmg = data ? data->damage : 12;
+    int ammo = data ? data->maxAmmo : 12;
+    return { 101, "Handgun", "Handgun", "高機動・高精度・高速リロードの万能サイドアーム (移動速度+12%UP)", ammo, dmg };
 }
 
 std::vector<WeaponSelectData> PlayerSelectionManager::GetAvailableSlot2Weapons() {
+    auto sgData = WeaponManager::GetInstance().GetWeaponData("Shotgun");
+    int sgDmg = sgData ? (sgData->damage * sgData->pelletCount) : 30;
+    int sgAmmo = sgData ? sgData->maxAmmo : 6;
+
+    auto snData = WeaponManager::GetInstance().GetWeaponData("SniperRifle");
+    int snDmg = snData ? snData->damage : 36;
+    int snAmmo = snData ? snData->maxAmmo : 5;
+
+    auto smgData = WeaponManager::GetInstance().GetWeaponData("SubmachineGun");
+    int smgDmg = smgData ? smgData->damage : 3;
+    int smgAmmo = smgData ? smgData->maxAmmo : 28;
+
     return {
-        { 201, "Shotgun",         "Shotgun", "近接拡散・高威力散弾銃", 6, 18 },
-        { 202, "Sniper Rifle",    "Sniper",  "超長射程・高速貫通狙撃銃", 5, 80 },
-        { 203, "Submachine Gun",  "SMG",     "高速連射短機関銃 (★キャラ別カスタム弾＆銃身！)", 32, 10 }
+        { 201, "Shotgun",         "Shotgun", "至近距離バースト・草むら奇襲（近接制圧散弾）", sgAmmo, sgDmg },
+        { 202, "Sniper Rifle",    "Sniper",  "一撃必殺・超長射程・高速貫通狙撃銃", snAmmo, snDmg },
+        { 203, "Submachine Gun",  "SMG",     "高速連射短機関銃（弾幕制圧・キャラ別カスタム弾）", smgAmmo, smgDmg }
     };
 }

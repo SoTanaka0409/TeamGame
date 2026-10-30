@@ -1,3 +1,4 @@
+#include "../Managers/WeaponManager.h"
 #include "SubmachineGun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
@@ -120,25 +121,53 @@ std::unordered_map<std::string, SubmachineGunConfig>& SubmachineGunFactory::GetR
     return registry;
 }
 
+// ベースSMGパラメータをWeaponManager (weapons.csv) から取得
+static SubmachineGunConfig GetBaseSMGConfig()
+{
+    SubmachineGunConfig cfg;
+    const WeaponData* wd = WeaponManager::GetInstance().GetWeaponData("SubmachineGun");
+    if (wd)
+    {
+        cfg.range = wd->range;
+        cfg.spreadAngle = wd->spreadAngle;
+        cfg.bulletRadius = wd->bulletRadius;
+        cfg.bulletSpeed = wd->bulletSpeed;
+        cfg.maxAmmo = wd->maxAmmo;
+        cfg.fireInterval = wd->fireInterval;
+        cfg.reloadTime = wd->reloadTime;
+        cfg.damage = wd->damage;
+        cfg.pelletCount = wd->pelletCount;
+    }
+    else
+    {
+        cfg.range = 200.0f;
+        cfg.spreadAngle = 4.5f;
+        cfg.bulletRadius = 3.5f;
+        cfg.bulletSpeed = 22.0f;
+        cfg.maxAmmo = 28;
+        cfg.fireInterval = 5;
+        cfg.reloadTime = 60;
+        cfg.damage = 3;
+        cfg.pelletCount = 1;
+    }
+    return cfg;
+}
+
 // キャラA (指揮者 / Tactical Falcon): 高精度・サイバーブルー・プラズマ弾
 SubmachineGunConfig SubmachineGunFactory::CreateCharaAConfig()
 {
-    SubmachineGunConfig cfg;
+    SubmachineGunConfig cfg = GetBaseSMGConfig();
     cfg.name = "SubmachineGun_CharaA";
     cfg.variantId = "CharaA";
     cfg.displayName = "SMG-Tactical Falcon";
     cfg.description = "高精度・安定射撃。サイバーブルーのプラズマ弾を放つ指揮官カスタム。";
     
     // パラメータ
-    cfg.range = 210.0f;
+    cfg.range += 20.0f;              // 射程長め
     cfg.spreadAngle = 2.5f;          // 高精度
-    cfg.moveSpreadPenalty = 4.0f;
-    cfg.bulletRadius = 3.5f;
-    cfg.bulletSpeed = 26.0f;
-    cfg.maxAmmo = 30;
-    cfg.fireInterval = 6;            // 秒間10発
-    cfg.reloadTime = 45;
-    cfg.damage = 1;
+    cfg.moveSpreadPenalty = 3.5f;
+    cfg.bulletSpeed = 25.0f;
+    cfg.damage = 3;
 
     // 描画アセット (弾)
     cfg.bulletVisual.customColors = true;
@@ -183,7 +212,7 @@ SubmachineGunConfig SubmachineGunFactory::CreateCharaBConfig()
     cfg.maxAmmo = 40;                // 多弾数
     cfg.fireInterval = 4;            // 秒間15発の超高速連射！
     cfg.reloadTime = 40;
-    cfg.damage = 1;
+    cfg.damage = 3;
 
     // 描画アセット (弾)
     cfg.bulletVisual.customColors = true;
@@ -228,7 +257,7 @@ SubmachineGunConfig SubmachineGunFactory::CreateCharaCConfig()
     cfg.maxAmmo = 24;
     cfg.fireInterval = 8;
     cfg.reloadTime = 58;
-    cfg.damage = 2;                  // 高威力！
+    cfg.damage = 4;                  // 高威力！
 
     // 描画アセット (弾)
     cfg.bulletVisual.customColors = true;
@@ -273,7 +302,7 @@ SubmachineGunConfig SubmachineGunFactory::CreateCharaDConfig()
     cfg.maxAmmo = 36;
     cfg.fireInterval = 5;
     cfg.reloadTime = 24;             // 0.4秒の超速リロード！
-    cfg.damage = 1;
+    cfg.damage = 3;
 
     // 描画アセット (弾)
     cfg.bulletVisual.customColors = true;
@@ -318,7 +347,7 @@ SubmachineGunConfig SubmachineGunFactory::CreateCharaEConfig()
     cfg.maxAmmo = 33;
     cfg.fireInterval = 5;
     cfg.reloadTime = 48;
-    cfg.damage = 1;
+    cfg.damage = 3;
 
     // 描画アセット (弾)
     cfg.bulletVisual.customColors = true;

@@ -164,8 +164,14 @@ void Player::Update()
         float length = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
         if (length > 0.0001f)
         {
-            float velX = (moveDir.x / length) * status.GetSpeed();
-            float velY = (moveDir.y / length) * status.GetSpeed();
+            float speed = status.GetSpeed();
+            // ハンドガン装備時: 軽量サイドアーム特有の高機動ボーナス (+12% 移動速度UP)
+            if (!weapons.empty() && weapons[currentWeaponIndex] && weapons[currentWeaponIndex]->GetName() == "Handgun")
+            {
+                speed *= 1.12f;
+            }
+            float velX = (moveDir.x / length) * speed;
+            float velY = (moveDir.y / length) * speed;
 
             // 周囲の敵キャラクターの座標と当たり判定半径を取得
             std::vector<std::pair<Vector2, float>> enemyInfos;

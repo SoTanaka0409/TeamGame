@@ -1,4 +1,5 @@
-﻿#include "Camera.h"
+#include <algorithm>
+#include "Camera.h"
 #include "Bullet.h"
 #include "Character.h"
 #include "ColliderManager.h"
@@ -19,9 +20,10 @@
  * @details 初期位置、速度などの設定を行い、コライダーマネージャーに円形コライダーを登録する
  */
 Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius,
-               int tId, int dmg, const std::string& sName, bool isPanic, const BulletVisualConfig& visual)
+               int tId, int dmg, const std::string& sName, bool isPanic, const BulletVisualConfig& visual, int pierce)
     : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range),
-      startPos(startX, startY), teamId(tId), damage(dmg), shooterName(sName), isPanicBullet(isPanic), visualConfig(visual)
+      startPos(startX, startY), teamId(tId), damage(dmg), shooterName(sName), isPanicBullet(isPanic), visualConfig(visual),
+      pierceCount(pierce)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -171,6 +173,13 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
 
         if (canHit)
         {
+            // 多重ヒット防止: 同一弾丸による同一対象への重複ダメージを遮断
+            if (std::find(hitTargets.begin(), hitTargets.end(), static_cast<void*>(target)) != hitTargets.end())
+            {
+                return;
+            }
+            hitTargets.push_back(static_cast<void*>(target));
+
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);
                 if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
@@ -204,7 +213,15 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
             {
                 scene->GetEffectManager()->AddBloodEffect(hitX, hitY, 16);
             }
-            SetActive(false);
+            // 貫通弾の処理: pierceCount が残っている場合は弾を消さずに続行
+            if (pierceCount > 0)
+            {
+                pierceCount--;
+            }
+            else
+            {
+                SetActive(false);
+            }
         }
     }
 }
