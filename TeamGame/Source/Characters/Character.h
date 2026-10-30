@@ -38,6 +38,7 @@ public:
     int equippedSkillId = 1;      ///< 現在指定されているスキルのID
     bool isDeadProcessed = false;  ///< 死亡処理フラグ
     int respawnTimer = 0;         ///< リスポーンタイマー
+    bool isSuicideDeath = false;  ///< 自爆特攻による死亡フラグ（敵のキルスコアに反映しない）
     int invincibleTimer = 0;      ///< 無敵時間タイマー
     int highRiskSoundTimer = 0;   ///< HighRiskスキル時の定期発音タイマー
     Vector2 knockbackVelocity = Vector2(0.0f, 0.0f); ///< 吹き飛ばし減衰速度ベクトル

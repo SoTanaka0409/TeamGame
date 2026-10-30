@@ -1,0 +1,22 @@
+# ==============================================================================
+# TeamGame 武器バランス設定ファイル (weapons.csv)
+# ==============================================================================
+# 各列の説明:
+# Name          : 武器識別名
+# Range         : 弾丸の最大射程距離 (px)
+# SpreadAngle   : 静止時の集弾ブレ角 (度)
+# BulletRadius  : 弾丸の当たり判定半径 (px)
+# BulletSpeed   : 弾丸の初速 (px/frame)
+# MaxAmmo       : 1マガジンの最大装弾数 (発)
+# FireInterval  : 発射間隔 (フレーム数: 60fps基準, 60=1秒に1発, 5=1秒に12発)
+# ReloadTime    : リロード所要時間 (フレーム数: 60=1秒)
+# Damage        : 1発 (または1散弾) あたりのダメージ (標準敵HPは28〜37)
+# PelletCount   : 1回の射撃で同時に放たれる散弾ペレット数
+# ModelPath     : 3Dモデルファイルパス
+# UIImagePath   : UI画像ファイルパス
+# ==============================================================================
+Name,Range,SpreadAngle,BulletRadius,BulletSpeed,MaxAmmo,FireInterval,ReloadTime,Damage,PelletCount,ModelPath,UIImagePath
+Handgun,260.0,1.5,5.0,28.0,12,16,45,12,1,Models/handgun.x,NONE
+Shotgun,150.0,18.0,4.5,24.0,6,50,80,5,6,Models/shotgun.x,NONE
+SniperRifle,500.0,0.0,7.0,55.0,5,65,85,36,1,Models/sniper.x,NONE
+SubmachineGun,200.0,4.5,3.5,22.0,28,5,60,3,1,Models/smg.x,NONE

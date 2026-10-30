@@ -76,7 +76,7 @@ void Item::Draw()
 
 void Item::OnCollisionEnter(Collider* otherCollider)
 {
-    if (otherCollider->GetTag() == "Player" || otherCollider->GetTag() == "Enemy" || otherCollider->GetTag() == "PlayerBody" || otherCollider->GetTag() == "EnemyBody")
+    if (otherCollider->GetTag() == "Player" || otherCollider->GetTag() == "Enemy" || otherCollider->GetTag() == "PlayerBody" || otherCollider->GetTag() == "EnemyBody" || otherCollider->GetTag() == "AllyBot" || otherCollider->GetTag() == "EnemyBot")
     {
         Character* character = dynamic_cast<Character*>(otherCollider->GetOwner());
         if (character)

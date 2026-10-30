@@ -34,6 +34,9 @@
     <Filter Include="ソース ファイル\Stage">
       <UniqueIdentifier>{7701ECA8-20D6-5FE5-B2C9-68A8CB3841E5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\UI">
+      <UniqueIdentifier>{6f981e7d-4c3e-4b7b-8b7a-9a0d8e7f1234}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\Weapons">
       <UniqueIdentifier>{775A324C-EFDB-5AE9-B846-39D7805844E6}</UniqueIdentifier>
     </Filter>
@@ -66,6 +69,9 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\Stage">
       <UniqueIdentifier>{C7AFD635-C028-5F24-8948-9078AEC85EBD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\UI">
+      <UniqueIdentifier>{7f981e7d-4c3e-4b7b-8b7a-9a0d8e7f1235}</UniqueIdentifier>
     </Filter>
     <Filter Include="ヘッダー ファイル\Weapons">
       <UniqueIdentifier>{DAC28EE1-3FF5-55D0-81FA-12EAC1731668}</UniqueIdentifier>
@@ -135,9 +141,6 @@
     <ClCompile Include="Source\Managers\ItemManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Managers\NetworkManager.cpp">
-      <Filter>ソース ファイル\Managers</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Managers\ObjectManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
@@ -201,8 +204,8 @@
     <ClCompile Include="Source\Stage\StageTest_main.cpp">
       <Filter>ソース ファイル\Stage</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UITextWindow.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="Source\UI\UITextWindow.cpp">
+      <Filter>ソース ファイル\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Weapons\Bullet.cpp">
       <Filter>ソース ファイル\Weapons</Filter>
@@ -220,6 +223,9 @@
       <Filter>ソース ファイル\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="Source\Weapons\Weapon.cpp">
+      <Filter>ソース ファイル\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapons\SubmachineGun.cpp">
       <Filter>ソース ファイル\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Animation.cpp">
@@ -308,13 +314,7 @@
     <ClInclude Include="Source\Managers\ItemManager.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Managers\NetworkManager.h">
-      <Filter>ヘッダー ファイル\Managers</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Managers\ObjectManager.h">
-      <Filter>ヘッダー ファイル\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Managers\PacketTypes.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\ResourceManager.h">
@@ -380,8 +380,8 @@
     <ClInclude Include="Source\Stage\StageTypes.h">
       <Filter>ヘッダー ファイル\Stage</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UITextWindow.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="Source\UI\UITextWindow.h">
+      <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Weapons\Bullet.h">
       <Filter>ヘッダー ファイル\Weapons</Filter>
@@ -401,24 +401,78 @@
     <ClInclude Include="Source\Weapons\Weapon.h">
       <Filter>ヘッダー ファイル\Weapons</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Weapons\SubmachineGun.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Weapons\BulletVisualConfig.h">
+      <Filter>ヘッダー ファイル\Weapons</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resource\characters.csv">
+    <None Include="Resource\CSV\characters.csv">
       <Filter>CSV</Filter>
     </None>
-    <None Include="Resource\game_balance.csv">
+    <None Include="Resource\CSV\game_balance.csv">
       <Filter>CSV</Filter>
     </None>
-    <None Include="Resource\items.csv">
+    <None Include="Resource\CSV\items.csv">
       <Filter>CSV</Filter>
     </None>
-    <None Include="Resource\skills.csv">
+    <None Include="Resource\CSV\skills.csv">
       <Filter>CSV</Filter>
     </None>
-    <None Include="Resource\weapons.csv">
+    <None Include="Resource\CSV\weapons.csv">
       <Filter>CSV</Filter>
     </None>
-    <None Include="Resource\Grass1.png">
+    <None Include="Resource\Textures\Grass1.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.glb">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.fbx">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\character.blend">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\GreenCharacter\preview.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\grass.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\grass_02_plain_dark.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_01.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_02.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_03.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\rock_04.mv1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title02.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title2.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Titleu.jpg">
       <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>

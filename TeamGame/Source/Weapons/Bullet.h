@@ -1,13 +1,16 @@
-﻿#pragma once
+#pragma once
+#include <string>
+#include <vector>
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Vector2.h"
+#include "BulletVisualConfig.h"
 
 class ColliderManager;
 
 /**
  * @brief プレイヤーや味方の弾クラス
- * @details まっすぐ飛んで敵にダメージを与える弾オブジェクト
+ * @details まっすぐ飛んで敵にダメージを与える弾オブジェクト。弾丸の見た目（コア色、グロー、トレール）の変更に対応。
  */
 class Bullet : public Object2D
 {
@@ -22,6 +25,9 @@ class Bullet : public Object2D
     int damage;
     std::string shooterName;
     bool isPanicBullet;
+    BulletVisualConfig visualConfig; ///< 弾丸の描画アセット・演出設定
+    int pierceCount = 0;             ///< 貫通残数 (0=通常消滅, 1以上=貫通継続)
+    std::vector<void*> hitTargets;   ///< 多重ヒット防止用リスト
 
   public:
     /**
@@ -35,9 +41,13 @@ class Bullet : public Object2D
      * @param tId チームID（デフォルト0）
      * @param dmg ダメージ量（デフォルト1）
      * @param sName 射撃者名
+     * @param isPanic 錯乱状態フラグ
+     * @param visual 弾丸の描画アセット設定（省略時はデフォルト）
      * @details 弾の初期パラメータを設定し、コライダーを登録する
      */
-    Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius, int tId = 0, int dmg = 1, const std::string& sName = "", bool isPanic = false);
+    Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius,
+           int tId = 0, int dmg = 1, const std::string& sName = "", bool isPanic = false,
+           const BulletVisualConfig& visual = BulletVisualConfig(), int pierce = 0);
     virtual ~Bullet();
 
     /**
@@ -47,7 +57,7 @@ class Bullet : public Object2D
     void Update() override;
     /**
      * @brief 描画処理
-     * @details 弾の見た目（コアとグローエフェクト）を描画する
+     * @details 弾の見た目（コア、グロー、トレール）を描画する
      */
     void Draw() override;
 
@@ -57,4 +67,7 @@ class Bullet : public Object2D
      * @details 敵やプレイヤーに当たった場合ダメージを与え、自身を消滅させる
      */
     void OnCollisionEnter(Collider *otherCollider) override;
+
+    const BulletVisualConfig& GetVisualConfig() const { return visualConfig; }
+    void SetVisualConfig(const BulletVisualConfig& config) { visualConfig = config; }
 };

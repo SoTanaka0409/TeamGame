@@ -1,6 +1,7 @@
-﻿#include "Skill.h"
+#include "Skill.h"
 #include "../Characters/Character.h"
 #include "../Characters/Enemy.h"
+#include "../Characters/Player.h"
 #include "../Weapons/Bullet.h"
 #include "../Managers/EffectManager.h"
 #include "../Managers/ObjectManager.h"
@@ -182,6 +183,32 @@ void Skill::ApplyDebuff(Character* user)
                         float knockbackImpulse = 42.0f; // 毎フレーム減衰しながら猛烈な勢いで吹き飛ぶ
                         chara->ApplyKnockback(Vector2(nx * knockbackImpulse, ny * knockbackImpulse));
                         chara->AddActiveEffect(SkillMinorTag::Stun, 45, 0.0f); // 0.75秒スタン
+
+                        // 主婦のスキル: ノックバック時に当たった敵のHP半分を削る大ダメージ
+                        if (chara->teamId != user->teamId)
+                        {
+                            int halfHpDamage = (chara->status.GetMaxHp() + 1) / 2;
+                            if (halfHpDamage < 1) halfHpDamage = 1;
+
+                            Enemy* enemy = dynamic_cast<Enemy*>(chara);
+                            if (enemy)
+                            {
+                                enemy->Damage(halfHpDamage, user->GetCharacterName(), user->teamId);
+                            }
+                            else
+                            {
+                                Player* player = dynamic_cast<Player*>(chara);
+                                if (player)
+                                {
+                                    player->TakeDamage(halfHpDamage, user->GetCharacterName(), user->teamId);
+                                }
+                            }
+
+                            if (scene->GetEffectManager())
+                            {
+                                scene->GetEffectManager()->AddBloodEffect(chara->GetPosition().x, chara->GetPosition().y, 16);
+                            }
+                        }
                     }
                 }
             }

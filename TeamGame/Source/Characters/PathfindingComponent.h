@@ -17,6 +17,7 @@ private:
     int lastTargetGridX;                ///< 最後に目標としたグリッドのX座標
     int lastTargetGridY;                ///< 最後に目標としたグリッドのY座標
 
+    int recalcCooldown;
     int stuckFrames;                    ///< スタック（進行不能）しているフレーム数
     Vector2 lastPos;                    ///< 前回の位置（スタック判定用）
 

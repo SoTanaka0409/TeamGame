@@ -14,6 +14,25 @@ CharacterSelectScene::~CharacterSelectScene() {
 }
 
 void CharacterSelectScene::Init() {
+    // =========================================================================
+    // 【2D画像配列への読み込み & 番号管理】
+    // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
+    // =========================================================================
+    m_bgImageIndex = Load2DImage("character_select_bg.png");
+    if (m_bgImageIndex == -1) {
+        m_bgImageIndex = Load2DImage("select_bg.png");
+    }
+    m_windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // UITextWindow による詳細説明枠の設定
+    m_detailWindow.SetFixedSize(1200, 110);
+    m_detailWindow.SetMaxTextWidth(1140);
+    m_detailWindow.SetPadding(UI::Margin(30, 16, 30, 16));
+    m_detailWindow.SetLineSpacing(6);
+    if (m_windowFrameIndex != -1) {
+        m_detailWindow.SetBgGraphHandle(Get2DImage(m_windowFrameIndex));
+    }
+
     m_characters = PlayerSelectionManager::GetAvailableCharacters();
     m_selectedIndex = 0;
 
@@ -49,14 +68,23 @@ void CharacterSelectScene::Update() {
     // ESCキーでタイトル画面へ戻る
     if (input.IsKeyPressed(KEY_INPUT_ESCAPE)) {
         auto titleScene = std::make_shared<TitleScene>();
-        titleScene->state = TitleScene::TitleState::MODE_SELECT;
+        titleScene->state = TitleScene::TitleState::MAIN;
         titleScene->cursor = 0;
         SceneManager::GetInstance().ChangeScene(titleScene);
     }
 }
 
 void CharacterSelectScene::Draw() {
-    DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    // 背景画像の描画（配列番号から呼び出し）
+    if (m_bgImageIndex != -1) {
+        DrawFullScreen2DImage(m_bgImageIndex, false);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
+        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    } else {
+        DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
+    }
+
     FontManager::GetInstance().DrawStringCenter(960, 60, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
     FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] / [A][D] で移動、[Z] / [Enter] で決定、[Esc] で戻る )", GetColor(200, 210, 225), 20);
 
@@ -127,15 +155,26 @@ void CharacterSelectScene::Draw() {
         }
     }
 
-    // 画面下部の詳細説明枠
+    // 画面下部の詳細説明枠 (キャラクターの性能・特徴・スキルを確実に表示)
     if (m_selectedIndex >= 0 && m_selectedIndex < count) {
         const auto& curChara = m_characters[m_selectedIndex];
-        int infoY = 670;
-        DrawBox(360, infoY, 1560, infoY + 110, GetColor(25, 32, 45), TRUE);
-        DrawBox(360, infoY, 1560, infoY + 110, curChara.themeColor, FALSE);
+        int infoX = 360;
+        int infoY = 665;
+        int infoW = 1200;
+        int infoH = 120;
 
-        FontManager::GetInstance().DrawFormatString(390, infoY + 18, GetColor(255, 220, 0), 20, "【%s】 %s", curChara.name.c_str(), curChara.typeName.c_str());
-        FontManager::GetInstance().DrawString(390, infoY + 55, curChara.description.c_str(), GetColor(220, 230, 240), 18);
+        // 背景半透明パネル
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, GetColor(20, 28, 42), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, curChara.themeColor, FALSE);
+
+        // ヘッダー（名前とタイプ）
+        FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 22, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());
+        DrawLine(infoX + 35, infoY + 48, infoX + infoW - 35, infoY + 48, GetColor(60, 90, 130));
+
+        // 本文詳細説明文
+        FontManager::GetInstance().DrawString(infoX + 35, infoY + 62, curChara.description.c_str(), GetColor(225, 235, 245), 20);
     }
 }
 

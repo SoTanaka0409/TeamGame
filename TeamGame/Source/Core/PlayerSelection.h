@@ -13,6 +13,7 @@ struct SelectionCharacterData {
     std::string description;            // 特徴・説明
     int maxHp = 100;                    // 最大HP
     float moveSpeed = 4.0f;             // 移動速度
+    int attackPower = 20;               // 攻撃力
     int skillId = 1;                    // スキルID
     std::string skillName;              // スキル名
     unsigned int themeColor = 0xFFFFFF; // UI上のテーマカラー

@@ -23,7 +23,14 @@ static void NotifyEnemiesOfGunshot(const Vector2 &pos, int shooterTeamId)
     }
 }
 
-Handgun::Handgun() : Weapon("Handgun") {}
+Handgun::Handgun() : Weapon("Handgun")
+{
+    barrelVisual.barrelLength = 22.0f;
+    barrelVisual.barrelWidth = 3;
+    barrelVisual.barrelColor = 0x4A505A;
+    barrelVisual.accentColor = 0x8899AA;
+    barrelVisual.hasMuzzleBrake = false;
+}
 
 void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving, const std::string& shooterName, bool isPanic)
 {
@@ -33,7 +40,8 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
         if (scene)
         {
             // 移動状態に応じた拡散角（静止時: 約±2°, 移動時: 約±9°）
-            float maxSpreadRad = isMoving ? 0.157f : 0.035f;
+            // ハンドガンは移動中でも極めてブレにくい高精度サイドアーム (静止時: ~1.5°, 移動時: ~3.5°)
+            float maxSpreadRad = isMoving ? 0.061f : 0.026f;
             float angleOffset = ((std::rand() % 1000) / 1000.0f - 0.5f) * maxSpreadRad;
             float baseAngle = std::atan2(dir.y, dir.x);
             float finalAngle = baseAngle + angleOffset;
