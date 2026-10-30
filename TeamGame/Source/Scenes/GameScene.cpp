@@ -419,71 +419,37 @@ void GameScene::Draw()
     else
     {
         Vector2 aimDir = (player && player->IsActive()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
-        
-        bool isSniper = false;
-        if (player && player->GetCurrentWeapon() && player->GetCurrentWeapon()->GetName() == "SniperRifle")
+        float maxOffsetDist = 70.0f;
+        if (player && player->GetCurrentWeapon())
         {
-            isSniper = true;
+            if (player->GetCurrentWeapon()->GetName() == "SniperRifle")
+            {
+                maxOffsetDist = 200.0f;
+            }
         }
+        Vector2 targetOffset = aimDir * maxOffsetDist;
 
-        // 武器に応じたエイム方向へのカメラ先読み距離（画面ピクセル単位）
-        // スナイパー時は前方を広く見通せるよう先読みを増やすが、
-        // プレイヤー自身が画面外へ見切れることを絶対に防ぐため安全範囲に抑える
-        float leadPxX = isSniper ? 240.0f : 80.0f;
-        float leadPxY = isSniper ? 180.0f : 60.0f;
-
+        // 元の広大なエイム先読みを基本としつつ、画面端から「ほんの1マス分（1タイル）」だけ内側に収める
         float currentZoom = (Camera::ZoomScale > 0.001f) ? Camera::ZoomScale : 1.0f;
-        Vector2 targetOffset((aimDir.x * leadPxX) / currentZoom, (aimDir.y * leadPxY) / currentZoom);
+        float margin = worldCellSize; // 画面端からちょうど1マス分の安全マージン
+        float maxOffsetX = (Camera::ScreenCenterX / currentZoom) - margin;
+        float maxOffsetY = (Camera::ScreenCenterY / currentZoom) - margin;
 
-        // 【最重要】どんな時でもプレイヤーがカメラ（画面）の中に確実に収まる安全余白
-        // 画面サイズ: 1920 x 1080 (中心: 960, 540)
-        // プレイヤーの画面座標 screen = ScreenCenter - m_cameraOffset * ZoomScale
-        // プレイヤーキャラクター本体、頭上UI、足元サークルを確実に画面内に保つマージン
-        const float safeMarginX = 350.0f; // 画面左右端の安全余白 (screenX ∈ [350, 1570])
-        const float safeMarginY = 220.0f; // 画面上下端の安全余白 (screenY ∈ [220, 860])
-
-        float maxWorldOffsetX = ((Camera::ScreenCenterX) - safeMarginX) / currentZoom;
-        float maxWorldOffsetY = ((Camera::ScreenCenterY) - safeMarginY) / currentZoom;
-
-        // 目標オフセットのクランプ
-        if (targetOffset.x > maxWorldOffsetX) targetOffset.x = maxWorldOffsetX;
-        if (targetOffset.x < -maxWorldOffsetX) targetOffset.x = -maxWorldOffsetX;
-        if (targetOffset.y > maxWorldOffsetY) targetOffset.y = maxWorldOffsetY;
-        if (targetOffset.y < -maxWorldOffsetY) targetOffset.y = -maxWorldOffsetY;
+        if (targetOffset.x > maxOffsetX) targetOffset.x = maxOffsetX;
+        if (targetOffset.x < -maxOffsetX) targetOffset.x = -maxOffsetX;
+        if (targetOffset.y > maxOffsetY) targetOffset.y = maxOffsetY;
+        if (targetOffset.y < -maxOffsetY) targetOffset.y = -maxOffsetY;
 
         m_cameraOffset.x += (targetOffset.x - m_cameraOffset.x) * 0.1f;
         m_cameraOffset.y += (targetOffset.y - m_cameraOffset.y) * 0.1f;
 
-        // 補間移動中の m_cameraOffset も安全限界内に確実に維持
-        if (m_cameraOffset.x > maxWorldOffsetX) m_cameraOffset.x = maxWorldOffsetX;
-        if (m_cameraOffset.x < -maxWorldOffsetX) m_cameraOffset.x = -maxWorldOffsetX;
-        if (m_cameraOffset.y > maxWorldOffsetY) m_cameraOffset.y = maxWorldOffsetY;
-        if (m_cameraOffset.y < -maxWorldOffsetY) m_cameraOffset.y = -maxWorldOffsetY;
+        if (m_cameraOffset.x > maxOffsetX) m_cameraOffset.x = maxOffsetX;
+        if (m_cameraOffset.x < -maxOffsetX) m_cameraOffset.x = -maxOffsetX;
+        if (m_cameraOffset.y > maxOffsetY) m_cameraOffset.y = maxOffsetY;
+        if (m_cameraOffset.y < -maxOffsetY) m_cameraOffset.y = -maxOffsetY;
 
         Camera::TargetWorldX = playerWorldX + m_cameraOffset.x;
         Camera::TargetWorldY = playerWorldY + m_cameraOffset.y;
-
-        // 絶対保証ガード: どんな要因でもプレイヤーの描画位置が画面内 [safeMarginX, 1920 - safeMarginX], [safeMarginY, 1080 - safeMarginY] に確実に収まるよう補正
-        float playerScreenX = Camera::WorldToScreenX(playerWorldX);
-        float playerScreenY = Camera::WorldToScreenY(playerWorldY);
-
-        if (playerScreenX < safeMarginX)
-        {
-            Camera::TargetWorldX -= (safeMarginX - playerScreenX) / currentZoom;
-        }
-        else if (playerScreenX > 1920.0f - safeMarginX)
-        {
-            Camera::TargetWorldX += (playerScreenX - (1920.0f - safeMarginX)) / currentZoom;
-        }
-
-        if (playerScreenY < safeMarginY)
-        {
-            Camera::TargetWorldY -= (safeMarginY - playerScreenY) / currentZoom;
-        }
-        else if (playerScreenY > 1080.0f - safeMarginY)
-        {
-            Camera::TargetWorldY += (playerScreenY - (1080.0f - safeMarginY)) / currentZoom;
-        }
     }
 
     stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
