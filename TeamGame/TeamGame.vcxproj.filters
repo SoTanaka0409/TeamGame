@@ -141,9 +141,6 @@
     <ClCompile Include="Source\Managers\ItemManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Managers\NetworkManager.cpp">
-      <Filter>ソース ファイル\Managers</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Managers\ObjectManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
@@ -317,13 +314,7 @@
     <ClInclude Include="Source\Managers\ItemManager.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Managers\NetworkManager.h">
-      <Filter>ヘッダー ファイル\Managers</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Managers\ObjectManager.h">
-      <Filter>ヘッダー ファイル\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Managers\PacketTypes.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\ResourceManager.h">

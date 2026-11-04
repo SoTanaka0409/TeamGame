@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <cstdlib>
 #include "SniperRifle.h"
 #include "Bullet.h"
@@ -7,10 +7,6 @@
 #include "SceneManager.h"
 #include "SoundManager.h"
 
-/**
- * @brief SniperRifleのコンストラクタ
- * @details 親クラスWeaponを"SniperRifle"という名前で初期化する
- */
 SniperRifle::SniperRifle() : Weapon("SniperRifle")
 {
     barrelVisual.barrelLength = 55.0f;
@@ -22,14 +18,6 @@ SniperRifle::SniperRifle() : Weapon("SniperRifle")
     barrelVisual.muzzleWidthOffset = 2.0f;
 }
 
-/**
- * @brief スナイパーの弾を発射する実装
- * @param pos 発射位置
- * @param dir 発射方向
- * @param teamId チームID
- * @param additionalSpread 追加の拡散角度
- * @details ブレを考慮しつつ高速・長射程のBulletオブジェクトを生成し、スナイパー特有の銃声を鳴らす
- */
 void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMoving, const std::string& shooterName, bool isPanic)
 {
     if (CanFire() && data)
@@ -37,6 +25,19 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
         auto scene = SceneManager::GetInstance().GetCurrentScene();
         if (scene && scene->GetObjectManager())
         {
+            // スナイパーの弾丸演出設定（高速シアンビームトレール）
+            BulletVisualConfig sniperVisual;
+            sniperVisual.customColors = true;
+            sniperVisual.coreColor = GetColor(255, 255, 255);
+            sniperVisual.glowColor = GetColor(0, 229, 255);       // ネオンシアン
+            sniperVisual.glowRadiusOffset = 6.0f;
+            sniperVisual.glowAlpha = 220;
+            sniperVisual.hasTrail = true;
+            sniperVisual.trailColor = GetColor(0, 180, 255);
+            sniperVisual.trailAlpha = 200;
+            sniperVisual.trailLength = 40.0f;
+            sniperVisual.trailWidth = 4;
+
             float additionalSpread = isMoving ? GetMoveSpreadPenalty() : 0.0f;
             float totalSpread = data->spreadAngle + additionalSpread;
             float halfSpreadRad = (totalSpread / 2.0f) * (3.14159265f / 180.0f);
@@ -48,11 +49,18 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
             float finalAngle = currentAngle + randomAngle;
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
-            int dmg = data ? data->damage : 3;
-            Bullet* bullet = new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, dmg, shooterName, isPanic);
+            int dmg = data ? data->damage : 36;
+            // 敵を最大2体まで貫通する弾丸を生成
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius,
+                       teamId, dmg, shooterName, isPanic, sniperVisual, /*pierce=*/ 2);
             
-            // スナイパー特有の銃声
+            // スナイパー特有の重厚な銃声
             SoundManager::GetInstance().Play3D("sniper_shot", pos, 1500.0f, 1.0f, teamId);
+
+            if (scene->GetEffectManager())
+            {
+                scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 45.0f, pos.y + dir.y * 45.0f, finalAngle, 28.0f);
+            }
 
             ResetCoolTime();
             UseAmmo(1);

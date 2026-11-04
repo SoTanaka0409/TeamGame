@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
@@ -88,7 +88,10 @@ void Player::Update()
             bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
             if (currMouseRight && !m_prevMouseRight)
             {
-                m_isLightOn = !m_isLightOn;
+                if (m_characterId != 1)
+                {
+                    m_isLightOn = !m_isLightOn;
+                }
             }
             m_prevMouseRight = currMouseRight;
         }
@@ -164,8 +167,14 @@ void Player::Update()
         float length = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
         if (length > 0.0001f)
         {
-            float velX = (moveDir.x / length) * status.GetSpeed();
-            float velY = (moveDir.y / length) * status.GetSpeed();
+            float speed = status.GetSpeed();
+            // ハンドガン装備時: 軽量サイドアーム特有の高機動ボーナス (+12% 移動速度UP)
+            if (!weapons.empty() && weapons[currentWeaponIndex] && weapons[currentWeaponIndex]->GetName() == "Handgun")
+            {
+                speed *= 1.12f;
+            }
+            float velX = (moveDir.x / length) * speed;
+            float velY = (moveDir.y / length) * speed;
 
             // 周囲の敵キャラクターの座標と当たり判定半径を取得
             std::vector<std::pair<Vector2, float>> enemyInfos;
@@ -569,6 +578,7 @@ void Player::Draw()
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
         m_model->SetFacingDir(facingDir);
+        m_model->SetScaleUniform(m_modelScale * (Camera::ZoomScale / 2.0f));
         float playerOpacity = IsTransparent() ? 0.35f : 1.0f;
         m_model->DrawWithOpacity(playerOpacity);
 
@@ -949,21 +959,23 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float zoomCellSize = cellSize * Camera::ZoomScale;
     float zoomScale = Camera::ZoomScale;
 
+    bool isConductor = (m_characterId == 1); // 指揮者判定
+
     float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
-    float closeRadius = zoomCellSize * m_closeRadiusCells * GetSightMultiplier();
+    // 指揮者の時は足元の全方位明かりを自身の身体直近のみに抑え、前方ライト光以外は見えないようにする
+    float closeRadius = isConductor ? (radius * zoomScale + 4.0f) : (zoomCellSize * m_closeRadiusCells * GetSightMultiplier());
 
     int stageWidth = currentStage->GetWidth();
     int stageHeight = currentStage->GetHeight();
-
-    
 
     const int resolutionStep = 8; // 8pxステップで高精細かつ大幅軽量化
 
     float lightAngle = std::atan2(facingDir.y, facingDir.x);
 
-    // 月明かり（薄明時間帯）の環境光ブーストと最大暗闇アルファの滑らかな緩和
-    float globalBrightVal = brightRatio * 0.05f;
-    float maxDarkAlpha = 248.0f * (1.0f - brightRatio * 0.10f);
+    // 月明かり（薄明時間帯）の環境光ブーストと最大暗闇アルファ
+    // 指揮者の時は完全な漆黒(255)かつ環境光ブーストなし（ライトの光以外は見えない）
+    float globalBrightVal = isConductor ? 0.0f : (brightRatio * 0.05f);
+    float maxDarkAlpha = isConductor ? 255.0f : (248.0f * (1.0f - brightRatio * 0.10f));
 
     float maxSpotDistSq = maxSpotDist * maxSpotDist;
     float closeRadiusSq = closeRadius * closeRadius;
@@ -972,7 +984,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
     float cosHalfAngle = std::cos(m_fanAngleHalf);
     float cosHalfAngleSq = cosHalfAngle * cosHalfAngle;
 
-    unsigned int darkColor = GetColor(4, 5, 10);
+    unsigned int darkColor = isConductor ? GetColor(0, 0, 0) : GetColor(4, 5, 10);
     int currentBlendAlpha = -1;
 
     for (int py = rectY; py < rectY + rectH; py += resolutionStep)
@@ -997,8 +1009,8 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 lightVal = (std::max)(lightVal, ambientLight);
             }
 
-            // B. 前方60°扇形スポットライト
-            if (m_isLightOn && distSq < maxSpotDistSq)
+            // B. 前方60°扇形スポットライト（指揮者は無能キャラ仕様のためライトが一切見えない・光が照射されない）
+            if (m_characterId != 1 && m_isLightOn && distSq < maxSpotDistSq)
             {
                 // 向きベクトルとの内積（前方方向への投影）
                 float forwardProj = dx * facingDir.x + dy * facingDir.y;
@@ -1065,6 +1077,7 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
 
             // アルファ値のクオンタイズ（微細な差をまとめてDrawBoxのランレングス結合率を最大化）
             int qAlpha = (alpha / 4) * 4;
+            if (alpha >= 250) qAlpha = 255;
 
             if (qAlpha != runAlpha)
             {
@@ -1072,7 +1085,14 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
                 {
                     if (currentBlendAlpha != runAlpha)
                     {
-                        SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                        if (runAlpha >= 255)
+                        {
+                            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                        }
+                        else
+                        {
+                            SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                        }
                         currentBlendAlpha = runAlpha;
                     }
                     DrawBox(runStartX, py, px, bottomY, darkColor, TRUE);
@@ -1087,7 +1107,14 @@ void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float s
         {
             if (currentBlendAlpha != runAlpha)
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                if (runAlpha >= 255)
+                {
+                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                }
+                else
+                {
+                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
+                }
                 currentBlendAlpha = runAlpha;
             }
             DrawBox(runStartX, py, rectX + rectW, bottomY, darkColor, TRUE);

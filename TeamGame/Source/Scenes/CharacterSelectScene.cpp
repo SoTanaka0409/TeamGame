@@ -68,7 +68,7 @@ void CharacterSelectScene::Update() {
     // ESCキーでタイトル画面へ戻る
     if (input.IsKeyPressed(KEY_INPUT_ESCAPE)) {
         auto titleScene = std::make_shared<TitleScene>();
-        titleScene->state = TitleScene::TitleState::MODE_SELECT;
+        titleScene->state = TitleScene::TitleState::MAIN;
         titleScene->cursor = 0;
         SceneManager::GetInstance().ChangeScene(titleScene);
     }
