@@ -1,4 +1,5 @@
 ﻿#include "CharacterSelectScene.h"
+#include "SoundManager.h"
 #include "WeaponSelectScene.h"
 #include "TitleScene.h"
 #include "../Managers/SceneManager.h"
@@ -14,6 +15,8 @@ CharacterSelectScene::~CharacterSelectScene() {
 }
 
 void CharacterSelectScene::Init() {
+    // タイトル〜武器選択までBGMを継続再生
+    SoundManager::GetInstance().PlayBGM("title_bgm", 0.85f);
     // =========================================================================
     // 【2D画像配列への読み込み & 番号管理】
     // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
@@ -60,6 +63,7 @@ void CharacterSelectScene::Update() {
 
     if (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE)) {
         if (m_selectedIndex >= 0 && m_selectedIndex < count) {
+            SoundManager::GetInstance().PlayTapSE();
             PlayerSelectionManager::GetInstance().SetSelectedCharacter(m_characters[m_selectedIndex]);
             SceneManager::GetInstance().ChangeScene(std::make_shared<WeaponSelectScene>());
         }

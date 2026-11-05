@@ -1,4 +1,5 @@
 ﻿#include "ClearScene.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
@@ -40,6 +41,8 @@ ClearScene::~ClearScene()
 
 void ClearScene::Init()
 {
+    // クリア音・ファンファーレBGMを再生
+    SoundManager::GetInstance().PlayBGM("clear_bgm", 0.85f);
     Scene::Init();
     animTimer = 0.0f;
     prevEnter = true; // 前のシーンの押しっぱなし事故防止
@@ -68,6 +71,7 @@ void ClearScene::Update()
     bool canConfirm = (animTimer >= 2.0f);
     if (canConfirm && currEnter && !prevEnter)
     {
+        SoundManager::GetInstance().PlayTapSE();
         if (menuCursor == 0)
         {
             // もう一度プレイ

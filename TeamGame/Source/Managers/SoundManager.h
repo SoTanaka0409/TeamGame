@@ -21,6 +21,9 @@ class SoundManager
     // 複製して再生したSEのハンドルリスト（終了時に削除するため）
     std::vector<int> playing3DSounds;
 
+    // 現在再生中のBGMキー
+    std::string currentBGMKey;
+
     /**
      * @brief コンストラクタ
      */
@@ -54,6 +57,31 @@ class SoundManager
      * @details 3Dサウンド再生の基準となるリスナーの位置と向きをセットする。
      */
     void SetListener(const Vector2& pos, const Vector2& dir);
+
+    /**
+     * @brief BGMのループ再生（シームレス継続対応）
+     * @param key 再生するBGMのキー名 (例: "title_bgm", "battle_bgm")
+     * @param volume 音量倍率 (0.0f〜1.0f、デフォルト: 1.0f)
+     * @details 同一キーのBGMが既に再生中の場合は曲頭に戻らずそのまま継続再生します。
+     */
+    void PlayBGM(const std::string &key, float volume = 1.0f);
+
+    /**
+     * @brief 現在再生中のBGMを停止
+     */
+    void StopBGM();
+
+    /**
+     * @brief 再生中BGMの音量を変更
+     * @param volume 音量倍率 (0.0f〜1.0f)
+     */
+    void SetBGMVolume(float volume);
+
+    /**
+     * @brief UIタップ音・決定音の再生
+     * @param volume 音量倍率 (デフォルト: 0.9f)
+     */
+    void PlayTapSE(float volume = 0.9f);
 
     /**
      * @brief サウンドの読み込み

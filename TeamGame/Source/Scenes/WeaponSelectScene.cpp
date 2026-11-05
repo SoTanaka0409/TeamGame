@@ -1,4 +1,5 @@
 ﻿#include "WeaponSelectScene.h"
+#include "SoundManager.h"
 #include "GameScene.h"
 #include "CharacterSelectScene.h"
 #include "../Managers/SceneManager.h"
@@ -10,6 +11,8 @@ WeaponSelectScene::WeaponSelectScene() {
 }
 
 void WeaponSelectScene::Init() {
+    // タイトル〜武器選択までBGMを継続再生
+    SoundManager::GetInstance().PlayBGM("title_bgm", 0.85f);
     // =========================================================================
     // 【2D画像配列への読み込み & 番号管理】
     // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
@@ -50,6 +53,7 @@ void WeaponSelectScene::Update() {
     // 決定キー（Z, Enter, Space）で決定
     if (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE)) {
         if (m_selectedSlot2Index >= 0 && m_selectedSlot2Index < count) {
+            SoundManager::GetInstance().PlayTapSE();
             // スロット1 (ハンドガン) とスロット2 (選択武器) を登録
             PlayerSelectionManager::GetInstance().SetSlot1Weapon(m_slot1Weapon);
             PlayerSelectionManager::GetInstance().SetSlot2Weapon(m_slot2Options[m_selectedSlot2Index]);

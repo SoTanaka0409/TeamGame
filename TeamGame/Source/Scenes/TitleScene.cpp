@@ -4,6 +4,7 @@
 #include "CharacterSelectScene.h"
 #include "InputManager.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 #include "GameSettings.h"
 #include "NetworkManager.h"
 #include <string>
@@ -30,6 +31,13 @@ TitleScene::TitleScene()
     windowFrameIndex   = Load2DImage("ui_window.png"); // 9スライス用枠画像
 
     LoadServerConfig();
+}
+
+void TitleScene::Init()
+{
+    Scene::Init();
+    // タイトルBGMの再生（タイトル.mp3をループ再生）
+    SoundManager::GetInstance().PlayBGM("title_bgm", 0.85f);
 }
 
 void TitleScene::LoadServerConfig()
@@ -83,6 +91,7 @@ void TitleScene::Update()
 
         if (currEnter && !prevEnter)
         {
+            SoundManager::GetInstance().PlayTapSE();
             if (cursor == 0) { state = TitleState::MODE_SELECT; cursor = 0; }
             else if (cursor == 1) { state = TitleState::SETTINGS; cursor = 0; }
             else if (cursor == 2) { PostQuitMessage(0); }
@@ -97,6 +106,7 @@ void TitleScene::Update()
 
         if (currEnter && !prevEnter)
         {
+            SoundManager::GetInstance().PlayTapSE();
             if (cursor == 0) // Solo
             {
                 NetworkManager::GetInstance().Disconnect();

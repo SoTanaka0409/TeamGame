@@ -44,7 +44,7 @@ void Weapon::Reload(const Vector2 &pos, int teamId)
         isReloading = true;
         reloadTimer = data->reloadTime;
         if (pos.x > -9000.0f) {
-            SoundManager::GetInstance().Play3D("reload", pos, 1000.0f, 0.9f, teamId);
+            SoundManager::GetInstance().Play3D("reload", pos, 1000.0f, 0.55f, teamId);
         } else {
             SoundManager::GetInstance().Play("reload");
         }

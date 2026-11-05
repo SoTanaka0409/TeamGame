@@ -92,7 +92,7 @@ void SubmachineGun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, boo
                 );
             }
 
-            SoundManager::GetInstance().Play3D("smg_shot", pos, 1100.0f, 0.85f, teamId);
+            SoundManager::GetInstance().Play3D("smg_shot", pos, 1100.0f, 0.58f, teamId);
             ResetCoolTime();
             UseAmmo(1);
         }

@@ -123,6 +123,7 @@ void SoundManager::Load(const std::string &key, const std::string &path)
         {
             std::vector<std::string> fallbacks = {
                 "Resource/" + path,
+                "Resource/BGM/" + path,
                 "Resource/SE/" + path,
                 "Resource/SE/銃/" + path,
                 "Resource/SE/足音/" + path,
@@ -130,6 +131,7 @@ void SoundManager::Load(const std::string &key, const std::string &path)
                 "Resource/SE/システム/" + path,
                 "Resource/AUDIO/" + path,
                 "TeamGame/Resource/" + path,
+                "TeamGame/Resource/BGM/" + path,
                 "TeamGame/Resource/SE/" + path,
                 "TeamGame/Resource/SE/銃/" + path,
                 "TeamGame/Resource/SE/足音/" + path,
@@ -218,6 +220,46 @@ void SoundManager::Load(const std::string &key, const std::string &path)
                 fallbacks.push_back("TeamGame/Resource/SE/銃/銃のリロード.mp3");
                 fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/SE/銃/銃のリロード.mp3");
             }
+            else if (key == "title_bgm")
+            {
+                fallbacks.push_back("Resource/BGM/bgm_title.mp3");
+                fallbacks.push_back("Resource/BGM/タイトル.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/bgm_title.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/タイトル.mp3");
+                fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/BGM/タイトル.mp3");
+            }
+            else if (key == "battle_bgm")
+            {
+                fallbacks.push_back("Resource/BGM/bgm_battle.mp3");
+                fallbacks.push_back("Resource/BGM/戦闘.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/bgm_battle.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/戦闘.mp3");
+                fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/BGM/戦闘.mp3");
+            }
+            else if (key == "clear_bgm")
+            {
+                fallbacks.push_back("Resource/BGM/bgm_clear.mp3");
+                fallbacks.push_back("Resource/BGM/クリア.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/bgm_clear.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/クリア.mp3");
+                fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/BGM/クリア.mp3");
+            }
+            else if (key == "defeat_bgm")
+            {
+                fallbacks.push_back("Resource/BGM/bgm_defeat.mp3");
+                fallbacks.push_back("Resource/BGM/敗北音.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/bgm_defeat.mp3");
+                fallbacks.push_back("TeamGame/Resource/BGM/敗北音.mp3");
+                fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/BGM/敗北音.mp3");
+            }
+            else if (key == "se_tap")
+            {
+                fallbacks.push_back("Resource/SE/システム/se_tap.mp3");
+                fallbacks.push_back("Resource/SE/システム/タップ音.mp3");
+                fallbacks.push_back("TeamGame/Resource/SE/システム/se_tap.mp3");
+                fallbacks.push_back("TeamGame/Resource/SE/システム/タップ音.mp3");
+                fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/SE/タップ音.mp3");
+            }
             for (const auto& fb : fallbacks)
             {
                 handle = LoadSoundMem(fb.c_str());
@@ -226,6 +268,10 @@ void SoundManager::Load(const std::string &key, const std::string &path)
         }
         if (handle != -1)
         {
+            if (key == "reload")
+            {
+                ChangeVolumeSoundMem(145, handle); // リロード音を抑えめに設定 (約57%)
+            }
             sounds[key] = handle;
         }
     }
@@ -242,11 +288,28 @@ void SoundManager::Play(const std::string &key, bool loop)
         else if (key == "smg_shot") { Load("smg_shot", "SE/銃/gun_smg.mp3"); it = sounds.find(key); }
         else if (key == "shotgun_shot") { Load("shotgun_shot", "SE/銃/gun_shotgun.mp3"); it = sounds.find(key); }
         else if (key == "sniper_shot") { Load("sniper_shot", "SE/銃/gun_sniper.mp3"); it = sounds.find(key); }
+        else if (key == "se_tap") { Load("se_tap", "SE/システム/se_tap.mp3"); it = sounds.find(key); }
     }
     if (it != sounds.end())
     {
         PlaySoundMem(it->second,
                      DX_PLAYTYPE_BACK | (loop ? DX_PLAYTYPE_LOOP : 0));
+    }
+}
+
+void SoundManager::PlayTapSE(float volume)
+{
+    auto it = sounds.find("se_tap");
+    if (it == sounds.end())
+    {
+        Load("se_tap", "SE/システム/se_tap.mp3");
+        it = sounds.find("se_tap");
+    }
+    if (it != sounds.end())
+    {
+        int vol = static_cast<int>(255.0f * std::max(0.0f, std::min(1.0f, volume)));
+        ChangeVolumeSoundMem(vol, it->second);
+        PlaySoundMem(it->second, DX_PLAYTYPE_BACK);
     }
 }
 
@@ -259,8 +322,81 @@ void SoundManager::Stop(const std::string &key)
     }
 }
 
+void SoundManager::PlayBGM(const std::string &key, float volume)
+{
+    int vol = static_cast<int>(255.0f * std::max(0.0f, std::min(1.0f, volume)));
+
+    // 同じBGMが既に再生中の場合は、曲を最初に戻さず音量調整のみ行いそのまま再生継続
+    if (currentBGMKey == key)
+    {
+        auto it = sounds.find(key);
+        if (it != sounds.end())
+        {
+            if (CheckSoundMem(it->second) == 0)
+            {
+                PlaySoundMem(it->second, DX_PLAYTYPE_LOOP);
+            }
+            ChangeVolumeSoundMem(vol, it->second);
+        }
+        return;
+    }
+
+    // 別のBGMが流れているなら停止
+    if (!currentBGMKey.empty())
+    {
+        auto itOld = sounds.find(currentBGMKey);
+        if (itOld != sounds.end())
+        {
+            StopSoundMem(itOld->second);
+        }
+    }
+
+    currentBGMKey = key;
+    auto it = sounds.find(key);
+    if (it == sounds.end())
+    {
+        if (key == "title_bgm") { Load("title_bgm", "BGM/bgm_title.mp3"); it = sounds.find(key); }
+        else if (key == "battle_bgm") { Load("battle_bgm", "BGM/bgm_battle.mp3"); it = sounds.find(key); }
+        else if (key == "clear_bgm") { Load("clear_bgm", "BGM/bgm_clear.mp3"); it = sounds.find(key); }
+        else if (key == "defeat_bgm") { Load("defeat_bgm", "BGM/bgm_defeat.mp3"); it = sounds.find(key); }
+    }
+
+    if (it != sounds.end())
+    {
+        ChangeVolumeSoundMem(vol, it->second);
+        PlaySoundMem(it->second, DX_PLAYTYPE_LOOP);
+    }
+}
+
+void SoundManager::StopBGM()
+{
+    if (!currentBGMKey.empty())
+    {
+        auto it = sounds.find(currentBGMKey);
+        if (it != sounds.end())
+        {
+            StopSoundMem(it->second);
+        }
+        currentBGMKey = "";
+    }
+}
+
+void SoundManager::SetBGMVolume(float volume)
+{
+    if (!currentBGMKey.empty())
+    {
+        auto it = sounds.find(currentBGMKey);
+        if (it != sounds.end())
+        {
+            int vol = static_cast<int>(255.0f * std::max(0.0f, std::min(1.0f, volume)));
+            ChangeVolumeSoundMem(vol, it->second);
+        }
+    }
+}
+
 void SoundManager::StopAll()
 {
+    currentBGMKey = "";
     InitSoundMem(); // DXLib specific to stop all sounds
 }
 

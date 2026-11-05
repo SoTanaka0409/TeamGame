@@ -88,6 +88,7 @@ class TitleScene : public Scene
      * @brief タイトルシーンの更新処理
      * @details 毎フレーム呼ばれ、現在の状態（state）に応じた入力処理、メニュー遷移、ネットワーク接続処理等を行います。
      */
+    void Init() override;
     void Update() override;
 
     /**

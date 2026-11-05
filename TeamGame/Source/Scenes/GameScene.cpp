@@ -250,6 +250,12 @@ void GameScene::Init()
     SoundManager::GetInstance().Load("sniper_shot", "SE/銃/gun_sniper.mp3");
     SoundManager::GetInstance().Load("gunshot", "SE/銃/gun_assault.mp3");
     SoundManager::GetInstance().Load("reload", "SE/銃/gun_reload.mp3");
+    SoundManager::GetInstance().Load("se_tap", "SE/システム/se_tap.mp3");
+    SoundManager::GetInstance().Load("clear_bgm", "BGM/bgm_clear.mp3");
+    SoundManager::GetInstance().Load("defeat_bgm", "BGM/bgm_defeat.mp3");
+
+    // 戦闘BGMの再生（音量をほんの少し下げて戦闘.mp3をループ再生: 0.60f）
+    SoundManager::GetInstance().PlayBGM("battle_bgm", 0.60f);
 }
 
 void GameScene::Update()

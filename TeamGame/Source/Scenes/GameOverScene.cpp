@@ -1,4 +1,5 @@
 ﻿#include "GameOverScene.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
@@ -38,6 +39,8 @@ GameOverScene::~GameOverScene()
 
 void GameOverScene::Init()
 {
+    // 敗北音・ゲームオーバーBGMを再生
+    SoundManager::GetInstance().PlayBGM("defeat_bgm", 0.85f);
     Scene::Init();
     animTimer = 0.0f;
     menuCursor = 0;
@@ -67,6 +70,7 @@ void GameOverScene::Update()
     bool canConfirm = (animTimer >= 2.0f);
     if (canConfirm && currEnter && !prevEnter)
     {
+        SoundManager::GetInstance().PlayTapSE();
         if (menuCursor == 0)
         {
             // もう一度プレイ
