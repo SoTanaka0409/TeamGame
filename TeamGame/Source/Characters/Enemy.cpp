@@ -31,7 +31,8 @@ Enemy::Enemy(float startX, float startY, int tId)
 
     if (data)
     {
-        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+       
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower/2);//botの場合のみパワーを半分にする
         collider->SetRadius(data->colliderRadius);
         radius = data->colliderRadius;
         sightRangeCells = data->sightRangeCells;
@@ -39,7 +40,7 @@ Enemy::Enemy(float startX, float startY, int tId)
     }
     else
     {
-        // 暗闇戦に集中できるよう移動速度を抑え(3.6→2.6)、当たり判定を実寸大に拡大(8.9→14.0)
+      
         status.Init(33, 2.6f, 10);
         collider->SetRadius(14.0f);
         radius = 14.0f;
