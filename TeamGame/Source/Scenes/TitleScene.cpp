@@ -1,3 +1,4 @@
+﻿#include "../UI/ControlsGuide.h"
 #include "TitleScene.h"
 #include "DxLib.h"
 #include "GameScene.h"
@@ -66,8 +67,8 @@ void TitleScene::Update()
     {
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 1;
-        if (cursor > 1) cursor = 0;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -75,15 +76,29 @@ void TitleScene::Update()
             {
                 GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
             }
-            else if (cursor == 1) // Back
+            else if (cursor == 1) // Controls Guide
+            {
+                state = TitleState::CONTROLS;
+            }
+            else if (cursor == 2) // Back
             {
                 state = TitleState::MAIN;
                 cursor = 1;
             }
         }
-        else if (currEsc)
+        else if (currEsc && !prevEsc)
         {
             state = TitleState::MAIN;
+            cursor = 1;
+        }
+    }
+    else if (state == TitleState::CONTROLS)
+    {
+        bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+        bool currKey = (CheckHitKey(KEY_INPUT_0) != 0 || CheckHitKey(KEY_INPUT_NUMPAD0) != 0 || CheckHitKey(KEY_INPUT_H) != 0);
+        if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || currClick || currKey)
+        {
+            state = TitleState::SETTINGS;
             cursor = 1;
         }
     }
@@ -91,6 +106,7 @@ void TitleScene::Update()
     prevUp = currUp;
     prevDown = currDown;
     prevEnter = currEnter;
+    prevEsc = currEsc;
 }
 
 void TitleScene::Draw()
@@ -190,20 +206,29 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::SETTINGS)
     {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
-        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(15, 20, 35), TRUE);
+        int setBoxW = 560;
+        int setBoxX = 1920 / 2 - setBoxW / 2;
+        int setBoxH = 3 * menuSpacing + 30;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+        DrawBox(setBoxX, menuStartY - 20, setBoxX + setBoxW, menuStartY - 20 + setBoxH, GetColor(15, 20, 35), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(0, 160, 240), FALSE);
+        DrawBox(setBoxX, menuStartY - 20, setBoxX + setBoxW, menuStartY - 20 + setBoxH, GetColor(0, 160, 240), FALSE);
 
         std::string items[] = {
             std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
-            "Back"
+            "操作説明 (CONTROLS GUIDE)",
+            "Back (戻る)"
         };
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i].c_str(), color);
+            if (i == cursor) DrawString(setBoxX + 35, menuStartY + i * menuSpacing, ">", color);
+            DrawString(setBoxX + 65, menuStartY + i * menuSpacing, items[i].c_str(), color);
         }
+    }
+    else if (state == TitleState::CONTROLS)
+    {
+        UI::ControlsGuide::Draw(1920, 1080);
     }
 }

@@ -1,4 +1,4 @@
-﻿#include "CutinManager.h"
+#include "CutinManager.h"
 #include "FontManager.h"
 #include <cmath>
 #include <algorithm>
@@ -100,8 +100,8 @@ void CutinManager::Update() {
 }
 
 bool CutinManager::ShouldPauseGame() const {
-    // カットイン開始〜決まりの瞬間(0〜34フレーム)は世界を停止(ヒットストップ)
-    return m_isActive && (m_timer <= 34);
+    // テンポ維持のためゲーム内時間停止(ヒットストップ)は行わない（リアルタイム進行）
+    return false;
 }
 
 // P5本家風の放射スピード線
@@ -271,64 +271,54 @@ void CutinManager::Draw() {
     GetDrawScreenSize(&sw, &sh);
 
     // =========================================================================
-    // Stage 1: P5シグネチャーの「純赤 + 深黒」スピード線背景
+    // Stage 1: ゲーム画面を塞がない薄いレターボックス調シャドウ（画面上下の視界を完全確保）
     // =========================================================================
-    int bgAlpha = 230;
-    if (m_timer < 4) bgAlpha = m_timer * 55;
-    else if (m_timer > m_maxFrames - 8) bgAlpha = (m_maxFrames - m_timer) * 28;
-
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, bgAlpha);
-    // 深紅の背景 (P5テーマの真紅 0xD01020)
-    DrawBox(0, 0, sw, sh, GetColor(190, 15, 25), TRUE);
-    // コミック調の漆黒集中線
-    DrawPersonaSpeedLines(sw, sh, GetColor(10, 10, 15));
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    // 全画面ベタ塗りは廃止し、帯の背後付近のみほんのり暗くして文字のコントラストを強調
+    float centerY = 540.0f;
+    float bandHeight = 220.0f; // 400pxから220pxにスリム化
 
     // =========================================================================
-    // Stage 2: イナズマのような急角度オランダアングル（Dutch Angle）斜めスラッシュ帯
+    // Stage 2: 超高速スライスアニメーション (約0.4秒 = 全体26フレーム)
+    // 0~4F: 画面左外から超高速で突き刺さる
+    // 5~17F: わずかにドリフトしながら魅せる (13フレーム)
+    // 18~26F: 画面右へ一気に駆け抜けてフェードアウト
     // =========================================================================
-    // アニメーションカーブ:
-    // 0~6F: 画面外から超高速で突き刺さる (スナップ・オーバーシュート)
-    // 7~36F: わずかにドリフトしながら静止 (ヒットストップ)
-    // 37~54F: 画面右下へ超高速で一気にスライス突破
     float slideX = 0.0f;
     float scaleAnim = 1.0f;
 
-    if (m_timer <= 6) {
-        float t = m_timer / 6.0f;
-        // イージング(バウンドオーバーシュート)
-        slideX = (1.0f - t) * (1.0f - t) * -1600.0f;
-        scaleAnim = 1.25f - (t * 0.25f);
-    } else if (m_timer <= 36) {
-        slideX = (m_timer - 6) * 1.5f; // 微小なドリフト
+    if (m_timer <= 4) {
+        float t = m_timer / 4.0f;
+        slideX = (1.0f - t) * (1.0f - t) * -1800.0f;
+        scaleAnim = 1.15f - (t * 0.15f);
+    } else if (m_timer <= 17) {
+        slideX = (m_timer - 4) * 2.5f; // 微小なドリフト
         scaleAnim = 1.0f;
     } else {
-        float t = (m_timer - 36) / 18.0f;
-        slideX = t * t * 2000.0f;
-        scaleAnim = 1.0f + (t * 0.15f);
+        float t = (m_timer - 17) / 9.0f;
+        slideX = t * t * 2200.0f;
+        scaleAnim = 1.0f + (t * 0.1f);
     }
 
-    float centerY = 540.0f;
-    float bandHeight = 400.0f * scaleAnim;
-    float skewX = 260.0f; // P5本家のようなダイナミックな傾き
+    float currentHeight = bandHeight * scaleAnim;
+    float skewX = 200.0f; // 傾き
 
     // 帯の角頂点
-    float p1x = -300.0f + skewX + slideX, p1y = centerY - bandHeight * 0.5f;
-    float p2x = sw + 300.0f + skewX + slideX, p2y = centerY - bandHeight * 0.5f - 30.0f;
-    float p3x = sw + 300.0f - skewX + slideX, p3y = centerY + bandHeight * 0.5f + 30.0f;
-    float p4x = -300.0f - skewX + slideX, p4y = centerY + bandHeight * 0.5f;
+    float p1x = -300.0f + skewX + slideX, p1y = centerY - currentHeight * 0.5f;
+    float p2x = sw + 300.0f + skewX + slideX, p2y = centerY - currentHeight * 0.5f - 20.0f;
+    float p3x = sw + 300.0f - skewX + slideX, p3y = centerY + currentHeight * 0.5f + 20.0f;
+    float p4x = -300.0f - skewX + slideX, p4y = centerY + currentHeight * 0.5f;
 
-    // 1. スラッシュ帯のドロップシャドウ（極太漆黒）
-    DrawTriangle(static_cast<int>(p1x - 24), static_cast<int>(p1y - 24),
-                 static_cast<int>(p2x + 24), static_cast<int>(p2y - 24),
-                 static_cast<int>(p3x + 24), static_cast<int>(p3y + 24),
+    // 1. スラッシュ帯のドロップシャドウ（漆黒）
+    DrawTriangle(static_cast<int>(p1x - 16), static_cast<int>(p1y - 16),
+                 static_cast<int>(p2x + 16), static_cast<int>(p2y - 16),
+                 static_cast<int>(p3x + 16), static_cast<int>(p3y + 16),
                  GetColor(0, 0, 0), TRUE);
-    DrawTriangle(static_cast<int>(p1x - 24), static_cast<int>(p1y - 24),
-                 static_cast<int>(p3x + 24), static_cast<int>(p3y + 24),
-                 static_cast<int>(p4x - 24), static_cast<int>(p4y + 24),
+    DrawTriangle(static_cast<int>(p1x - 16), static_cast<int>(p1y - 16),
+                 static_cast<int>(p3x + 16), static_cast<int>(p3y + 16),
+                 static_cast<int>(p4x - 16), static_cast<int>(p4y + 16),
                  GetColor(0, 0, 0), TRUE);
 
-    // 2. キャラクター固有テーマカラーの太帯
+    // 2. キャラクター固有テーマカラーのシャープな帯
     DrawTriangle(static_cast<int>(p1x), static_cast<int>(p1y),
                  static_cast<int>(p2x), static_cast<int>(p2y),
                  static_cast<int>(p3x), static_cast<int>(p3y),
@@ -338,21 +328,19 @@ void CutinManager::Draw() {
                  static_cast<int>(p4x), static_cast<int>(p4y),
                  m_themeColor, TRUE);
 
-    // 3. P5本家特有の「上下ギザギザカッティング＆イエロー/ホワイトアクセントエッジ」
-    DrawLine(static_cast<int>(p1x - 80), static_cast<int>(p1y - 12), static_cast<int>(p2x + 80), static_cast<int>(p2y - 12), GetColor(255, 235, 30), 6);
-    DrawLine(static_cast<int>(p4x - 80), static_cast<int>(p4y + 12), static_cast<int>(p3x + 80), static_cast<int>(p3y + 12), GetColor(255, 255, 255), 6);
+    // 3. 上下のエッジライン
+    DrawLine(static_cast<int>(p1x - 50), static_cast<int>(p1y - 6), static_cast<int>(p2x + 50), static_cast<int>(p2y - 6), GetColor(255, 235, 30), 4);
+    DrawLine(static_cast<int>(p4x - 50), static_cast<int>(p4y + 6), static_cast<int>(p3x + 50), static_cast<int>(p3y + 6), GetColor(255, 255, 255), 4);
 
     // =========================================================================
-    // Stage 3: 本家 P5 の核心「キャラクターカットイン フレーム」
-    // (正方形イラスト~300x300に最適化されたスタイリッシュなポートレートフレーム)
+    // Stage 3: キャラクターカットイン フレーム (横長スリット型で目元・顔を強調)
     // =========================================================================
-    float eyeCenterX = sw * 0.35f + slideX * 0.85f;
+    float eyeCenterX = sw * 0.32f + slideX * 0.85f;
     float eyeCenterY = centerY;
 
-    // イラストフレームの寸法 (ほぼ正方形~黄金比に近い斜めフレーム)
-    float slitW = 390.0f * scaleAnim;
-    float slitH = 340.0f * scaleAnim;
-    float slitSkew = 70.0f;
+    float slitW = 340.0f * scaleAnim;
+    float slitH = 190.0f * scaleAnim;
+    float slitSkew = 50.0f;
 
     float s1x = eyeCenterX - slitW * 0.5f + slitSkew, s1y = eyeCenterY - slitH * 0.5f;
     float s2x = eyeCenterX + slitW * 0.5f + slitSkew, s2y = eyeCenterY - slitH * 0.5f;
@@ -360,13 +348,13 @@ void CutinManager::Draw() {
     float s4x = eyeCenterX - slitW * 0.5f - slitSkew, s4y = eyeCenterY + slitH * 0.5f;
 
     // スリットの漆黒外枠フレーム
-    DrawTriangle(static_cast<int>(s1x - 14), static_cast<int>(s1y - 14),
-                 static_cast<int>(s2x + 14), static_cast<int>(s2y - 14),
-                 static_cast<int>(s3x + 14), static_cast<int>(s3y + 14),
+    DrawTriangle(static_cast<int>(s1x - 10), static_cast<int>(s1y - 10),
+                 static_cast<int>(s2x + 10), static_cast<int>(s2y - 10),
+                 static_cast<int>(s3x + 10), static_cast<int>(s3y + 10),
                  GetColor(0, 0, 0), TRUE);
-    DrawTriangle(static_cast<int>(s1x - 14), static_cast<int>(s1y - 14),
-                 static_cast<int>(s3x + 14), static_cast<int>(s3y + 14),
-                 static_cast<int>(s4x - 14), static_cast<int>(s4y + 14),
+    DrawTriangle(static_cast<int>(s1x - 10), static_cast<int>(s1y - 10),
+                 static_cast<int>(s3x + 10), static_cast<int>(s3y + 10),
+                 static_cast<int>(s4x - 10), static_cast<int>(s4y + 10),
                  GetColor(0, 0, 0), TRUE);
 
     // 内側背景（深黒）
@@ -379,9 +367,8 @@ void CutinManager::Draw() {
                  static_cast<int>(s4x), static_cast<int>(s4y),
                  GetColor(15, 15, 20), TRUE);
 
-    // 画像がロードされている場合はカスタムグラフィックをアスペクト比を維持してフィッティング描画
+    // キャラクター画像の描画
     if (m_previewHandle != -1) {
-        // P5風のシャープな斜めフレームに合わせて描画
         DrawModiGraph(
             static_cast<int>(s1x), static_cast<int>(s1y),
             static_cast<int>(s2x), static_cast<int>(s2y),
@@ -390,56 +377,47 @@ void CutinManager::Draw() {
             m_previewHandle, TRUE
         );
     } else {
-        // 画像がない場合は本家P5スタイルの精巧な目元劇画イラストをプロシージャル描画
-        DrawP5EyeIllustration(m_charaId, eyeCenterX, eyeCenterY, scaleAnim, m_themeColor);
+        DrawP5EyeIllustration(m_charaId, eyeCenterX, eyeCenterY, scaleAnim * 0.85f, m_themeColor);
     }
 
-    // スリット枠の白＆黄色二重縁取りライン
-    DrawLine(static_cast<int>(s1x), static_cast<int>(s1y), static_cast<int>(s2x), static_cast<int>(s2y), GetColor(255, 235, 40), 5);
-    DrawLine(static_cast<int>(s2x), static_cast<int>(s2y), static_cast<int>(s3x), static_cast<int>(s3y), GetColor(255, 255, 255), 5);
-    DrawLine(static_cast<int>(s3x), static_cast<int>(s3y), static_cast<int>(s4x), static_cast<int>(s4y), GetColor(255, 235, 40), 5);
-    DrawLine(static_cast<int>(s4x), static_cast<int>(s4y), static_cast<int>(s1x), static_cast<int>(s1y), GetColor(255, 255, 255), 5);
+    // スリット枠の縁取りライン
+    DrawLine(static_cast<int>(s1x), static_cast<int>(s1y), static_cast<int>(s2x), static_cast<int>(s2y), GetColor(255, 235, 40), 4);
+    DrawLine(static_cast<int>(s2x), static_cast<int>(s2y), static_cast<int>(s3x), static_cast<int>(s3y), GetColor(255, 255, 255), 4);
+    DrawLine(static_cast<int>(s3x), static_cast<int>(s3y), static_cast<int>(s4x), static_cast<int>(s4y), GetColor(255, 235, 40), 4);
+    DrawLine(static_cast<int>(s4x), static_cast<int>(s4y), static_cast<int>(s1x), static_cast<int>(s1y), GetColor(255, 255, 255), 4);
 
     // =========================================================================
-    // Stage 4: P5 アメコミ調タイポグラフィ（斜体・切り文字ボックス・二重シャドウ）
+    // Stage 4: スタイリッシュタイポグラフィ（帯の高さに合わせたコンパクト配置）
     // =========================================================================
-    int textBaseX = static_cast<int>(sw * 0.54f + slideX * 0.95f);
+    int textBaseX = static_cast<int>(sw * 0.50f + slideX * 0.95f);
     int textBaseY = static_cast<int>(centerY);
 
-    // 1. "CRITICAL SKILL >>" バッジ
-    DrawBox(textBaseX - 10, textBaseY - 130, textBaseX + 350, textBaseY - 90, GetColor(0, 0, 0), TRUE);
-    DrawBox(textBaseX - 8, textBaseY - 128, textBaseX + 348, textBaseY - 92, GetColor(255, 235, 40), TRUE);
-    FontManager::GetInstance().DrawString(textBaseX + 12, textBaseY - 124, "CRITICAL SKILL >>", GetColor(0, 0, 0), 24, 9);
+    // 1. "CRITICAL SKILL" バッジ
+    DrawBox(textBaseX - 8, textBaseY - 76, textBaseX + 260, textBaseY - 48, GetColor(0, 0, 0), TRUE);
+    DrawBox(textBaseX - 6, textBaseY - 74, textBaseX + 258, textBaseY - 50, GetColor(255, 235, 40), TRUE);
+    FontManager::GetInstance().DrawString(textBaseX + 10, textBaseY - 72, "CRITICAL SKILL >>", GetColor(0, 0, 0), 20, 9);
 
-    // 2. キャラクター名（大迫力の切り文字・黒白コントラスト）
+    // 2. キャラクター名
     std::string charaDisplay = m_charaName;
-    FontManager::GetInstance().DrawString(textBaseX + 6, textBaseY - 80, charaDisplay.c_str(), GetColor(0, 0, 0), 44, 9);
-    FontManager::GetInstance().DrawString(textBaseX + 3, textBaseY - 82, charaDisplay.c_str(), GetColor(190, 15, 25), 44, 9);
-    FontManager::GetInstance().DrawString(textBaseX, textBaseY - 84, charaDisplay.c_str(), GetColor(255, 255, 255), 44, 9);
+    FontManager::GetInstance().DrawString(textBaseX + 4, textBaseY - 42, charaDisplay.c_str(), GetColor(0, 0, 0), 32, 9);
+    FontManager::GetInstance().DrawString(textBaseX, textBaseY - 44, charaDisplay.c_str(), GetColor(255, 255, 255), 32, 9);
 
-    // 3. スキル名（特大ボールド英字・P5風の立体シャドウ）
+    // 3. スキル名（ボールド英字）
     std::string skillDisplay = m_skillName;
     std::transform(skillDisplay.begin(), skillDisplay.end(), skillDisplay.begin(), ::toupper);
 
-    // 多重ドロップシャドウで雑誌・アメコミの飛び出す文字を完全再現
-    FontManager::GetInstance().DrawString(textBaseX + 8, textBaseY - 18, skillDisplay.c_str(), GetColor(0, 0, 0), 62, 9);
-    FontManager::GetInstance().DrawString(textBaseX + 4, textBaseY - 22, skillDisplay.c_str(), GetColor(20, 20, 25), 62, 9);
-    FontManager::GetInstance().DrawString(textBaseX, textBaseY - 26, skillDisplay.c_str(), GetColor(255, 255, 255), 62, 9);
-
-    // サブキャプション
-    FontManager::GetInstance().DrawString(textBaseX + 2, textBaseY + 54, "[ SHOW ME YOUR TRUE FORM ]", GetColor(0, 0, 0), 20, 6);
-    FontManager::GetInstance().DrawString(textBaseX, textBaseY + 52, "[ SHOW ME YOUR TRUE FORM ]", GetColor(255, 235, 40), 20, 6);
+    FontManager::GetInstance().DrawString(textBaseX + 5, textBaseY - 6, skillDisplay.c_str(), GetColor(0, 0, 0), 48, 9);
+    FontManager::GetInstance().DrawString(textBaseX, textBaseY - 8, skillDisplay.c_str(), GetColor(255, 255, 255), 48, 9);
 
     // =========================================================================
-    // Stage 5: 飛び散るコミック破片・星・インク飛沫パーティクル
+    // Stage 5: 飛び散るコミック破片パーティクル
     // =========================================================================
     for (const auto& s : m_shards) {
         float cosA = std::cos(s.angle);
         float sinA = std::sin(s.angle);
-        float r = s.size;
+        float r = s.size * 0.8f;
 
         if (s.type == 0) {
-            // P5風 4芒星（ダイヤスター）
             int t1x = static_cast<int>(s.x + cosA * r);
             int t1y = static_cast<int>(s.y + sinA * r);
             int t2x = static_cast<int>(s.x - sinA * (r * 0.35f));
@@ -451,10 +429,7 @@ void CutinManager::Draw() {
 
             DrawTriangle(t1x, t1y, t2x, t2y, t3x, t3y, s.color, TRUE);
             DrawTriangle(t1x, t1y, t3x, t3y, t4x, t4y, s.color, TRUE);
-            DrawTriangle(t1x, t1y, t2x, t2y, t3x, t3y, GetColor(0, 0, 0), FALSE);
-            DrawTriangle(t1x, t1y, t3x, t3y, t4x, t4y, GetColor(0, 0, 0), FALSE);
         } else if (s.type == 1) {
-            // 鋭角な三角ガラス・紙片
             int pA_x = static_cast<int>(s.x + cosA * r * 1.2f);
             int pA_y = static_cast<int>(s.y + sinA * r * 1.2f);
             int pB_x = static_cast<int>(s.x - sinA * r * 0.6f);
@@ -463,27 +438,8 @@ void CutinManager::Draw() {
             int pC_y = static_cast<int>(s.y - sinA * r * 0.6f);
 
             DrawTriangle(pA_x, pA_y, pB_x, pB_y, pC_x, pC_y, s.color, TRUE);
-            DrawTriangle(pA_x, pA_y, pB_x, pB_y, pC_x, pC_y, GetColor(0, 0, 0), FALSE);
         } else {
-            // インク滴・スプラッター丸
             DrawCircle(static_cast<int>(s.x), static_cast<int>(s.y), static_cast<int>(r * 0.45f), s.color, TRUE);
-            DrawCircle(static_cast<int>(s.x), static_cast<int>(s.y), static_cast<int>(r * 0.45f), GetColor(0, 0, 0), FALSE);
         }
-    }
-
-    // =========================================================================
-    // Stage 6: 激しいインパクトフレーム（白フラッシュ ＆ 黒反転）
-    // =========================================================================
-    if (m_timer <= 3) {
-        // 発動0~3フレームの激しい純白閃光
-        int flashAlpha = (4 - m_timer) * 70;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, flashAlpha);
-        DrawBox(0, 0, sw, sh, GetColor(255, 255, 255), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    } else if (m_timer == 4) {
-        // 1フレームだけの黒反転（P5の打撃衝撃フレーム技法）
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
-        DrawBox(0, 0, sw, sh, GetColor(0, 0, 0), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 }

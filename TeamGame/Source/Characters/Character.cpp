@@ -1,5 +1,6 @@
 ﻿#define NOMINMAX
 #include "Character.h"
+#include "Camera.h"
 #include "ColliderManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
@@ -163,10 +164,8 @@ void Character::Update()
     }
 
     // 3. 3Dモデル・アニメーションの更新
-    if (m_model)
-    {
-        m_model->Update();
-    }
+    // ※ 派生クラス(Player, Enemy)側でプレイヤーの可視範囲判定(IsVisibleToPlayer)を行い、
+    //    見える範囲のみアニメーション更新を実行することでFPS向上・重複負荷削減を行っています。
 }
 
 void Character::SetColliderRadius(float rad)
@@ -386,4 +385,18 @@ int Character::GetEffectRemainingFrames(SkillMinorTag tag) const
     return 0;
 }
 
+bool Character::IsVisibleToPlayer() const
+{
+    if (!IsActive()) return false;
+    if (IsTransparent()) return false;
 
+    int sw = 1920, sh = 1080;
+    GetDrawScreenSize(&sw, &sh);
+
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
+    const float margin = 120.0f;
+
+    return (screenX >= -margin && screenX <= static_cast<float>(sw) + margin &&
+            screenY >= -margin && screenY <= static_cast<float>(sh) + margin);
+}

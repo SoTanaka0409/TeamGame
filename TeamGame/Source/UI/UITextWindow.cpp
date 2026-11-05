@@ -133,8 +133,17 @@ void UITextWindow::RecalculateLayout() {
     m_calculatedTextHeight = 0;
 
     if (m_rawText.empty()) {
-        m_windowWidth = m_padding.left + m_padding.right;
-        m_windowHeight = m_padding.top + m_padding.bottom;
+        int minW = m_nineSliceMargin.left + m_nineSliceMargin.right;
+        int minH = m_nineSliceMargin.top + m_nineSliceMargin.bottom;
+        int autoW = (std::max)(m_padding.left + m_padding.right, minW);
+        int autoH = (std::max)(m_padding.top + m_padding.bottom, minH);
+        if (!m_title.empty()) {
+            int fontHeight = (m_fontHandle == -1) ? 16 : GetFontSizeToHandle(m_fontHandle);
+            if (fontHeight <= 0) fontHeight = 16;
+            autoH += fontHeight + m_lineSpacing + 8;
+        }
+        m_windowWidth = (m_fixedWidth > 0) ? m_fixedWidth : autoW;
+        m_windowHeight = (m_fixedHeight > 0) ? m_fixedHeight : autoH;
         m_isDirty = false;
         return;
     }

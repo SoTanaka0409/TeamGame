@@ -152,6 +152,12 @@ public:
     void OnCollisionExit(Collider *otherCollider) override;
 
     /**
+     * @brief プレイヤーから見える範囲（画面内かつ可視状態）にいるかどうか
+     * @return 画面内に存在し、不可視化されていなければtrue
+     */
+    virtual bool IsVisibleToPlayer() const override;
+
+    /**
      * @brief ステージ情報のセットアップ
      * @param s ステージへのポインタ
      * @param cSize セルサイズ

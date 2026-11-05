@@ -1,3 +1,4 @@
+﻿#include "../UI/ControlsGuide.h"
 #include "GameScene.h"
 #include "Camera.h"
 #include "EffectManager.h"
@@ -150,10 +151,32 @@ void GameScene::Update()
 
     if (state == GameState::PLAYING)
     {
+        bool currHelpKey = (CheckHitKey(KEY_INPUT_0) != 0 || CheckHitKey(KEY_INPUT_NUMPAD0) != 0 || CheckHitKey(KEY_INPUT_H) != 0);
+        if (currHelpKey && !prevHelpKey)
+        {
+            isShowingControlsGuide = !isShowingControlsGuide;
+        }
+
+        if (isShowingControlsGuide)
+        {
+            bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+            if ((currEnter && !prevEnter) || currClick)
+            {
+                isShowingControlsGuide = false;
+            }
+        }
+
         if (currEsc && !prevEsc)
         {
-            state = GameState::PAUSED;
-            pauseMenuCursor = 0;
+            if (isShowingControlsGuide)
+            {
+                isShowingControlsGuide = false;
+            }
+            else
+            {
+                state = GameState::PAUSED;
+                pauseMenuCursor = 0;
+            }
         }
         else
         {
@@ -312,22 +335,26 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PLAYING;
         if (currUp && !prevUp) pauseMenuCursor--;
         if (currDown && !prevDown) pauseMenuCursor++;
-        if (pauseMenuCursor < 0) pauseMenuCursor = 3;
-        if (pauseMenuCursor > 3) pauseMenuCursor = 0;
+        if (pauseMenuCursor < 0) pauseMenuCursor = 4;
+        if (pauseMenuCursor > 4) pauseMenuCursor = 0;
 
         if (currEnter && !prevEnter)
         {
             if (pauseMenuCursor == 0) state = GameState::PLAYING;
             else if (pauseMenuCursor == 1)
             {
-                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+                state = GameState::CONTROLS;
             }
             else if (pauseMenuCursor == 2)
+            {
+                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
+            }
+            else if (pauseMenuCursor == 3)
             {
                 state = GameState::SETTINGS;
                 settingsMenuCursor = 0;
             }
-            else if (pauseMenuCursor == 3)
+            else if (pauseMenuCursor == 4)
             {
                 SceneManager::GetInstance().ChangeScene(std::make_shared<TitleScene>());
             }
@@ -338,8 +365,8 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PAUSED;
         if (currUp && !prevUp) settingsMenuCursor--;
         if (currDown && !prevDown) settingsMenuCursor++;
-        if (settingsMenuCursor < 0) settingsMenuCursor = 1;
-        if (settingsMenuCursor > 1) settingsMenuCursor = 0;
+        if (settingsMenuCursor < 0) settingsMenuCursor = 2;
+        if (settingsMenuCursor > 2) settingsMenuCursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -349,11 +376,26 @@ void GameScene::Update()
             }
             else if (settingsMenuCursor == 1)
             {
+                state = GameState::CONTROLS;
+            }
+            else if (settingsMenuCursor == 2)
+            {
                 state = GameState::PAUSED;
             }
         }
     }
+    else if (state == GameState::CONTROLS)
+    {
+        bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+        bool currHelpKey = (CheckHitKey(KEY_INPUT_0) != 0 || CheckHitKey(KEY_INPUT_NUMPAD0) != 0 || CheckHitKey(KEY_INPUT_H) != 0);
+        if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || currClick || (currHelpKey && !prevHelpKey))
+        {
+            state = GameState::PAUSED;
+        }
+    }
 
+    bool curHelp = (CheckHitKey(KEY_INPUT_0) != 0 || CheckHitKey(KEY_INPUT_NUMPAD0) != 0 || CheckHitKey(KEY_INPUT_H) != 0);
+    prevHelpKey = curHelp;
     prevEsc = currEsc;
     prevUp = currUp;
     prevDown = currDown;
@@ -539,8 +581,9 @@ void GameScene::Draw()
 
         if (state == GameState::PAUSED)
         {
-            const char* items[] = { "Resume", "Restart", "Settings", "Exit to Title" };
-            for (int i = 0; i < 4; i++)
+            DrawString(1920 / 2 - 50, 200, "== ポーズ ==", GetColor(255, 255, 0));
+            const char* items[] = { "Resume (再開)", "Controls (操作説明)", "Restart (やり直し)", "Settings (設定)", "Exit to Title (タイトルへ)" };
+            for (int i = 0; i < 5; i++)
             {
                 unsigned int color = (i == pauseMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
                 if (i == pauseMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -549,11 +592,13 @@ void GameScene::Draw()
         }
         else if (state == GameState::SETTINGS)
         {
+            DrawString(1920 / 2 - 50, 200, "== 設定 ==", GetColor(255, 255, 0));
             std::string items[] = {
                 std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
-                "Back"
+                "Controls Guide (操作説明)",
+                "Back (戻る)"
             };
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 3; i++)
             {
                 unsigned int color = (i == settingsMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
                 if (i == settingsMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
@@ -635,4 +680,16 @@ void GameScene::Draw()
 
     // スキル発動時のペルソナ5風スタイリッシュカットイン描画（最前面オーバーレイ）
     CutinManager::GetInstance().Draw();
+
+    // ゲームプレイ中の操作説明ミニHUD描画 (画面右下に常時表示)
+    if (state == GameState::PLAYING)
+    {
+        UI::ControlsGuide::DrawMiniHud(1920, 1080);
+    }
+
+    // 操作説明オーバーレイ（Hキー/Tabキー/ポーズ中等で最前面に表示）
+    if (isShowingControlsGuide || state == GameState::CONTROLS)
+    {
+        UI::ControlsGuide::Draw(1920, 1080);
+    }
 }
