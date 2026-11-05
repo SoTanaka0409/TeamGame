@@ -5,10 +5,8 @@
 
 void DebugManager::Update()
 {
-    // 0キー（またはテンキー0, Tab, F1）でデバッグモードのON/OFF切り替え
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_0) ||
-        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD0) ||
-        InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
+    // TABキー（またはF1キー）でデバッグモードのON/OFF切り替え（0キーは操作説明に割り当て）
+    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
     {
         ToggleDebugMode();
@@ -47,6 +45,6 @@ void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX,
 
     // 操作ガイド
     DrawString(startX + 15, startY + 95, "--- DEBUG CONTROLS ---", GetColor(180, 180, 180));
-    DrawString(startX + 15, startY + 118, "[0 / TAB] : デバッグ表示 ON/OFF", GetColor(255, 255, 255));
+    DrawString(startX + 15, startY + 118, "[TAB] : デバッグ表示 ON/OFF", GetColor(255, 255, 255));
     DrawString(startX + 15, startY + 141, "[T] テーマ変更 | [L] マップ変更", GetColor(255, 255, 255));
 }

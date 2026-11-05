@@ -85,8 +85,7 @@ void ChatManager::Update(float playerWorldX, float playerWorldY) {
                 for (auto obj : objs) {
                     Character* ch = dynamic_cast<Character*>(obj);
                     // 味方(teamId == 0)かつ自分以外で生存中のBot
-                    if (ch && ch->teamId == 0 && ch->characterName != "YOU" && ch->characterName != "Player" && !ch->isDeadProcessed && ch->status.GetHp() > 0)
-                    {
+                    if (ch && ch->teamId == 0 && ch->characterName != "YOU" && ch->characterName != "Player" && !ch->isDeadProcessed && ch->status.GetCurrentHp() > 0) {
                         std::string replyText = "";
                         if (selectedIndex == 0) replyText = "了解、迎撃する！";
                         else if (selectedIndex == 1) replyText = "今向かう、持ちこたえろ！";
@@ -144,7 +143,7 @@ void ChatManager::Draw() {
                      GetColor(15, 20, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 吹き出し外枠（チームカラー）
+        // 吹き出し外枠（チームカラー） 
         unsigned int borderColor = (msg.teamId == 0) ? GetColor(70, 170, 255) : GetColor(255, 90, 90);
         DrawRoundRect(bx, by, bx + bubbleW, by + bubbleH, 6, 6, borderColor, FALSE);
 

@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
@@ -40,7 +40,7 @@ Player::Player(float startX, float startY)
     }
     else
     {
-        status.Init(33, 4.2f, 10);
+        status.Init(33, 2.1f, 10);
         if (collider) collider->SetRadius(8.9f);
         radius = 8.9f;
     }
@@ -286,7 +286,12 @@ void Player::Update()
         {
             m_model->PlayIdle();
         }
-        m_model->Update(1.0f / 60.0f);
+
+        // プレイヤーの見える範囲のみアニメーション更新を実行して負荷削減
+        if (IsVisibleToPlayer())
+        {
+            m_model->Update(1.0f / 60.0f);
+        }
     }
 
 
@@ -1424,4 +1429,13 @@ void Player::UpdateAutoAim(const Vector2& moveDir)
             facingDir = Vector2(dx / dist, dy / dist);
         }
     }
+}
+
+bool Player::IsVisibleToPlayer() const
+{
+    // 自機プレイヤーは透明化スキル中であっても半透明表示されるため、常に可視とみなす
+    if (!isRemote) return true;
+
+    // リモートプレイヤーや2Pは基底クラスの画面内判定に従う
+    return Character::IsVisibleToPlayer();
 }

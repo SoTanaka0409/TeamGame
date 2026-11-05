@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Status.h"
@@ -146,6 +146,12 @@ public:
      * @brief ハイリスク（位置探知＆強制発音）状態か
      */
     bool IsHighRisk() const;
+
+    /**
+     * @brief プレイヤーから見える範囲（画面内かつ可視状態）にいるかどうか
+     * @return 画面内に存在し、不可視状態でなければtrue
+     */
+    virtual bool IsVisibleToPlayer() const;
 
     /**
      * @brief 指定タグのアクティブエフェクトの残りフレーム数を取得（無ければ0）

@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Enemy.h"
@@ -31,8 +31,7 @@ Enemy::Enemy(float startX, float startY, int tId)
 
     if (data)
     {
-       
-        status.Init(data->maxHp, data->moveSpeed, data->attackPower/2);//botの場合のみパワーを半分にする
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower / 2); // botの場合のみパワーを半分にする
         collider->SetRadius(data->colliderRadius);
         radius = data->colliderRadius;
         sightRangeCells = data->sightRangeCells;
@@ -40,8 +39,7 @@ Enemy::Enemy(float startX, float startY, int tId)
     }
     else
     {
-      
-        status.Init(33, 2.6f, 10);
+        status.Init(33, 1.3f, 5); // 速度およびBot攻撃力半分
         collider->SetRadius(14.0f);
         radius = 14.0f;
     }
@@ -99,7 +97,7 @@ void Enemy::SetCharacterId(int id)
     const CharacterData* data = CharacterManager::GetInstance().GetCharacterDataById(id);
     if (data)
     {
-        status.Init(data->maxHp, data->moveSpeed, data->attackPower);
+        status.Init(data->maxHp, data->moveSpeed, data->attackPower / 2); // Botの攻撃力を半分にする
         if (collider) collider->SetRadius(data->colliderRadius);
         radius = data->colliderRadius;
     }
@@ -281,6 +279,10 @@ void Enemy::SetEquippedWeapon(Weapon* w)
 {
     if (equippedWeapon) delete equippedWeapon;
     equippedWeapon = w;
+    if (equippedWeapon)
+    {
+        equippedWeapon->SetDamageMultiplier(0.5f); // Botの武器攻撃力（ダメージ）を半分にする
+    }
     UpdateWeaponTactic();
 }
 
@@ -1167,7 +1169,12 @@ void Enemy::Update()
         {
             m_model->PlayIdle();
         }
-        m_model->Update(1.0f / 60.0f);
+
+        // プレイヤーの見える範囲（画面内かつ可視状態）のみアニメーション更新を実行して大幅軽量化
+        if (IsVisibleToPlayer())
+        {
+            m_model->Update(1.0f / 60.0f);
+        }
     }
 }
 
@@ -1510,3 +1517,18 @@ void Enemy::StopHomingSuicide()
     aiState = EnemyAIState::PATROL;
 }
 
+bool Enemy::IsVisibleToPlayer() const
+{
+    // 非アクティブまたはステルス透明化中なら見えない
+    if (!IsActive() || IsTransparent()) return false;
+
+    int sw = 1920, sh = 1080;
+    GetDrawScreenSize(&sw, &sh);
+
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
+    const float margin = 120.0f; // モデルのはみ出し考慮マージン
+
+    return (screenX >= -margin && screenX <= static_cast<float>(sw) + margin &&
+            screenY >= -margin && screenY <= static_cast<float>(sh) + margin);
+}
