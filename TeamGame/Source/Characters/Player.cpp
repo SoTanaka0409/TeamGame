@@ -2,6 +2,7 @@
 #include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
+#include "SoundManager.h"
 #include "Stage.h"
 #include "Bullet.h"
 #include "DxLib.h"
@@ -280,6 +281,27 @@ void Player::Update()
         m_model->Update(1.0f / 60.0f);
     }
 
+    // 歩行足音SEの再生制御 (草むら: grass_walk / 土・地面: dirt_walk)
+    if (m_isMoving)
+    {
+        m_footstepTimer--;
+        if (m_footstepTimer <= 0)
+        {
+            const char* seKey = m_isInBush ? "grass_walk" : "dirt_walk";
+            float baseVol = m_isInBush ? 0.85f : 0.72f;
+            SoundManager::GetInstance().Play3D(seKey, position, 1200.0f, baseVol, teamId);
+
+            float spd = status.GetSpeed();
+            int interval = (spd > 0.1f) ? static_cast<int>(18.0f * (4.0f / spd)) : 18;
+            if (interval < 12) interval = 12;
+            if (interval > 24) interval = 24;
+            m_footstepTimer = interval;
+        }
+    }
+    else
+    {
+        m_footstepTimer = 0;
+    }
 
     if (!weapons.empty())
     {
@@ -480,7 +502,7 @@ void Player::Update()
     
     if (isReloadPressed && !weapons.empty())
     {
-        weapons[currentWeaponIndex]->Reload();
+        weapons[currentWeaponIndex]->Reload(position, teamId);
     }
     
     // Spaceキー等でナイフ暗殺 (敵が未発覚時のみ実行可能)

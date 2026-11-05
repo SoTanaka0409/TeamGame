@@ -1173,7 +1173,8 @@ void Enemy::Update()
     {
         float dx = position.x - startPosX;
         float dy = position.y - startPosY;
-        if (dx * dx + dy * dy > 0.01f)
+        bool isMoving = (dx * dx + dy * dy > 0.01f);
+        if (isMoving)
         {
             m_model->PlayWalk();
         }
@@ -1182,6 +1183,23 @@ void Enemy::Update()
             m_model->PlayIdle();
         }
         m_model->Update(1.0f / 60.0f);
+
+        // 歩行SE（草むら移動音または土移動音、3D空間オーディオ）
+        if (isMoving)
+        {
+            m_footstepTimer--;
+            if (m_footstepTimer <= 0)
+            {
+                const char* seKey = m_isInBush ? "grass_walk" : "dirt_walk";
+                float baseVol = m_isInBush ? 0.65f : 0.50f;
+                SoundManager::GetInstance().Play3D(seKey, position, 800.0f, baseVol, teamId);
+                m_footstepTimer = 22;
+            }
+        }
+        else
+        {
+            m_footstepTimer = 0;
+        }
     }
 }
 

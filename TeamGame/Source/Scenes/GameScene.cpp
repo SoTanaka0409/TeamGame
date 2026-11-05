@@ -239,6 +239,17 @@ void GameScene::Init()
         introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
         SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
     }
+
+    // 歩行足音SE (草: 草の上を歩く音風Ⅰ, 土: 土の上を歩く音風) のロード (SEフォルダ配下優先)
+    SoundManager::GetInstance().Load("grass_walk", "SE/足音/grass_walk.mp3");
+    SoundManager::GetInstance().Load("dirt_walk", "SE/足音/dirt_walk.mp3");
+    // 武器発射音・リロード音のロード
+    SoundManager::GetInstance().Load("handgun_shot", "SE/銃/gun_handgun.mp3");
+    SoundManager::GetInstance().Load("smg_shot", "SE/銃/gun_smg.mp3");
+    SoundManager::GetInstance().Load("shotgun_shot", "SE/銃/gun_shotgun.mp3");
+    SoundManager::GetInstance().Load("sniper_shot", "SE/銃/gun_sniper.mp3");
+    SoundManager::GetInstance().Load("gunshot", "SE/銃/gun_assault.mp3");
+    SoundManager::GetInstance().Load("reload", "SE/銃/gun_reload.mp3");
 }
 
 void GameScene::Update()
@@ -286,6 +297,13 @@ void GameScene::Update()
             {
                 Scene::Update();
             }
+
+            // 3D空間オーディオのリスナー（プレイヤー）位置・向きの更新およびサウンド解放
+            if (player && player->IsActive())
+            {
+                SoundManager::GetInstance().SetListener(player->GetPosition(), player->GetFacingDir());
+            }
+            SoundManager::GetInstance().Update();
 
             // ランダムな時間帯に（15秒間）全エリアが明るくなる処理
             if (brightTimer > 0.0f)

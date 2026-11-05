@@ -60,6 +60,6 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
     }
     else if (currentAmmo <= 0 && !isReloading)
     {
-        Reload();
+        Reload(pos, teamId);
     }
 }

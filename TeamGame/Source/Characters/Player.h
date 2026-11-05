@@ -31,6 +31,7 @@ private:
     int currentWeaponIndex;              ///< 現在装備中の武器インデックス
     int autoPingTimer;                   ///< オートピン送信タイマー
     bool m_isMoving = false;             ///< 移動中フラグ
+    int m_footstepTimer = 0;             ///< 歩行足音SE用タイマー (草・土)
 
 
 public:

@@ -1,8 +1,9 @@
-#include "SubmachineGun.h"
+﻿#include "SubmachineGun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 #include "Enemy.h"
 #include "DxLib.h"
 #include <cmath>
@@ -91,14 +92,14 @@ void SubmachineGun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, boo
                 );
             }
 
-            NotifyEnemiesOfGunshot(pos, teamId);
+            SoundManager::GetInstance().Play3D("smg_shot", pos, 1100.0f, 0.85f, teamId);
             ResetCoolTime();
             UseAmmo(1);
         }
     }
     else if (currentAmmo <= 0 && !isReloading)
     {
-        Reload();
+        Reload(pos, teamId);
     }
 }
 

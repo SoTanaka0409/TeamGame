@@ -69,6 +69,7 @@ private:
     int aimDelayTimer;                ///< エイムディレイタイマー
     int strafeDirection;              ///< かに歩き（横移動）方向
     int strafeTimer;                  ///< かに歩き切り替えタイマー
+    int m_footstepTimer = 0;          ///< 歩行足音SEタイマー (草・土)
     float effectiveRangeCells = 10.0f;///< 攻撃有効射程（10セル）
     float sightRangeCells = 8.5f;     ///< 索敵視界（8.5セル: プレイヤーのカメラ画面サイズ・ライト照射範囲に合わせて同期）
     class Weapon* equippedWeapon = nullptr; ///< 装備武器
