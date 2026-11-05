@@ -204,6 +204,9 @@
     <ClCompile Include="Source\Stage\StageTest_main.cpp">
       <Filter>ソース ファイル\Stage</Filter>
     </ClCompile>
+    <ClCompile Include="Source\UI\ControlsGuide.cpp">
+      <Filter>ソース ファイル\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\UI\UITextWindow.cpp">
       <Filter>ソース ファイル\UI</Filter>
     </ClCompile>
@@ -379,6 +382,9 @@
     </ClInclude>
     <ClInclude Include="Source\Stage\StageTypes.h">
       <Filter>ヘッダー ファイル\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UI\ControlsGuide.h">
+      <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\UITextWindow.h">
       <Filter>ヘッダー ファイル\UI</Filter>

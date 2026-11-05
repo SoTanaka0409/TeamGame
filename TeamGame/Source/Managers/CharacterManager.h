@@ -12,7 +12,7 @@ struct CharacterData
     std::string name;               ///< キャラクター表示名 (例: Character 1)
     std::string type = "Assault";   ///< タイプ分類名
     int maxHp = 100;                ///< 最大体力
-    float moveSpeed = 4.2f;         ///< 移動速度
+    float moveSpeed = 2.1f;         ///< 移動速度
     int attackPower = 20;           ///< 攻撃力
     int skillId = 1;                ///< 所持するスキルのID (skills.csvのIDに対応)
     std::string description;        ///< 特徴・説明文

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include "StageManager.h"
 #include "../Core/Vector2.h"
@@ -21,7 +21,8 @@ enum class GameState
 {
     PLAYING,        ///< ゲームプレイ中
     PAUSED,         ///< ポーズメニューを開いている状態
-    SETTINGS        ///< 設定画面を開いている状態
+    SETTINGS,       ///< 設定画面を開いている状態
+    CONTROLS        ///< 操作説明画面を開いている状態
 };
 
 /**
@@ -46,6 +47,8 @@ class GameScene : public Scene
     bool prevLeft = false;               ///< 前フレームでの左入力状態
     bool prevRight = false;              ///< 前フレームでの右入力状態
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
+    bool prevHelpKey = false;            ///< 前フレームでのヘルプキー入力状態
+    bool isShowingControlsGuide = false; ///< ゲーム中の操作説明オーバーレイ表示フラグ
 
     float gameTimer = 0.0f;              ///< 経過時間のタイマー
     float introTimer = 0.0f;             ///< カメラ演出用のタイマー

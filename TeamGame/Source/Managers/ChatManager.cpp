@@ -143,7 +143,7 @@ void ChatManager::Draw() {
                      GetColor(15, 20, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 吹き出し外枠（チームカラー）
+        // 吹き出し外枠（チームカラー） 
         unsigned int borderColor = (msg.teamId == 0) ? GetColor(70, 170, 255) : GetColor(255, 90, 90);
         DrawRoundRect(bx, by, bx + bubbleW, by + bubbleH, 6, 6, borderColor, FALSE);
 
