@@ -168,6 +168,12 @@ public:
      * @brief リモートプレイヤーフラグの設定
      */
     void SetRemote(bool val) { isRemote = val; }
+
+    /**
+     * @brief プレイヤーから見える範囲（画面内かつ可視状態）にいるかどうか
+     * @details 自機プレイヤーは透明化中も半透明表示されるため常にtrue、2P/リモート時は画面内判定に従います。
+     */
+    virtual bool IsVisibleToPlayer() const override;
     
     /**
      * @brief スキルのセット

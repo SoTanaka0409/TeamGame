@@ -286,7 +286,12 @@ void Player::Update()
         {
             m_model->PlayIdle();
         }
-        m_model->Update(1.0f / 60.0f);
+
+        // プレイヤーの見える範囲のみアニメーション更新を実行して負荷削減
+        if (IsVisibleToPlayer())
+        {
+            m_model->Update(1.0f / 60.0f);
+        }
     }
 
 
@@ -1424,4 +1429,13 @@ void Player::UpdateAutoAim(const Vector2& moveDir)
             facingDir = Vector2(dx / dist, dy / dist);
         }
     }
+}
+
+bool Player::IsVisibleToPlayer() const
+{
+    // 自機プレイヤーは透明化スキル中であっても半透明表示されるため、常に可視とみなす
+    if (!isRemote) return true;
+
+    // リモートプレイヤーや2Pは基底クラスの画面内判定に従う
+    return Character::IsVisibleToPlayer();
 }

@@ -1167,7 +1167,12 @@ void Enemy::Update()
         {
             m_model->PlayIdle();
         }
-        m_model->Update(1.0f / 60.0f);
+
+        // プレイヤーの見える範囲（画面内かつ可視状態）のみアニメーション更新を実行して大幅軽量化
+        if (IsVisibleToPlayer())
+        {
+            m_model->Update(1.0f / 60.0f);
+        }
     }
 }
 
@@ -1510,3 +1515,18 @@ void Enemy::StopHomingSuicide()
     aiState = EnemyAIState::PATROL;
 }
 
+bool Enemy::IsVisibleToPlayer() const
+{
+    // 非アクティブまたはステルス透明化中なら見えない
+    if (!IsActive() || IsTransparent()) return false;
+
+    int sw = 1920, sh = 1080;
+    GetDrawScreenSize(&sw, &sh);
+
+    float screenX = Camera::WorldToScreenX(position.x);
+    float screenY = Camera::WorldToScreenY(position.y);
+    const float margin = 120.0f; // モデルのはみ出し考慮マージン
+
+    return (screenX >= -margin && screenX <= static_cast<float>(sw) + margin &&
+            screenY >= -margin && screenY <= static_cast<float>(sh) + margin);
+}

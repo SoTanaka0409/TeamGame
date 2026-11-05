@@ -85,7 +85,7 @@ void ChatManager::Update(float playerWorldX, float playerWorldY) {
                 for (auto obj : objs) {
                     Character* ch = dynamic_cast<Character*>(obj);
                     // 味方(teamId == 0)かつ自分以外で生存中のBot
-                    if (ch && ch->teamId == 0 && ch->characterName != "YOU" && ch->characterName != "Player" && !ch->isDeadProcessed && ch->status.GetHp() > 0) {
+                    if (ch && ch->teamId == 0 && ch->characterName != "YOU" && ch->characterName != "Player" && !ch->isDeadProcessed && ch->status.GetCurrentHp() > 0) {
                         std::string replyText = "";
                         if (selectedIndex == 0) replyText = "了解、迎撃する！";
                         else if (selectedIndex == 1) replyText = "今向かう、持ちこたえろ！";
