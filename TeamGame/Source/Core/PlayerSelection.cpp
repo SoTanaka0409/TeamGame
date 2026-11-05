@@ -1,6 +1,7 @@
-﻿#include "PlayerSelection.h"
+#include "PlayerSelection.h"
 #include "../Managers/CharacterManager.h"
 #include "../Skills/SkillData.h"
+#include "../Managers/WeaponManager.h"
 
 PlayerSelectionManager& PlayerSelectionManager::GetInstance() {
     static PlayerSelectionManager instance;
@@ -94,22 +95,37 @@ std::vector<SelectionCharacterData> PlayerSelectionManager::GetAvailableCharacte
 
     // CSV読み込みに失敗した場合の安全フォールバック
     return {
-        { 1, "指揮者", "Tactical", "味方Botを敵の手前で爆発させる [Homing Kill] を操る冷徹な指揮者",  37, 4.2f, 20, 1, "Homing Kill", 0xAA44FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_1.png" },
+        { 1, "指揮者", "Tactical", "味方Botを特攻自爆させるが敵は無傷、自身もライトが見えず暗闇を彷徨う無能指揮者",  37, 4.2f, 20, 1, "Homing Kill", 0xAA44FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_1.png" },
         { 2, "反逆者", "Speed",    "敵味方双方から姿を消す [Transparency] を持つ神出鬼没な反逆者",   28, 5.2f, 18, 2, "Transparency", 0x00A2FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_2.png" },
         { 3, "バカ",   "Assault",  "周囲を錯乱させ同士討ちを起こす [Panic shoot] を放つ暴走アタッカー",  33, 4.4f, 25, 3, "Panic shoot", 0x00FF88, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_3.png" },
-        { 4, "主婦",   "Heavy",    "周囲の物や弾を綺麗サッパリ吹き飛ばす [Clean time] を持つ最強の主婦",  53, 3.2f, 30, 4, "Clean time", 0xFF4444, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_4.png" },
+        { 4, "主婦",   "Heavy",    "周囲の物や弾を綺麗サッパリ吹き飛ばし敵HPの半分を削る [Clean time] を持つ最強の主婦",  53, 3.2f, 30, 4, "Clean time", 0xFF4444, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_4.png" },
         { 5, "悪魔",   "Sniper",   "敵の位置を暴くが自身も音を放つ [High risk, high return] を宿した悪魔", 30, 3.8f, 45, 5, "High risk", 0xFFBB00, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_5.png" }
     };
 }
 
 WeaponSelectData PlayerSelectionManager::GetFixedSlot1Weapon() {
-    return { 101, "Handgun", "Handgun", "Standard Handgun", 12, 25 };
+    auto data = WeaponManager::GetInstance().GetWeaponData("Handgun");
+    int dmg = data ? data->damage : 12;
+    int ammo = data ? data->maxAmmo : 12;
+    return { 101, "Handgun", "Handgun", "高機動・高精度・高速リロードの万能サイドアーム (移動速度+12%UP)", ammo, dmg };
 }
 
 std::vector<WeaponSelectData> PlayerSelectionManager::GetAvailableSlot2Weapons() {
+    auto sgData = WeaponManager::GetInstance().GetWeaponData("Shotgun");
+    int sgDmg = sgData ? (sgData->damage * sgData->pelletCount) : 30;
+    int sgAmmo = sgData ? sgData->maxAmmo : 6;
+
+    auto snData = WeaponManager::GetInstance().GetWeaponData("SniperRifle");
+    int snDmg = snData ? snData->damage : 36;
+    int snAmmo = snData ? snData->maxAmmo : 5;
+
+    auto smgData = WeaponManager::GetInstance().GetWeaponData("SubmachineGun");
+    int smgDmg = smgData ? smgData->damage : 3;
+    int smgAmmo = smgData ? smgData->maxAmmo : 28;
+
     return {
-        { 201, "Shotgun",         "Shotgun", "近接拡散・高威力散弾銃", 6, 18 },
-        { 202, "Sniper Rifle",    "Sniper",  "超長射程・高速貫通狙撃銃", 5, 80 },
-        { 203, "Submachine Gun",  "SMG",     "高速連射短機関銃 (★キャラ別カスタム弾＆銃身！)", 32, 10 }
+        { 201, "Shotgun",         "Shotgun", "至近距離バースト・草むら奇襲（近接制圧散弾）", sgAmmo, sgDmg },
+        { 202, "Sniper Rifle",    "Sniper",  "一撃必殺・超長射程・高速貫通狙撃銃", snAmmo, snDmg },
+        { 203, "Submachine Gun",  "SMG",     "高速連射短機関銃（弾幕制圧・キャラ別カスタム弾）", smgAmmo, smgDmg }
     };
 }

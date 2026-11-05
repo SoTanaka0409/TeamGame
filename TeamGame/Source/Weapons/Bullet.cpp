@@ -1,4 +1,5 @@
-﻿#include "Camera.h"
+#include <algorithm>
+#include "Camera.h"
 #include "Bullet.h"
 #include "Character.h"
 #include "ColliderManager.h"
@@ -19,9 +20,10 @@
  * @details 初期位置、速度などの設定を行い、コライダーマネージャーに円形コライダーを登録する
  */
 Bullet::Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float bulletRadius,
-               int tId, int dmg, const std::string& sName, bool isPanic, const BulletVisualConfig& visual)
+               int tId, int dmg, const std::string& sName, bool isPanic, const BulletVisualConfig& visual, int pierce)
     : Object2D(ObjectTag::PlayerWeapon), myColliderManager(nullptr), radius(bulletRadius), maxRange(range),
-      startPos(startX, startY), teamId(tId), damage(dmg), shooterName(sName), isPanicBullet(isPanic), visualConfig(visual)
+      startPos(startX, startY), teamId(tId), damage(dmg), shooterName(sName), isPanicBullet(isPanic), visualConfig(visual),
+      pierceCount(pierce)
 {
     position = Vector2(startX, startY);
     width = radius * 2.0f;
@@ -156,8 +158,7 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
     {
         Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
         bool canHit = false;
-        // 射撃者自身への自爆判定を防止
-        if (target && target->teamId != -1 && (shooterName.empty() || target->GetCharacterName() != shooterName))
+        if (target && target->teamId != -1)
         {
             if (target->teamId != this->teamId)
             {
@@ -172,15 +173,21 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
 
         if (canHit)
         {
-            int actualDamage = (this->isPanicBullet || (target && target->IsPanic())) ? (this->damage * 25) : (this->damage * 20);
+            // 多重ヒット防止: 同一弾丸による同一対象への重複ダメージを遮断
+            if (std::find(hitTargets.begin(), hitTargets.end(), static_cast<void*>(target)) != hitTargets.end())
+            {
+                return;
+            }
+            hitTargets.push_back(static_cast<void*>(target));
+
             if (target->GetObjectTag() == ObjectTag::Enemy) {
                 Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage(actualDamage, this->shooterName, this->teamId);
+                if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
             } else if (target->GetObjectTag() == ObjectTag::Player) {
                 Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage(actualDamage, this->shooterName, this->teamId);
+                if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
             }
-
+            
             // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す
             float hitX = position.x;
             float hitY = position.y;
@@ -206,7 +213,15 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
             {
                 scene->GetEffectManager()->AddBloodEffect(hitX, hitY, 16);
             }
-            SetActive(false);
+            // 貫通弾の処理: pierceCount が残っている場合は弾を消さずに続行
+            if (pierceCount > 0)
+            {
+                pierceCount--;
+            }
+            else
+            {
+                SetActive(false);
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Character.h"
 #include <vector>
 #include <cmath>
@@ -147,7 +147,7 @@ public:
     /**
      * @brief ライトのON/OFF切り替え
      */
-    void ToggleLight() { m_isLightOn = !m_isLightOn; }
+    void ToggleLight() { if (m_characterId == 1) return; m_isLightOn = !m_isLightOn; }
 
     /**
      * @brief ブッシュに隠れているか確認

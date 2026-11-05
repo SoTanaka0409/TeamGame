@@ -80,8 +80,7 @@ void ColliderManager::CheckAllCollisions()
 
     for (auto &pair : currentCollisions)
     {
-        bool isEnter =
-            (previousCollisions.find(pair) == previousCollisions.end());
+        bool isEnter =(previousCollisions.find(pair) == previousCollisions.end());
 
         Collider *colA = pair.first;
         Collider *colB = pair.second;

@@ -1,4 +1,5 @@
 #include "Weapon.h"
+#include "../Core/Camera.h"
 #include "../Managers/WeaponManager.h"
 #include "DxLib.h"
 #include <cmath>
@@ -58,8 +59,9 @@ void Weapon::DrawBarrel(float screenX, float screenY, const Vector2 &facingDir)
     float px = -ny;
     float py = nx;
 
-    float startDist = 14.0f; // キャラクター中心からの開始距離
-    float endDist = startDist + barrelVisual.barrelLength;
+    float scale = Camera::ZoomScale / 2.0f;
+    float startDist = 14.0f * scale; // キャラクター中心からの開始距離
+    float endDist = startDist + barrelVisual.barrelLength * scale;
 
     float sx = screenX + nx * startDist;
     float sy = screenY + ny * startDist;
@@ -67,14 +69,14 @@ void Weapon::DrawBarrel(float screenX, float screenY, const Vector2 &facingDir)
     float ey = screenY + ny * endDist;
 
     // 1. 銃身ベース（メインバレル）
-    int bWidth = (std::max)(1, barrelVisual.barrelWidth);
+    int bWidth = (std::max)(1, static_cast<int>(barrelVisual.barrelWidth * scale));
     DrawLine(static_cast<int>(sx), static_cast<int>(sy),
              static_cast<int>(ex), static_cast<int>(ey),
              barrelVisual.barrelColor, bWidth);
 
     // 2. アクセント／LED発光ライン（銃身上部または中心の細い光）
-    float accentStartDist = startDist + 4.0f;
-    float accentEndDist = endDist - 6.0f;
+    float accentStartDist = startDist + 4.0f * scale;
+    float accentEndDist = endDist - 6.0f * scale;
     if (accentEndDist > accentStartDist)
     {
         float asx = screenX + nx * accentStartDist;
@@ -89,12 +91,12 @@ void Weapon::DrawBarrel(float screenX, float screenY, const Vector2 &facingDir)
     // 3. マズルブレーキ／フラッシュハイダー（先端）
     if (barrelVisual.hasMuzzleBrake)
     {
-        float mStartDist = endDist - 5.0f;
+        float mStartDist = endDist - 5.0f * scale;
         float msx = screenX + nx * mStartDist;
         float msy = screenY + ny * mStartDist;
         DrawLine(static_cast<int>(msx), static_cast<int>(msy),
                  static_cast<int>(ex), static_cast<int>(ey),
-                 barrelVisual.muzzleColor, bWidth + static_cast<int>(barrelVisual.muzzleWidthOffset));
+                 barrelVisual.muzzleColor, bWidth + static_cast<int>(barrelVisual.muzzleWidthOffset * scale));
     }
 }
 

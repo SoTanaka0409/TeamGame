@@ -36,7 +36,12 @@ private:
     /**
      * @brief コンストラクタ
      */
-    WeaponManager() {}
+    WeaponManager() { InitDefaults(); }
+
+    /**
+     * @brief 武器の標準バランス初期値を設定する（CSV未検出時のフォールバック保証）
+     */
+    void InitDefaults();
 
     /**
      * @brief デストラクタ
@@ -63,6 +68,11 @@ public:
      * @details 指定したCSVファイルを解析し、WeaponDataとしてデータベースに登録する。
      */
     void LoadFromCSV(const std::string& filePath);
+
+    /**
+     * @brief 武器バランス設定の再読み込み
+     */
+    void ReloadBalance(const std::string& filePath = "weapons.csv") { LoadFromCSV(filePath); }
 
     /**
      * @brief 武器データの取得

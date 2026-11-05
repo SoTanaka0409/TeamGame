@@ -1,4 +1,4 @@
-﻿#include "MatchManager.h"
+#include "MatchManager.h"
 #include "ObjectManager.h"
 #include "GameBalanceManager.h"
 #include "../Characters/Character.h"
@@ -30,22 +30,31 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
         {
             if (!ch->isDeadProcessed)
             {
-                if (ch->teamId == 0) team1Kills++;
-                else if (ch->teamId == 1) team0Kills++;
-
-                // キルログの生成
-                std::string victimName = ch->GetCharacterName();
-                std::string killerName = ch->GetLastAttackerName();
-                int killerTeam = ch->GetLastAttackerTeamId();
-                if (killerName.empty()) {
-                    killerName = (ch->teamId == 0) ? "敵ボット" : "プレイヤー";
-                    killerTeam = (ch->teamId == 0) ? 1 : 0;
+                if (ch->isSuicideDeath)
+                {
+                    // 指揮者の自爆特攻スキルによる死亡: 敵チームのキルスコアには加算しない
+                    std::string victimName = ch->GetCharacterName();
+                    AddKillLog("自爆 (指揮者スキル)", ch->teamId, victimName, ch->teamId, false, false);
                 }
+                else
+                {
+                    if (ch->teamId == 0) team1Kills++;
+                    else if (ch->teamId == 1) team0Kills++;
 
-                bool isPlayerKill = (killerName == "プレイヤー" || (killerTeam == 0 && killerName != "味方ボット"));
-                bool isPlayerDeath = (victimName == "プレイヤー");
+                    // キルログの生成
+                    std::string victimName = ch->GetCharacterName();
+                    std::string killerName = ch->GetLastAttackerName();
+                    int killerTeam = ch->GetLastAttackerTeamId();
+                    if (killerName.empty()) {
+                        killerName = (ch->teamId == 0) ? "敵ボット" : "プレイヤー";
+                        killerTeam = (ch->teamId == 0) ? 1 : 0;
+                    }
 
-                AddKillLog(killerName, killerTeam, victimName, ch->teamId, isPlayerKill, isPlayerDeath);
+                    bool isPlayerKill = (killerName == "プレイヤー" || (killerTeam == 0 && killerName != "味方ボット"));
+                    bool isPlayerDeath = (victimName == "プレイヤー");
+
+                    AddKillLog(killerName, killerTeam, victimName, ch->teamId, isPlayerKill, isPlayerDeath);
+                }
                 
                 ch->isDeadProcessed = true;
                 ch->respawnTimer = GameBalanceManager::GetInstance().GetInt("RespawnTimeFrames", 180);
@@ -59,6 +68,7 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
             if (ch->respawnTimer <= 0)
             {
                 ch->isDeadProcessed = false;
+                ch->isSuicideDeath = false;
                 
                 int midX = stage.GetWidth() / 2;
                 int spawnY = (ch->teamId == 0) ? (stage.GetHeight() - 4) : 3;

@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <vector>
 #include "CircleCollider.h"
 #include "Object2D.h"
 #include "Vector2.h"
@@ -24,6 +26,8 @@ class Bullet : public Object2D
     std::string shooterName;
     bool isPanicBullet;
     BulletVisualConfig visualConfig; ///< 弾丸の描画アセット・演出設定
+    int pierceCount = 0;             ///< 貫通残数 (0=通常消滅, 1以上=貫通継続)
+    std::vector<void*> hitTargets;   ///< 多重ヒット防止用リスト
 
   public:
     /**
@@ -43,7 +47,7 @@ class Bullet : public Object2D
      */
     Bullet(float startX, float startY, const Vector2 &dir, float speed, float range, float radius,
            int tId = 0, int dmg = 1, const std::string& sName = "", bool isPanic = false,
-           const BulletVisualConfig& visual = BulletVisualConfig());
+           const BulletVisualConfig& visual = BulletVisualConfig(), int pierce = 0);
     virtual ~Bullet();
 
     /**
