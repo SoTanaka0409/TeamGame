@@ -8,6 +8,7 @@ SkillManager& SkillManager::GetInstance() {
 }
 
 #include "CutinManager.h"
+#include "SoundManager.h"
 #include "../Characters/Player.h"
 #include "../Core/PlayerSelection.h"
 
@@ -28,8 +29,17 @@ bool SkillManager::TriggerSkill(Character* user) {
     // スキル自体がUse処理とクールタイムセットを完結
     skill->Use(user);
 
-    // プレイヤーがスキル発動時: ペルソナ5風カットイン演出をトリガー
+    // スキル発動音の再生
     Player* player = dynamic_cast<Player*>(user);
+    if (player) {
+        // 自プレイヤー発動時はクリアに大迫力で再生
+        SoundManager::GetInstance().PlaySkillSE(1.0f);
+    } else {
+        // 他キャラやボットの場合は3D空間オーディオで再生
+        SoundManager::GetInstance().Play3D("skill_activate", user->GetPosition(), 1500.0f, 0.9f, user->teamId);
+    }
+
+    // プレイヤーがスキル発動時: ペルソナ5風カットイン演出をトリガー
     if (player && skill->GetData()) {
         const auto& selection = PlayerSelectionManager::GetInstance().GetSelection();
         std::string cName = selection.selectedCharacter.name.empty() ? "HERO" : selection.selectedCharacter.name;

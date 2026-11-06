@@ -253,6 +253,7 @@ void GameScene::Init()
     SoundManager::GetInstance().Load("se_tap", "SE/システム/se_tap.mp3");
     SoundManager::GetInstance().Load("clear_bgm", "BGM/bgm_clear.mp3");
     SoundManager::GetInstance().Load("defeat_bgm", "BGM/bgm_defeat.mp3");
+    SoundManager::GetInstance().Load("skill_activate", "SE/システム/se_skill.mp3");
 
     // 戦闘BGMの再生（音量をほんの少し下げて戦闘.mp3をループ再生: 0.60f）
     SoundManager::GetInstance().PlayBGM("battle_bgm", 0.60f);

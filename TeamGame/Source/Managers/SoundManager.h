@@ -84,6 +84,12 @@ class SoundManager
     void PlayTapSE(float volume = 0.9f);
 
     /**
+     * @brief スキル発動音の再生
+     * @param volume 音量倍率 (デフォルト: 1.0f)
+     */
+    void PlaySkillSE(float volume = 1.0f);
+
+    /**
      * @brief サウンドの読み込み
      * @param key サウンドを識別するキー名
      * @param path サウンドファイルのパス

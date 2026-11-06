@@ -57,6 +57,7 @@ bool SoundManager::Play3D(const std::string &key, const Vector2 &sourcePos, floa
         else if (key == "sniper_shot") { Load("sniper_shot", "SE/銃/gun_sniper.mp3"); it = sounds.find(key); }
         else if (key == "gunshot") { Load("gunshot", "SE/銃/gun_assault.mp3"); it = sounds.find(key); }
         else if (key == "reload") { Load("reload", "SE/銃/gun_reload.mp3"); it = sounds.find(key); }
+        else if (key == "skill_activate") { Load("skill_activate", "SE/システム/se_skill.mp3"); it = sounds.find(key); }
         if (it == sounds.end()) return false;
     }
 
@@ -260,6 +261,18 @@ void SoundManager::Load(const std::string &key, const std::string &path)
                 fallbacks.push_back("TeamGame/Resource/SE/システム/タップ音.mp3");
                 fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/SE/タップ音.mp3");
             }
+            else if (key == "skill_activate")
+            {
+                fallbacks.push_back("Resource/SE/システム/se_skill.mp3");
+                fallbacks.push_back("Resource/SE/システム/スキル発動.mp3");
+                fallbacks.push_back("Resource/SE/se_skill.mp3");
+                fallbacks.push_back("Resource/SE/スキル発動.mp3");
+                fallbacks.push_back("TeamGame/Resource/SE/システム/se_skill.mp3");
+                fallbacks.push_back("TeamGame/Resource/SE/システム/スキル発動.mp3");
+                fallbacks.push_back("TeamGame/Resource/SE/se_skill.mp3");
+                fallbacks.push_back("TeamGame/Resource/SE/スキル発動.mp3");
+                fallbacks.push_back("C:/Users/student/Desktop/SE・BGM/スキル発動.mp3");
+            }
             for (const auto& fb : fallbacks)
             {
                 handle = LoadSoundMem(fb.c_str());
@@ -289,6 +302,7 @@ void SoundManager::Play(const std::string &key, bool loop)
         else if (key == "shotgun_shot") { Load("shotgun_shot", "SE/銃/gun_shotgun.mp3"); it = sounds.find(key); }
         else if (key == "sniper_shot") { Load("sniper_shot", "SE/銃/gun_sniper.mp3"); it = sounds.find(key); }
         else if (key == "se_tap") { Load("se_tap", "SE/システム/se_tap.mp3"); it = sounds.find(key); }
+        else if (key == "skill_activate") { Load("skill_activate", "SE/システム/se_skill.mp3"); it = sounds.find(key); }
     }
     if (it != sounds.end())
     {
@@ -304,6 +318,22 @@ void SoundManager::PlayTapSE(float volume)
     {
         Load("se_tap", "SE/システム/se_tap.mp3");
         it = sounds.find("se_tap");
+    }
+    if (it != sounds.end())
+    {
+        int vol = static_cast<int>(255.0f * std::max(0.0f, std::min(1.0f, volume)));
+        ChangeVolumeSoundMem(vol, it->second);
+        PlaySoundMem(it->second, DX_PLAYTYPE_BACK);
+    }
+}
+
+void SoundManager::PlaySkillSE(float volume)
+{
+    auto it = sounds.find("skill_activate");
+    if (it == sounds.end())
+    {
+        Load("skill_activate", "SE/システム/se_skill.mp3");
+        it = sounds.find("skill_activate");
     }
     if (it != sounds.end())
     {
