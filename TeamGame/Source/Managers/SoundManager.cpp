@@ -1,8 +1,11 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "SoundManager.h"
+#include "SoundVisualizer.h"
 #include "SceneManager.h"
 #include "Scene.h"
 #include "ObjectManager.h"
+#include "../Scenes/GameScene.h"
+#include "../Characters/Player.h"
 #include "../Characters/Enemy.h"
 #include <cmath>
 #include <algorithm>
@@ -45,36 +48,34 @@ void SoundManager::SetListener(const Vector2& pos, const Vector2& dir)
 
 bool SoundManager::Play3D(const std::string &key, const Vector2 &sourcePos, float maxDistance, float baseVolume, int sourceTeamId)
 {
-    auto it = sounds.find(key);
-    if (it == sounds.end()) return false;
-
     float dx = sourcePos.x - listenerPos.x;
     float dy = sourcePos.y - listenerPos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
 
-    bool playForPlayer = (distance <= maxDistance);
-    if (playForPlayer) {
-        float volumeRatio = 1.0f - (distance / maxDistance);
-        int volume = static_cast<int>(255.0f * volumeRatio * baseVolume);
-        volume = std::max(0, std::min(255, volume));
+    // 音無し環境でも敵の銃撃方向が分かるよう視覚インジケーターに登録
+    // （プレイヤー自身の発砲以外、かつ敵がライトの範囲内にいない時のみ可視化）
+    if (key == "gunshot" || key == "sniper_shot")
+    {
+        if (sourceTeamId != 0 || distance > 40.0f)
+        {
+            bool isInLight = false;
+            auto scene = SceneManager::GetInstance().GetCurrentScene();
+            GameScene* gameScene = dynamic_cast<GameScene*>(scene.get());
+            if (gameScene && gameScene->GetPlayer())
+            {
+                isInLight = gameScene->GetPlayer()->IsWorldPosInLight(sourcePos);
+            }
 
-        float pan = 0;
-        if (distance > 0.0001f) {
-            float dirToSourceX = dx / distance;
-            float dirToSourceY = dy / distance;
-            float crossProduct = (listenerDir.x * dirToSourceY) - (listenerDir.y * dirToSourceX);
-            pan = crossProduct * 255.0f; 
-        }
-
-        int dupHandle = DuplicateSoundMem(it->second);
-        if (dupHandle != -1) {
-            ChangeVolumeSoundMem(volume, dupHandle);
-            ChangePanSoundMem(static_cast<int>(pan), dupHandle);
-            PlaySoundMem(dupHandle, DX_PLAYTYPE_BACK);
-            playing3DSounds.push_back(dupHandle);
+            // ライトの範囲にいない場合のみサウンドマークを登録
+            if (!isInLight)
+            {
+                // マップ全域の暗闇からの銃声を可視化できるよう十分な距離(2500px)を設定
+                SoundVisualizer::GetInstance().AddSound(SoundVisualType::Gunshot, sourcePos, 2500.0f);
+            }
         }
     }
 
+    // 敵AIへの銃声通知（音源ファイル読み込み状況に関わらずゲーム内ロジックとして機能）
     bool heardByAnyone = false;
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetObjectManager())
@@ -94,6 +95,35 @@ bool SoundManager::Play3D(const std::string &key, const Vector2 &sourcePos, floa
             }
         }
     }
+
+    // 音声データの再生（ロードされている場合のみ実行）
+    auto it = sounds.find(key);
+    if (it != sounds.end())
+    {
+        bool playForPlayer = (distance <= maxDistance);
+        if (playForPlayer) {
+            float volumeRatio = 1.0f - (distance / maxDistance);
+            int volume = static_cast<int>(255.0f * volumeRatio * baseVolume);
+            volume = std::max(0, std::min(255, volume));
+
+            float pan = 0;
+            if (distance > 0.0001f) {
+                float dirToSourceX = dx / distance;
+                float dirToSourceY = dy / distance;
+                float crossProduct = (listenerDir.x * dirToSourceY) - (listenerDir.y * dirToSourceX);
+                pan = crossProduct * 255.0f; 
+            }
+
+            int dupHandle = DuplicateSoundMem(it->second);
+            if (dupHandle != -1) {
+                ChangeVolumeSoundMem(volume, dupHandle);
+                ChangePanSoundMem(static_cast<int>(pan), dupHandle);
+                PlaySoundMem(dupHandle, DX_PLAYTYPE_BACK);
+                playing3DSounds.push_back(dupHandle);
+            }
+        }
+    }
+
     return heardByAnyone;
 }
 

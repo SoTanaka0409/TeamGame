@@ -1,11 +1,11 @@
-﻿#include "Shotgun.h"
+#include "Shotgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
 #include "EffectManager.h"
+#include "SoundManager.h"
 #include <cmath>
-
 
 #include "Enemy.h"
 
@@ -66,6 +66,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, baseAngle, 16.0f);
             }
+            SoundManager::GetInstance().Play3D("gunshot", pos, 1400.0f, 1.0f, teamId);
             NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
             UseAmmo(1);

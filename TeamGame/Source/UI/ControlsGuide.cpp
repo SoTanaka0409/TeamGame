@@ -1,4 +1,4 @@
-﻿#include "ControlsGuide.h"
+#include "ControlsGuide.h"
 #include "../Managers/FontManager.h"
 #include <DxLib.h>
 #include <cmath>
@@ -141,15 +141,10 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
     FontManager::GetInstance().DrawString(col3X + 215, rowY + 6, "無線チャット (連携)", GetColor(230, 230, 230), 18);
 
     rowY += stepY;
-    // 0 / H
-    DrawKeyBadge(col3X + 20, rowY, 56, 36, "0", GetColor(255, 220, 50), GetColor(255, 255, 255));
-    DrawKeyBadge(col3X + 85, rowY, 56, 36, "H", GetColor(255, 220, 50), GetColor(255, 255, 255));
-    FontManager::GetInstance().DrawString(col3X + 155, rowY + 8, "操作説明の表示", GetColor(255, 230, 100), 18);
-
-    rowY += stepY;
     // Esc
     DrawKeyBadge(col3X + 20, rowY, 65, 36, "Esc", GetColor(200, 200, 200), GetColor(255, 255, 255));
-    FontManager::GetInstance().DrawString(col3X + 100, rowY + 8, "ポーズ / 設定メニュー", GetColor(230, 230, 230), 18);
+    FontManager::GetInstance().DrawString(col3X + 100, rowY + 8, "ポーズ / 操作説明メニュー", GetColor(230, 230, 230), 18);
+    FontManager::GetInstance().DrawString(col3X + 100, rowY + 32, "ゲーム中いつでも操作説明や設定を開けます", GetColor(140, 160, 180), 14);
 
     rowY += stepY;
     // ゲームのコツ・ルールボックス
@@ -160,14 +155,15 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
 
     FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 14, "【暗闇での立ち回り】", GetColor(255, 220, 0), 18);
     FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 44, "・敵の姿は暗闇では見えない！", GetColor(220, 230, 225), 15);
-    FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 70, "・足音や銃声、ソナー波で索敵せよ！", GetColor(220, 230, 225), 15);
-    FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 98, "・敵10体撃破で勝利！", GetColor(100, 255, 180), 16);
+    FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 68, "・音の方向に波紋マーカー(HUD)が出現！", GetColor(255, 210, 100), 15);
+    FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 92, "・無音環境でも銃声やソナー波で索敵可能！", GetColor(180, 240, 255), 14);
+    FontManager::GetInstance().DrawString(col3X + 25, hintBoxY + 118, "・敵チーム10体撃破で勝利！", GetColor(100, 255, 180), 16);
 
     // 5. フッター案内
     int footerY = panelY + panelH - 45;
-    DrawBox(panelX + 440, footerY - 5, panelX + panelW - 440, footerY + 32, GetColor(25, 40, 60), TRUE);
-    DrawBox(panelX + 440, footerY - 5, panelX + panelW - 440, footerY + 32, GetColor(0, 180, 255), FALSE);
-    FontManager::GetInstance().DrawStringCenter(screenWidth / 2, footerY, "[ Enter / Space / Esc / 0 / H / クリック ] で閉じる", GetColor(255, 240, 120), 18);
+    DrawBox(panelX + 400, footerY - 5, panelX + panelW - 400, footerY + 32, GetColor(25, 40, 60), TRUE);
+    DrawBox(panelX + 400, footerY - 5, panelX + panelW - 400, footerY + 32, GetColor(0, 180, 255), FALSE);
+    FontManager::GetInstance().DrawStringCenter(screenWidth / 2, footerY, "[ ESC / Enter / Space / クリック ] で戻る", GetColor(255, 240, 120), 18);
 }
 
 void ControlsGuide::DrawMiniHud(int screenWidth, int screenHeight)

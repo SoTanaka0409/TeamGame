@@ -1,8 +1,9 @@
-﻿#include "../UI/ControlsGuide.h"
+#include "../UI/ControlsGuide.h"
 #include "GameScene.h"
 #include "Camera.h"
 #include "EffectManager.h"
 #include "SoundManager.h"
+#include "SoundVisualizer.h"
 #include "CutinManager.h"
 #include "GameBalanceManager.h"
 #include "DebugManager.h"
@@ -109,13 +110,14 @@ void GameScene::Init()
     gameTimer = 0.0f;
     isCleared = false;
     MatchManager::GetInstance().Reset();
+    SoundVisualizer::GetInstance().Clear();
 
     brightTimer = 0.0f;
     int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
     int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
     int brightRange = (brightMax > brightMin) ? (brightMax - brightMin) : 900;
-    nextBrightInterval = static_cast<float>(brightMin + (std::rand() % brightRange));
-    sonarPingTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarPingIntervalFrames", 900));
+    // 初回ソナー音波は開始3秒(180フレーム)後、以降は900フレーム(15秒)周期で発生
+    sonarPingTimer = 180.0f;
     sonarNotificationTimer = 0.0f;
     
     // StageManagerの初期化
@@ -148,35 +150,14 @@ void GameScene::Update()
     bool currLeft = (CheckHitKey(KEY_INPUT_LEFT) != 0 || CheckHitKey(KEY_INPUT_A) != 0);
     bool currRight = (CheckHitKey(KEY_INPUT_RIGHT) != 0 || CheckHitKey(KEY_INPUT_D) != 0);
     bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
+    bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
 
     if (state == GameState::PLAYING)
     {
-        bool currHelpKey = (CheckHitKey(KEY_INPUT_0) != 0 || CheckHitKey(KEY_INPUT_NUMPAD0) != 0 || CheckHitKey(KEY_INPUT_H) != 0);
-        if (currHelpKey && !prevHelpKey)
-        {
-            isShowingControlsGuide = !isShowingControlsGuide;
-        }
-
-        if (isShowingControlsGuide)
-        {
-            bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-            if ((currEnter && !prevEnter) || currClick)
-            {
-                isShowingControlsGuide = false;
-            }
-        }
-
         if (currEsc && !prevEsc)
         {
-            if (isShowingControlsGuide)
-            {
-                isShowingControlsGuide = false;
-            }
-            else
-            {
-                state = GameState::PAUSED;
-                pauseMenuCursor = 0;
-            }
+            state = GameState::PAUSED;
+            pauseMenuCursor = 0;
         }
         else
         {
@@ -197,6 +178,8 @@ void GameScene::Update()
             {
                 Scene::Update();
             }
+
+            SoundVisualizer::GetInstance().Update();
 
             // ランダムな時間帯に（15秒間）全エリアが明るくなる処理
             if (brightTimer > 0.0f)
@@ -237,6 +220,15 @@ void GameScene::Update()
                             if (effectManager)
                             {
                                 effectManager->AddSonarWaveEffect(pos.x, pos.y, waveCol);
+                            }
+
+                            // 敵キャラクター（自チーム以外）がソナーを発した場合、ライトの範囲内にいない時のみ視覚インジケーターに登録
+                            if (ch->teamId != 0)
+                            {
+                                if (!player || !player->IsWorldPosInLight(pos))
+                                {
+                                    SoundVisualizer::GetInstance().AddSound(SoundVisualType::SonarPing, pos, 2500.0f);
+                                }
                             }
 
                             // 音波により相手チームに位置を伝達
@@ -338,7 +330,34 @@ void GameScene::Update()
         if (pauseMenuCursor < 0) pauseMenuCursor = 4;
         if (pauseMenuCursor > 4) pauseMenuCursor = 0;
 
-        if (currEnter && !prevEnter)
+        int mouseX = 0, mouseY = 0;
+        GetMousePoint(&mouseX, &mouseY);
+        const int panelW = 680;
+        const int panelH = 680;
+        const int panelX = (1920 - panelW) / 2;
+        const int panelY = (1080 - panelH) / 2;
+        const int itemW = 580;
+        const int itemH = 76;
+        const int itemSpacing = 88;
+        const int itemStartX = panelX + (panelW - itemW) / 2;
+        const int itemStartY = panelY + 115;
+
+        bool mouseClickedItem = false;
+        for (int i = 0; i < 5; i++)
+        {
+            int iy = itemStartY + i * itemSpacing;
+            if (mouseX >= itemStartX && mouseX <= itemStartX + itemW &&
+                mouseY >= iy && mouseY <= iy + itemH)
+            {
+                pauseMenuCursor = i;
+                if (currClick && !prevClick)
+                {
+                    mouseClickedItem = true;
+                }
+            }
+        }
+
+        if ((currEnter && !prevEnter) || mouseClickedItem)
         {
             if (pauseMenuCursor == 0) state = GameState::PLAYING;
             else if (pauseMenuCursor == 1)
@@ -368,7 +387,34 @@ void GameScene::Update()
         if (settingsMenuCursor < 0) settingsMenuCursor = 2;
         if (settingsMenuCursor > 2) settingsMenuCursor = 0;
 
-        if (currEnter && !prevEnter)
+        int mouseX = 0, mouseY = 0;
+        GetMousePoint(&mouseX, &mouseY);
+        const int panelW = 680;
+        const int panelH = 500;
+        const int panelX = (1920 - panelW) / 2;
+        const int panelY = (1080 - panelH) / 2;
+        const int itemW = 580;
+        const int itemH = 76;
+        const int itemSpacing = 95;
+        const int itemStartX = panelX + (panelW - itemW) / 2;
+        const int itemStartY = panelY + 130;
+
+        bool mouseClickedItem = false;
+        for (int i = 0; i < 3; i++)
+        {
+            int iy = itemStartY + i * itemSpacing;
+            if (mouseX >= itemStartX && mouseX <= itemStartX + itemW &&
+                mouseY >= iy && mouseY <= iy + itemH)
+            {
+                settingsMenuCursor = i;
+                if (currClick && !prevClick)
+                {
+                    mouseClickedItem = true;
+                }
+            }
+        }
+
+        if ((currEnter && !prevEnter) || mouseClickedItem)
         {
             if (settingsMenuCursor == 0)
             {
@@ -386,9 +432,7 @@ void GameScene::Update()
     }
     else if (state == GameState::CONTROLS)
     {
-        bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-        bool currHelpKey = (CheckHitKey(KEY_INPUT_0) != 0 || CheckHitKey(KEY_INPUT_NUMPAD0) != 0 || CheckHitKey(KEY_INPUT_H) != 0);
-        if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || currClick || (currHelpKey && !prevHelpKey))
+        if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || (currClick && !prevClick))
         {
             state = GameState::PAUSED;
         }
@@ -402,6 +446,7 @@ void GameScene::Update()
     prevLeft = currLeft;
     prevRight = currRight;
     prevEnter = currEnter;
+    prevClick = currClick;
 }
 
 void GameScene::Draw()
@@ -521,13 +566,21 @@ void GameScene::Draw()
         player->RenderHighRiskEnemyIndicators();
     }
 
+    // 音無し環境でも敵の方向が分かるビジュアルサウンドインジケーター（荒野行動風）
+    if (player && player->IsActive())
+    {
+        float pScreenX = Camera::WorldToScreenX(playerWorldX);
+        float pScreenY = Camera::WorldToScreenY(playerWorldY);
+        SoundVisualizer::GetInstance().Draw(player, pScreenX, pScreenY);
+    }
+
     // 体力低下時の血しぶきデンジャーエフェクト
     if (GameSettings::GetInstance().isBloodSplatterEnabled && player && player->IsActive())
     {
         player->RenderBloodSplatterOverlay(1920, 1080);
     }
     
-    DrawString(15, 15, "[ESC]キーでポーズ", GetColor(255, 255, 255));
+    DrawString(15, 15, "[ESC] メニュー / 操作説明", GetColor(255, 255, 255));
     DrawString(15, 45, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(200, 200, 200));
     DrawString(15, 70, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(200, 200, 200));
 
@@ -556,55 +609,15 @@ void GameScene::Draw()
         player->DrawUI(25, 850);
     }
 
-    if (state == GameState::PAUSED || state == GameState::SETTINGS)
+    if (state == GameState::PLAYING && introTimer > 0.0f)
     {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-        DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-        DrawString(1920 / 2 - 50, 200, "== ポーズ ==", GetColor(255, 255, 0));
-
-        const int menuStartX = 1920 / 2 - 100;
-        const int menuStartY = 400;
-        const int menuSpacing = 55;
-
-        if (state == GameState::PLAYING && introTimer > 0.0f)
-        {
-            SetFontSize(80);
-            if (introTimer > 60.0f) {
-                DrawString(1920/2 - 150, 1080/2 - 100, "READY...", GetColor(255, 200, 50));
-            } else {
-                DrawString(1920/2 - 180, 1080/2 - 100, "BRAWL!", GetColor(255, 50, 50));
-            }
-            SetFontSize(32);
+        SetFontSize(80);
+        if (introTimer > 60.0f) {
+            DrawString(1920 / 2 - 150, 1080 / 2 - 100, "READY...", GetColor(255, 200, 50));
+        } else {
+            DrawString(1920 / 2 - 180, 1080 / 2 - 100, "BRAWL!", GetColor(255, 50, 50));
         }
-
-        if (state == GameState::PAUSED)
-        {
-            DrawString(1920 / 2 - 50, 200, "== ポーズ ==", GetColor(255, 255, 0));
-            const char* items[] = { "Resume (再開)", "Controls (操作説明)", "Restart (やり直し)", "Settings (設定)", "Exit to Title (タイトルへ)" };
-            for (int i = 0; i < 5; i++)
-            {
-                unsigned int color = (i == pauseMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-                if (i == pauseMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-                DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
-            }
-        }
-        else if (state == GameState::SETTINGS)
-        {
-            DrawString(1920 / 2 - 50, 200, "== 設定 ==", GetColor(255, 255, 0));
-            std::string items[] = {
-                std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
-                "Controls Guide (操作説明)",
-                "Back (戻る)"
-            };
-            for (int i = 0; i < 3; i++)
-            {
-                unsigned int color = (i == settingsMenuCursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-                if (i == settingsMenuCursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-                DrawString(menuStartX, menuStartY + i * menuSpacing, items[i].c_str(), color);
-            }
-        }
+        SetFontSize(32);
     }
 
     // 画面上部中央: チームキル数バー (Brawl Stars風HUD)
@@ -681,15 +694,233 @@ void GameScene::Draw()
     // スキル発動時のペルソナ5風スタイリッシュカットイン描画（最前面オーバーレイ）
     CutinManager::GetInstance().Draw();
 
-    // ゲームプレイ中の操作説明ミニHUD描画 (画面右下に常時表示)
-    if (state == GameState::PLAYING)
-    {
-        UI::ControlsGuide::DrawMiniHud(1920, 1080);
-    }
+    // ==========================================
+    // 最前面オーバーレイメニュー (ポーズ / 設定 / 操作説明)
+    // ==========================================
 
-    // 操作説明オーバーレイ（Hキー/Tabキー/ポーズ中等で最前面に表示）
-    if (isShowingControlsGuide || state == GameState::CONTROLS)
+    if (state == GameState::PAUSED)
     {
+        // 1. 全面暗転オーバーレイ (背景を適度に暗くして集中)
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+        DrawBox(0, 0, 1920, 1080, GetColor(5, 10, 20), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        // 2. メインパネル枠
+        const int panelW = 680;
+        const int panelH = 680;
+        const int panelX = (1920 - panelW) / 2;
+        const int panelY = (1080 - panelH) / 2;
+
+        // パネル背景
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(16, 22, 34), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        // 多重ネオン外枠
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 180, 255), FALSE);
+        DrawBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, GetColor(0, 120, 180), FALSE);
+        DrawBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, GetColor(30, 50, 80), FALSE);
+
+        // ヘッダータイトル
+        int headerY = panelY + 22;
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY, "PAUSE MENU", GetColor(255, 220, 0), 30);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY + 36, "- 一時停止 / メニュー選択 -", GetColor(160, 200, 240), 16);
+        DrawLine(panelX + 40, headerY + 64, panelX + panelW - 40, headerY + 64, GetColor(0, 140, 200));
+
+        // 3. 各項目の枠（カード・ボタン）
+        const int itemW = 580;
+        const int itemH = 76;
+        const int itemSpacing = 88;
+        const int itemStartX = panelX + (panelW - itemW) / 2;
+        const int itemStartY = panelY + 115;
+
+        struct MenuItemInfo {
+            const char* titleJa;
+            const char* titleEn;
+            const char* desc;
+            const char* badge;
+            bool isSpecial;
+        };
+
+        const MenuItemInfo items[5] = {
+            { "ゲーム再開", "RESUME GAME", "戦闘画面に戻ってプレイを続行します", "▶", false },
+            { "操作説明", "CONTROLS GUIDE", "キーボード・マウスの操作方法とルールを確認", "？", true },
+            { "やり直し", "RESTART", "現在のステージを最初からリスタートします", "↺", false },
+            { "各種設定", "SETTINGS", "エイム固定モード等の設定を変更します", "⚙", false },
+            { "タイトルへ", "EXIT TO TITLE", "タイトル画面へ戻ります", "✕", false }
+        };
+
+        for (int i = 0; i < 5; i++)
+        {
+            int iy = itemStartY + i * itemSpacing;
+            bool isSelected = (i == pauseMenuCursor);
+
+            // 枠の背景
+            if (isSelected)
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 235);
+                unsigned int bgCol = items[i].isSpecial ? GetColor(45, 48, 25) : GetColor(25, 45, 75);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, bgCol, TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+                // 発光枠線
+                unsigned int borderCol = items[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
+                DrawBox(itemStartX + 1, iy + 1, itemStartX + itemW - 1, iy + itemH - 1, borderCol, FALSE);
+
+                // 左端のアクティブバー
+                DrawBox(itemStartX, iy, itemStartX + 8, iy + itemH, borderCol, TRUE);
+            }
+            else
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, GetColor(12, 18, 28), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+                // 通常枠線（操作説明枠は非選択時でもゴールド系の視認しやすい枠線）
+                unsigned int borderCol = items[i].isSpecial ? GetColor(160, 130, 40) : GetColor(45, 65, 95);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
+            }
+
+            // バッジ枠（左側アイコン）
+            int badgeX = itemStartX + 18;
+            int badgeY = iy + 14;
+            int badgeSize = 48;
+            unsigned int badgeBorder = isSelected ? (items[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255)) : GetColor(50, 70, 95);
+            unsigned int badgeBg = isSelected ? GetColor(35, 55, 85) : GetColor(20, 28, 42);
+            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBg, TRUE);
+            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBorder, FALSE);
+            unsigned int badgeTextCol = isSelected ? GetColor(255, 255, 255) : GetColor(160, 180, 200);
+            FontManager::GetInstance().DrawStringCenter(badgeX + badgeSize / 2, badgeY + 10, items[i].badge, badgeTextCol, 22);
+
+            // テキスト描画
+            int textX = badgeX + badgeSize + 18;
+            unsigned int titleCol = isSelected ? (items[i].isSpecial ? GetColor(255, 235, 80) : GetColor(255, 240, 100)) : GetColor(220, 225, 235);
+            FontManager::GetInstance().DrawString(textX, iy + 12, items[i].titleJa, titleCol, 22);
+
+            // 英語サブタイトル
+            unsigned int enCol = isSelected ? GetColor(140, 200, 255) : GetColor(120, 135, 150);
+            FontManager::GetInstance().DrawString(textX + 130, iy + 16, items[i].titleEn, enCol, 15);
+
+            // 説明文
+            unsigned int descCol = isSelected ? GetColor(200, 220, 240) : GetColor(130, 145, 160);
+            FontManager::GetInstance().DrawString(textX, iy + 44, items[i].desc, descCol, 15);
+
+            // 選択中のカーソル矢印
+            if (isSelected)
+            {
+                FontManager::GetInstance().DrawString(itemStartX + itemW - 35, iy + 24, "▶", items[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255), 22);
+            }
+        }
+
+        // フッター案内
+        int footerY = panelY + panelH - 42;
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, footerY, "[ ↑ / ↓ / マウス ] 選択    [ Enter / クリック ] 決定    [ ESC ] 再開", GetColor(160, 190, 220), 16);
+    }
+    else if (state == GameState::SETTINGS)
+    {
+        // 1. 全面暗転オーバーレイ
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+        DrawBox(0, 0, 1920, 1080, GetColor(5, 10, 20), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        // 2. メインパネル枠
+        const int panelW = 680;
+        const int panelH = 500;
+        const int panelX = (1920 - panelW) / 2;
+        const int panelY = (1080 - panelH) / 2;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(16, 22, 34), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 180, 255), FALSE);
+        DrawBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, GetColor(0, 120, 180), FALSE);
+        DrawBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, GetColor(30, 50, 80), FALSE);
+
+        int headerY = panelY + 22;
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY, "SETTINGS", GetColor(255, 220, 0), 30);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY + 36, "- 各種設定 -", GetColor(160, 200, 240), 16);
+        DrawLine(panelX + 40, headerY + 64, panelX + panelW - 40, headerY + 64, GetColor(0, 140, 200));
+
+        const int itemW = 580;
+        const int itemH = 76;
+        const int itemSpacing = 95;
+        const int itemStartX = panelX + (panelW - itemW) / 2;
+        const int itemStartY = panelY + 120;
+
+        std::string modeText = std::string("エイム固定 (Eキー): ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (Hold)" : "切り替え (Toggle)");
+        std::string modeDesc = GameSettings::GetInstance().isAimLockHoldMode ? "Eキーを押している間だけエイムを固定します" : "Eキーを押すごとにエイム固定のON/OFFを切り替えます";
+
+        struct SettingsItemInfo {
+            std::string title;
+            std::string desc;
+            const char* badge;
+            bool isSpecial;
+        };
+
+        SettingsItemInfo sItems[3] = {
+            { modeText, modeDesc, "⚙", false },
+            { "操作説明 (CONTROLS GUIDE)", "キーボード・マウス操作＆ルールのヘルプを表示", "？", true },
+            { "戻る (BACK)", "ポーズメニューへ戻ります", "←", false }
+        };
+
+        for (int i = 0; i < 3; i++)
+        {
+            int iy = itemStartY + i * itemSpacing;
+            bool isSelected = (i == settingsMenuCursor);
+
+            if (isSelected)
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 235);
+                unsigned int bgCol = sItems[i].isSpecial ? GetColor(45, 48, 25) : GetColor(25, 45, 75);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, bgCol, TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+                unsigned int borderCol = sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
+                DrawBox(itemStartX + 1, iy + 1, itemStartX + itemW - 1, iy + itemH - 1, borderCol, FALSE);
+                DrawBox(itemStartX, iy, itemStartX + 8, iy + itemH, borderCol, TRUE);
+            }
+            else
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, GetColor(12, 18, 28), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+                unsigned int borderCol = sItems[i].isSpecial ? GetColor(160, 130, 40) : GetColor(45, 65, 95);
+                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
+            }
+
+            int badgeX = itemStartX + 18;
+            int badgeY = iy + 14;
+            int badgeSize = 48;
+            unsigned int badgeBorder = isSelected ? (sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255)) : GetColor(50, 70, 95);
+            unsigned int badgeBg = isSelected ? GetColor(35, 55, 85) : GetColor(20, 28, 42);
+            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBg, TRUE);
+            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBorder, FALSE);
+            unsigned int badgeTextCol = isSelected ? GetColor(255, 255, 255) : GetColor(160, 180, 200);
+            FontManager::GetInstance().DrawStringCenter(badgeX + badgeSize / 2, badgeY + 10, sItems[i].badge, badgeTextCol, 22);
+
+            int textX = badgeX + badgeSize + 18;
+            unsigned int titleCol = isSelected ? (sItems[i].isSpecial ? GetColor(255, 235, 80) : GetColor(255, 240, 100)) : GetColor(220, 225, 235);
+            FontManager::GetInstance().DrawString(textX, iy + 12, sItems[i].title.c_str(), titleCol, 22);
+
+            unsigned int descCol = isSelected ? GetColor(200, 220, 240) : GetColor(130, 145, 160);
+            FontManager::GetInstance().DrawString(textX, iy + 44, sItems[i].desc.c_str(), descCol, 15);
+
+            if (isSelected)
+            {
+                FontManager::GetInstance().DrawString(itemStartX + itemW - 35, iy + 24, "▶", sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255), 22);
+            }
+        }
+
+        int footerY = panelY + panelH - 38;
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, footerY, "[ ↑ / ↓ / マウス ] 選択    [ Enter / クリック ] 決定・切替    [ ESC ] ポーズに戻る", GetColor(160, 190, 220), 16);
+    }
+    else if (state == GameState::CONTROLS)
+    {
+        // 操作説明オーバーレイ描画
         UI::ControlsGuide::Draw(1920, 1080);
     }
 }

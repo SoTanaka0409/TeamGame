@@ -145,6 +145,13 @@ public:
     bool IsLightOn() const { return m_isLightOn; }
 
     /**
+     * @brief 指定したワールド座標がライト照射範囲（または近接視野）内にあるか判定
+     * @param targetPos 判定対象のワールド座標（敵や音源の位置）
+     * @return true: ライトの範囲内（見えている）, false: ライトの範囲外（暗闇に隠れている）
+     */
+    bool IsWorldPosInLight(const Vector2& targetPos) const;
+
+    /**
      * @brief ライトのON/OFF切り替え
      */
     void ToggleLight() { if (m_characterId == 1) return; m_isLightOn = !m_isLightOn; }

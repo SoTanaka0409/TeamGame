@@ -153,6 +153,9 @@
     <ClCompile Include="Source\Managers\SoundManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Managers\SoundVisualizer.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Managers\WeaponManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
@@ -330,6 +333,9 @@
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\SoundManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\SoundVisualizer.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\WeaponManager.h">

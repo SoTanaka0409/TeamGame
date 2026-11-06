@@ -1,4 +1,5 @@
-﻿#include "../Managers/WeaponManager.h"
+#include "../Managers/WeaponManager.h"
+#include "../Managers/SoundManager.h"
 #include "SubmachineGun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
@@ -92,6 +93,7 @@ void SubmachineGun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, boo
                 );
             }
 
+            SoundManager::GetInstance().Play3D("gunshot", pos, 1200.0f, 0.9f, teamId);
             NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
             UseAmmo(1);

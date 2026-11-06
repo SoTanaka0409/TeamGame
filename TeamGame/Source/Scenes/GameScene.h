@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
 #include "StageManager.h"
 #include "../Core/Vector2.h"
@@ -48,6 +48,7 @@ class GameScene : public Scene
     bool prevRight = false;              ///< 前フレームでの右入力状態
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
     bool prevHelpKey = false;            ///< 前フレームでのヘルプキー入力状態
+    bool prevClick = false;              ///< 前フレームでのマウスクリック状態
     bool isShowingControlsGuide = false; ///< ゲーム中の操作説明オーバーレイ表示フラグ
 
     float gameTimer = 0.0f;              ///< 経過時間のタイマー
@@ -81,4 +82,6 @@ class GameScene : public Scene
     {
         return &stageManager.GetCurrentStage();
     }
+
+    class Player* GetPlayer() const { return player; }
 };

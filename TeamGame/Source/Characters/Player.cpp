@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
@@ -951,6 +951,76 @@ void Player::OnCollisionStay(Collider *otherCollider)
 
 void Player::OnCollisionExit(Collider *otherCollider)
 {
+}
+
+bool Player::IsWorldPosInLight(const Vector2& targetPos) const
+{
+    if (!currentStage || cellSize <= 0.0f) return false;
+
+    float dx = targetPos.x - position.x;
+    float dy = targetPos.y - position.y;
+    float distSq = dx * dx + dy * dy;
+
+    int stageWidth = currentStage->GetWidth();
+    int stageHeight = currentStage->GetHeight();
+
+    // 遮蔽物レイキャスト判定ラムダ
+    auto isRayBlocked = [&](float toX, float toY, float totalDist) -> bool {
+        if (totalDist <= cellSize * 0.5f) return false;
+        int raySteps = static_cast<int>(totalDist / (cellSize * 0.35f));
+        if (raySteps < 2) raySteps = 2;
+        for (int s = 1; s < raySteps; ++s)
+        {
+            float t = static_cast<float>(s) / raySteps;
+            float wx = position.x + (toX - position.x) * t;
+            float wy = position.y + (toY - position.y) * t;
+            int gx = static_cast<int>(wx / cellSize);
+            int gy = static_cast<int>(wy / cellSize);
+            if (gx < 0 || gx >= stageWidth || gy < 0 || gy >= stageHeight || currentStage->IsLightBlockingWall(gx, gy))
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // 1. 足元の全方位明かり範囲（指揮者の時は至近距離のみ）
+    bool isConductor = (m_characterId == 1);
+    float closeRadius = isConductor ? (radius + 4.0f) : (cellSize * m_closeRadiusCells * GetSightMultiplier());
+    if (distSq < closeRadius * closeRadius)
+    {
+        float dist = std::sqrt(distSq);
+        if (!isRayBlocked(targetPos.x, targetPos.y, dist))
+        {
+            return true;
+        }
+    }
+
+    // 2. 前方60度扇形スポットライト範囲（指揮者以外かつライトON時のみ）
+    if (m_characterId != 1 && m_isLightOn)
+    {
+        float maxSpotDist = cellSize * m_maxSpotDistCells * GetSightMultiplier();
+        if (distSq < maxSpotDist * maxSpotDist)
+        {
+            float dist = std::sqrt(distSq);
+            if (dist > 0.001f)
+            {
+                // エイム向きベクトルとの内積
+                float forwardProj = (dx * facingDir.x + dy * facingDir.y) / dist;
+                float cosHalfAngle = std::cos(m_fanAngleHalf); // 約0.866 (30度)
+
+                if (forwardProj >= cosHalfAngle)
+                {
+                    if (!isRayBlocked(targetPos.x, targetPos.y, dist))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY, float brightRatio) const
