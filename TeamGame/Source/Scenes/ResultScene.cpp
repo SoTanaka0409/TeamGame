@@ -1,4 +1,4 @@
-﻿#include "ResultScene.h"
+#include "ResultScene.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
@@ -41,7 +41,18 @@ void ResultScene::Update()
 
     animTimer += 0.016f; // ~60 FPS 走査線アニメーション更新
 
-    if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_RETURN) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE))
+    bool anyConfirmHeld = (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_RETURN) || 
+                           InputManager::GetInstance().IsKeyHeld(KEY_INPUT_SPACE) || 
+                           InputManager::GetInstance().IsMouseHeld(MOUSE_INPUT_LEFT));
+    if (!anyConfirmHeld)
+    {
+        hasReleasedConfirm = true;
+    }
+
+    if (animTimer >= 0.5f && hasReleasedConfirm && 
+        (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_RETURN) || 
+         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE) || 
+         InputManager::GetInstance().IsMousePressed(MOUSE_INPUT_LEFT)))
     {
         SceneManager::GetInstance().ChangeScene(std::make_shared<TitleScene>());
     }

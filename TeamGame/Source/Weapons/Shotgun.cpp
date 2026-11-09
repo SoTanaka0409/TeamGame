@@ -66,7 +66,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, baseAngle, 16.0f);
             }
-            SoundManager::GetInstance().Play3D("gunshot", pos, 1400.0f, 1.0f, teamId);
+            SoundManager::GetInstance().Play3D("shotgun_shot", pos, 1400.0f, 1.0f, teamId);
             NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
             UseAmmo(1);
@@ -74,6 +74,6 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
     }
     else if (currentAmmo <= 0 && !isReloading)
     {
-        Reload();
+        Reload(pos, teamId);
     }
 }

@@ -7,6 +7,8 @@
 #include "CutinManager.h"
 #include "GameBalanceManager.h"
 #include "DebugManager.h"
+#include "NetworkManager.h"
+#include "PacketTypes.h"
 #include "DxLib.h"
 #include "Enemy.h"
 #include "../Objects/Item.h"
@@ -138,8 +140,119 @@ void GameScene::Init()
     player = CharacterFactory::CreatePlayer(startX, startY, stagePtr, cellSize, 0);
     if (objectManager) objectManager->AddObject(player);
 
-    introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
-    SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        MatchManager::GetInstance().SetTargetKillCount(10);
+    }
+
+    if (currentPlayMode == PlayMode::LOCAL_PVP)
+    {
+        // 1P: 青チーム (teamId = 0)
+        player->teamId = 0;
+        player->SetThemeColor(GetColor(0, 150, 255));
+
+        // 2P: 赤チーム (teamId = 1, マップ上部中央側からスポーン)
+        int midX = stage.GetWidth() / 2;
+        int team1Y = 3;
+        float p2StartX = (midX + 0.5f) * cellSize;
+        float p2StartY = (team1Y + 0.5f) * cellSize;
+
+        remotePlayer = new Player(p2StartX, p2StartY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->teamId = 1;
+        remotePlayer->SetThemeColor(GetColor(255, 60, 60));
+
+        // コントローラー接続台数に応じたインテリジェント入力割り当て
+        int padCount = GetJoypadNum();
+        if (padCount >= 2)
+        {
+            // コントローラー2台以上: 1PにPAD1、2PにPAD2を割り当て（コントローラー2台対戦）
+            player->SetInputType(PlayerInputType::KEYBOARD_MOUSE);
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_2);
+        }
+        else
+        {
+            // コントローラー1台または0台: 1PはKBM、2PはGAMEPAD_1 (PAD1または矢印キー＋強力オートエイム)
+            player->SetInputType(PlayerInputType::KEYBOARD_MOUSE);
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        }
+
+        remotePlayer->SetRemote(false);
+        remotePlayer->status.Init(100, 4.2f, 10);
+        remotePlayer->SetColliderRadius(8.9f);
+        remotePlayer->SetModelScale(0.3f);
+        remotePlayer->SetModelPath("Resource/GreenCharacter/character.mv1");
+        std::vector<Weapon*> p2Weapons;
+        p2Weapons.push_back(new Handgun());
+        p2Weapons.push_back(new Shotgun());
+        p2Weapons.push_back(new SniperRifle());
+        remotePlayer->SetWeapons(p2Weapons);
+        if (objectManager) objectManager->AddObject(remotePlayer);
+
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+
+        // 両チームとも「プレイヤー1人＋ボット2体」を配分 (合計 3 vs 3)
+        ClearEnemies();
+        CharacterFactory::SpawnPvPBots(stage, cellSize, player, remotePlayer, objectManager, enemies);
+        totalEnemiesSpawned = static_cast<int>(enemies.size());
+    }
+    else if (currentPlayMode == PlayMode::LOCAL_COOP)
+    {
+        remotePlayer = new Player(startX + 50.0f, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        int coopPadCount = GetJoypadNum();
+        if (coopPadCount >= 2) {
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_2);
+        } else {
+            remotePlayer->SetInputType(PlayerInputType::GAMEPAD_1);
+        }
+        if (objectManager) objectManager->AddObject(remotePlayer);
+
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+        SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
+    }
+    else if (currentPlayMode == PlayMode::NETWORK_HOST || currentPlayMode == PlayMode::NETWORK_CLIENT)
+    {
+        remotePlayer = new Player(startX, startY);
+        remotePlayer->SetStage(stagePtr, cellSize);
+        remotePlayer->SetRemote(true);
+        if (objectManager) objectManager->AddObject(remotePlayer);
+
+        if (currentPlayMode == PlayMode::NETWORK_HOST && NetworkManager::GetInstance().IsConnected())
+        {
+            PacketStageInit packet;
+            packet.header.type = PacketType::STAGE_INIT;
+            packet.seed = stageManager.GetCurrentSeed();
+            NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+        }
+
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+        SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
+    }
+    else
+    {
+        // Soloモード
+        introTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("IntroCameraDurationFrames", 300));
+        SpawnEnemiesRandomly(GameBalanceManager::GetInstance().GetInt("InitialEnemyCount", 5));
+    }
+
+    // 歩行足音SE (草: grass_walk, 土: dirt_walk) のロード
+    SoundManager::GetInstance().Load("grass_walk", "SE/足音/grass_walk.mp3");
+    SoundManager::GetInstance().Load("dirt_walk", "SE/足音/dirt_walk.mp3");
+    // 武器発射音・リロード音のロード
+    SoundManager::GetInstance().Load("handgun_shot", "SE/銃/gun_handgun.mp3");
+    SoundManager::GetInstance().Load("smg_shot", "SE/銃/gun_smg.mp3");
+    SoundManager::GetInstance().Load("shotgun_shot", "SE/銃/gun_shotgun.mp3");
+    SoundManager::GetInstance().Load("sniper_shot", "SE/銃/gun_sniper.mp3");
+    SoundManager::GetInstance().Load("gunshot", "SE/銃/gun_assault.mp3");
+    SoundManager::GetInstance().Load("reload", "SE/銃/gun_reload.mp3");
+    SoundManager::GetInstance().Load("se_tap", "SE/システム/se_tap.mp3");
+    SoundManager::GetInstance().Load("clear_bgm", "BGM/bgm_clear.mp3");
+    SoundManager::GetInstance().Load("defeat_bgm", "BGM/bgm_defeat.mp3");
+    SoundManager::GetInstance().Load("skill_activate", "SE/システム/se_skill.mp3");
+
+    // 戦闘BGMの再生（音量をほんの少し下げて戦闘.mp3をループ再生: 0.60f）
+    SoundManager::GetInstance().PlayBGM("battle_bgm", 0.60f);
 }
 
 void GameScene::Update()
@@ -169,6 +282,14 @@ void GameScene::Update()
             if (introTimer > 0.0f)
             {
                 introTimer -= 1.0f;
+                // ホスト側はイントロ中にステージ初期化情報を定期送信して同期を確実にする
+                if (currentPlayMode == PlayMode::NETWORK_HOST && NetworkManager::GetInstance().IsConnected() && (static_cast<int>(introTimer) % 30 == 0))
+                {
+                    PacketStageInit packet;
+                    packet.header.type = PacketType::STAGE_INIT;
+                    packet.seed = stageManager.GetCurrentSeed();
+                    NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+                }
             }
             else if (CutinManager::GetInstance().ShouldPauseGame())
             {
@@ -179,6 +300,12 @@ void GameScene::Update()
                 Scene::Update();
             }
 
+            // 3D空間オーディオのリスナー（プレイヤー）位置・向きの更新およびサウンド解放
+            if (player && player->IsActive())
+            {
+                SoundManager::GetInstance().SetListener(player->GetPosition(), player->GetFacingDir());
+            }
+            SoundManager::GetInstance().Update();
             SoundVisualizer::GetInstance().Update();
 
             // ランダムな時間帯に（15秒間）全エリアが明るくなる処理
@@ -260,27 +387,41 @@ void GameScene::Update()
             if (!isCleared && result != MatchResult::IN_PROGRESS)
             {
                 isCleared = true;
-                if (result == MatchResult::TEAM0_WIN)
+                if (currentPlayMode == PlayMode::LOCAL_PVP)
                 {
                     ClearStats stats;
                     stats.clearTimeSec = gameTimer;
-                    stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                    stats.defeatedEnemies = (result == MatchResult::TEAM0_WIN) ? MatchManager::GetInstance().GetTeam0Kills() : MatchManager::GetInstance().GetTeam1Kills();
                     stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
-
-                    int baseScore = 5000;
-                    int timePenalty = static_cast<int>(gameTimer * 10.0f);
-                    stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
-
-                    if (stats.rankScore >= 4500) stats.rankName = "S";
-                    else if (stats.rankScore >= 3500) stats.rankName = "A";
-                    else if (stats.rankScore >= 2500) stats.rankName = "B";
-                    else stats.rankName = "C";
+                    stats.rankScore = 5000;
+                    stats.rankName = (result == MatchResult::TEAM0_WIN) ? "1P WIN" : "2P WIN";
 
                     SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
                 }
                 else
                 {
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
+                    if (result == MatchResult::TEAM0_WIN)
+                    {
+                        ClearStats stats;
+                        stats.clearTimeSec = gameTimer;
+                        stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                        stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
+
+                        int baseScore = 5000;
+                        int timePenalty = static_cast<int>(gameTimer * 10.0f);
+                        stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
+
+                        if (stats.rankScore >= 4500) stats.rankName = "S";
+                        else if (stats.rankScore >= 3500) stats.rankName = "A";
+                        else if (stats.rankScore >= 2500) stats.rankName = "B";
+                        else stats.rankName = "C";
+
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                    }
+                    else
+                    {
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
+                    }
                 }
                 return;
             }
@@ -320,6 +461,23 @@ void GameScene::Update()
                     }
                 }
             }
+
+            if (NetworkManager::GetInstance().IsConnected() && player)
+            {
+                PacketPlayerState packet;
+                packet.header.type = PacketType::PLAYER_STATE;
+                packet.x = player->GetPosition().x;
+                packet.y = player->GetPosition().y;
+                packet.facingX = player->GetFacingDir().x;
+                packet.facingY = player->GetFacingDir().y;
+                packet.isLightOn = player->IsLightOn();
+                packet.isInBush = player->IsInBush();
+                packet.currentWeaponIndex = 0;
+                
+                NetworkManager::GetInstance().SendPacket(&packet, sizeof(packet));
+            }
+            
+            ProcessNetworkPackets();
         }
     }
     else if (state == GameState::PAUSED)
@@ -505,7 +663,7 @@ void GameScene::Draw()
     }
     else
     {
-        Vector2 aimDir = (player && player->IsActive()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
+        Vector2 aimDir = (player && player->IsActive() && !player->IsDying()) ? player->GetFacingDir() : Vector2(0.0f, 0.0f);
         float maxOffsetDist = 70.0f;
         if (player && player->GetCurrentWeapon())
         {
@@ -607,6 +765,9 @@ void GameScene::Draw()
     // 画面左下にプレイヤーのHP・武器UIを表示
     if (player && player->IsActive()) {
         player->DrawUI(25, 850);
+    }
+    if ((currentPlayMode == PlayMode::LOCAL_COOP || currentPlayMode == PlayMode::LOCAL_PVP) && remotePlayer && remotePlayer->IsActive()) {
+        remotePlayer->DrawUI(1920 / 2 + 25, 850);
     }
 
     if (state == GameState::PLAYING && introTimer > 0.0f)
@@ -924,3 +1085,43 @@ void GameScene::Draw()
         UI::ControlsGuide::Draw(1920, 1080);
     }
 }
+
+void GameScene::ProcessNetworkPackets()
+{
+    auto packets = NetworkManager::GetInstance().ReceivePackets();
+    for (const auto& data : packets)
+    {
+        if (data.size() < sizeof(PacketHeader)) continue;
+        
+        const PacketHeader* header = reinterpret_cast<const PacketHeader*>(data.data());
+        
+        if (header->type == PacketType::STAGE_INIT && !NetworkManager::GetInstance().IsHost())
+        {
+            const PacketStageInit* packet = reinterpret_cast<const PacketStageInit*>(data.data());
+            
+            stageManager.Regenerate(packet->seed);
+            
+            const Stage& stage = stageManager.GetCurrentStage();
+            float cellW = 1920.0f / stage.GetWidth();
+            float cellH = 1080.0f / stage.GetHeight();
+            float cellSize = (cellW < cellH) ? cellW : cellH;
+            
+            if (player) {
+                Point2D startGrid = stage.GetPlayerStartPos();
+                player->SetPosition(Vector2((startGrid.x + 0.5f) * cellSize, (startGrid.y + 0.5f) * cellSize));
+                player->SetStage(const_cast<Stage*>(&stage), cellSize);
+            }
+            SpawnEnemiesRandomly(5);
+        }
+        else if (header->type == PacketType::PLAYER_STATE && remotePlayer)
+        {
+            const PacketPlayerState* packet = reinterpret_cast<const PacketPlayerState*>(data.data());
+            remotePlayer->SetPosition(Vector2(packet->x, packet->y));
+            remotePlayer->SetFacingDir(Vector2(packet->facingX, packet->facingY));
+            if (packet->isLightOn && !remotePlayer->IsLightOn()) remotePlayer->ToggleLight();
+            if (!packet->isLightOn && remotePlayer->IsLightOn()) remotePlayer->ToggleLight();
+            remotePlayer->SetInBush(packet->isInBush);
+        }
+    }
+}
+

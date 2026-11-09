@@ -11,7 +11,11 @@ class Enemy;
  */
 enum class PlayMode
 {
-    SOLO           ///< ソロプレイ
+    SOLO,           ///< ソロプレイ
+    LOCAL_PVP,      ///< ローカルでの画面分割対戦プレイ (1P vs 2P)
+    LOCAL_COOP,     ///< ローカルでの協力プレイ（画面分割など）
+    NETWORK_HOST,   ///< ネットワークプレイでのホスト
+    NETWORK_CLIENT  ///< ネットワークプレイでのクライアント
 };
 
 /**
@@ -33,6 +37,7 @@ class GameScene : public Scene
 {
   private:
     class Player *player;                ///< プレイヤー
+    class Player *remotePlayer = nullptr;///< リモートプレイヤーまたは2Pプレイヤー
     std::vector<Enemy*> enemies;         ///< 敵キャラクターのリスト
     StageManager stageManager;           ///< ステージマネージャー
 
@@ -63,6 +68,11 @@ class GameScene : public Scene
     int horrorEffectTimer = 0;           ///< ホラー演出用のタイマー
     bool isCleared = false;              ///< クリア済みフラグ
     Vector2 m_cameraOffset = Vector2(0.0f, 0.0f); ///< エイム方向に応じた動的カメラオフセット
+
+    /**
+     * @brief ネットワークパケットの処理
+     */
+    void ProcessNetworkPackets();
 
   public:
     GameScene(PlayMode mode = PlayMode::SOLO);

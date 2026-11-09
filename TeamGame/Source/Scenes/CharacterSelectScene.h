@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
 #include <vector>
 #include "../Core/PlayerSelection.h"
@@ -20,6 +20,7 @@ public:
 private:
     int m_cursorIndex;
     int m_selectedIndex;
+    bool m_hasReleasedConfirm = false; ///< シーン開始後に決定キーが一度離されたかのフラグ
     std::vector<SelectionCharacterData> m_characters;
     std::vector<int> m_previewHandles;
 

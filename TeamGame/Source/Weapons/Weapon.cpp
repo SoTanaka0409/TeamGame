@@ -1,6 +1,7 @@
 #include "Weapon.h"
 #include "../Core/Camera.h"
 #include "../Managers/WeaponManager.h"
+#include "../Managers/SoundManager.h"
 #include "DxLib.h"
 #include <cmath>
 
@@ -38,11 +39,16 @@ void Weapon::Update()
     }
 }
 
-void Weapon::Reload()
+void Weapon::Reload(const Vector2 &pos, int teamId)
 {
     if (!isReloading && data && currentAmmo < data->maxAmmo) {
         isReloading = true;
         reloadTimer = data->reloadTime;
+        if (pos.x > -9000.0f) {
+            SoundManager::GetInstance().Play3D("reload", pos, 1000.0f, 0.55f, teamId);
+        } else {
+            SoundManager::GetInstance().Play("reload");
+        }
     }
 }
 

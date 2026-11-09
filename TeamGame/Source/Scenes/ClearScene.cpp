@@ -1,4 +1,5 @@
-﻿#include "ClearScene.h"
+#include "ClearScene.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
@@ -40,6 +41,8 @@ ClearScene::~ClearScene()
 
 void ClearScene::Init()
 {
+    // クリア音・ファンファーレBGMを再生
+    SoundManager::GetInstance().PlayBGM("clear_bgm", 0.85f);
     Scene::Init();
     animTimer = 0.0f;
     prevEnter = true; // 前のシーンの押しっぱなし事故防止
@@ -53,7 +56,12 @@ void ClearScene::Update()
 
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
-    bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
+    bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0 || (GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
+
+    if (!currEnter)
+    {
+        hasReleasedConfirm = true;
+    }
 
     if (currUp && !prevUp)
     {
@@ -64,10 +72,11 @@ void ClearScene::Update()
         menuCursor = (menuCursor + 1) % 2;
     }
 
-    // シーン遷移後2秒間は決定操作をロック（連打・押しっぱなしによる意図しない即時選択を防止）
-    bool canConfirm = (animTimer >= 2.0f);
+    // シーン遷移後2秒間＆一度キーを離すまでは決定操作をロック（連打・押しっぱなしによる意図しない即時選択を防止）
+    bool canConfirm = (animTimer >= 2.0f) && hasReleasedConfirm;
     if (canConfirm && currEnter && !prevEnter)
     {
+        SoundManager::GetInstance().PlayTapSE();
         if (menuCursor == 0)
         {
             // もう一度プレイ

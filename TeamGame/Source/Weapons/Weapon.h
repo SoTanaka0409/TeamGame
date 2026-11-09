@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Vector2.h"
 #include "../Managers/WeaponManager.h"
 #include "BulletVisualConfig.h"
@@ -29,7 +29,7 @@ public:
 
     virtual void Update();
     virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, bool isMoving = false, const std::string& shooterName = "", bool isPanic = false) = 0;
-    virtual void Reload();
+    virtual void Reload(const Vector2 &pos = Vector2(-9999.0f, -9999.0f), int teamId = 0);
 
     /**
      * @brief 銃身（ガンバレル）の描画処理

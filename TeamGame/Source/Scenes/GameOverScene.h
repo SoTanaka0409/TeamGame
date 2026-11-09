@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
 #include "../UI/UITextWindow.h"
 
@@ -15,6 +15,7 @@ class GameOverScene : public Scene
     bool prevUp = false;             ///< 前フレームでの上入力状態
     bool prevDown = false;           ///< 前フレームでの下入力状態
     bool prevEnter = false;          ///< 前フレームでの決定入力状態
+    bool hasReleasedConfirm = false; ///< シーン開始後に決定キーが一度離されたかのフラグ
 
     // ========================================================
     // 【2D画像配列キャッシュ & 番号（インデックス）管理】

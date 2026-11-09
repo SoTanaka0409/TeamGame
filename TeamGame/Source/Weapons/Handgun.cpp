@@ -53,7 +53,7 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, finalAngle, 16.0f);
             }
-            SoundManager::GetInstance().Play3D("gunshot", pos, 1200.0f, 1.0f, teamId);
+            SoundManager::GetInstance().Play3D("handgun_shot", pos, 1200.0f, 1.25f, teamId);
             NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
             UseAmmo(1);
@@ -62,6 +62,6 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
     else if (currentAmmo <= 0 && !isReloading)
     {
         // Auto-reload on empty
-        Reload();
+        Reload(pos, teamId);
     }
 }
