@@ -12,6 +12,7 @@
 #include "SniperRifle.h"
 #include "SceneManager.h"
 #include "Scene.h"
+#include "../Managers/SoundManager.h"
 #include "GameSettings.h"
 #include "CharacterManager.h"
 #include "GameBalanceManager.h"
@@ -40,7 +41,7 @@ Player::Player(float startX, float startY)
     }
     else
     {
-        status.Init(33, 4.2f, 10);
+        status.Init(33, 2.1f, 10);
         if (collider) collider->SetRadius(8.9f);
         radius = 8.9f;
     }
@@ -76,6 +77,27 @@ void Player::SetWeapons(const std::vector<Weapon*>& newWeapons)
 void Player::Update()
 {
     Character::Update();
+
+    // 死亡時のその場停止演出（死んだ場所で倒れて一定時間留まる）
+    if (m_isDying)
+    {
+        m_isMoving = false;
+        knockbackVelocity = Vector2(0.0f, 0.0f);
+        if (m_model)
+        {
+            m_model->PlayDie();
+            m_model->Update(1.0f / 60.0f);
+        }
+
+        m_deathStayTimer--;
+        if (m_deathStayTimer <= 0)
+        {
+            m_isDying = false;
+            SetActive(false); // 停止演出終了後、初めて非アクティブ化（リスポーン処理へ移行）
+        }
+        return;
+    }
+
     if (!CanAction()) return;
 
     if (invincibleTimer > 0) invincibleTimer--;
@@ -270,6 +292,28 @@ void Player::Update()
         }
     }
 
+    // 歩行足音SEの再生制御 (草むら: grass_walk / 土・地面: dirt_walk)
+    if (m_isMoving)
+    {
+        m_footstepTimer--;
+        if (m_footstepTimer <= 0)
+        {
+            const char* seKey = m_isInBush ? "grass_walk" : "dirt_walk";
+            float baseVol = m_isInBush ? 0.85f : 0.72f;
+            SoundManager::GetInstance().Play3D(seKey, position, 1200.0f, baseVol, teamId);
+
+            float spd = status.GetSpeed();
+            int interval = (spd > 0.1f) ? static_cast<int>(18.0f * (4.0f / spd)) : 18;
+            if (interval < 12) interval = 12;
+            if (interval > 24) interval = 24;
+            m_footstepTimer = interval;
+        }
+    }
+    else
+    {
+        m_footstepTimer = 0;
+    }
+
     if (damageColorTimer > 0)
     {
         damageColorTimer--;
@@ -286,7 +330,12 @@ void Player::Update()
         {
             m_model->PlayIdle();
         }
-        m_model->Update(1.0f / 60.0f);
+
+        // プレイヤーの見える範囲のみアニメーション更新を実行して負荷削減
+        if (IsVisibleToPlayer())
+        {
+            m_model->Update(1.0f / 60.0f);
+        }
     }
 
 
@@ -489,7 +538,7 @@ void Player::Update()
     
     if (isReloadPressed && !weapons.empty())
     {
-        weapons[currentWeaponIndex]->Reload();
+        weapons[currentWeaponIndex]->Reload(position, teamId);
     }
     
     // Spaceキー等でナイフ暗殺 (敵が未発覚時のみ実行可能)
@@ -559,8 +608,8 @@ void Player::Draw()
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
     }
 
-    unsigned int color =
-        (damageColorTimer > 0) ? GetColor(255, 255, 0) : m_themeColor;
+    unsigned int color = m_isDying ? GetColor(220, 50, 50) :
+        ((damageColorTimer > 0) ? GetColor(255, 255, 0) : m_themeColor);
 
     float renderRadius = radius * Camera::ZoomScale;
 
@@ -573,7 +622,7 @@ void Player::Draw()
                    static_cast<int>(renderRadius), color, TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), GetColor(255, 255, 255), FALSE);
+                   static_cast<int>(renderRadius), m_isDying ? GetColor(255, 80, 80) : GetColor(255, 255, 255), FALSE);
 
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
@@ -618,31 +667,39 @@ void Player::Draw()
     float nx = (dirLen > 0.0001f) ? (facingDir.x / dirLen) : facingDir.x;
     float ny = (dirLen > 0.0001f) ? (facingDir.y / dirLen) : facingDir.y;
 
-    // 銃身（ガンバレル）の描画: 装備中の武器固有の描画アセットを描画
-    if (!weapons.empty() && weapons[currentWeaponIndex])
+    if (!m_isDying)
     {
-        weapons[currentWeaponIndex]->DrawBarrel(screenX, screenY, facingDir);
+        // 銃身（ガンバレル）の描画: 装備中の武器固有の描画アセットを描画
+        if (!weapons.empty() && weapons[currentWeaponIndex])
+        {
+            weapons[currentWeaponIndex]->DrawBarrel(screenX, screenY, facingDir);
+        }
+        else
+        {
+            // 向いている方角を線で描画
+            float lineLen = 50.0f; // 線の長さ
+            int x1 = static_cast<int>(screenX);
+            int y1 = static_cast<int>(screenY);
+            int x2 = static_cast<int>(screenX + nx * lineLen);
+            int y2 = static_cast<int>(screenY + ny * lineLen);
+            DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
+        }
+
+        // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
+        if (!weapons.empty() && weapons[currentWeaponIndex]) {
+            std::string wName = weapons[currentWeaponIndex]->GetName();
+            if (isAimLocked) wName += " [視点固定]";
+            DrawString(static_cast<int>(screenX) - 35, static_cast<int>(screenY) - static_cast<int>(renderRadius) - 22, wName.c_str(), isAimLocked ? GetColor(255, 220, 0) : GetColor(200, 220, 255));
+        }
     }
     else
     {
-        // 向いている方角を線で描画
-        float lineLen = 50.0f; // 線の長さ
-        int x1 = static_cast<int>(screenX);
-        int y1 = static_cast<int>(screenY);
-        int x2 = static_cast<int>(screenX + nx * lineLen);
-        int y2 = static_cast<int>(screenY + ny * lineLen);
-        DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
-    }
-
-    // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
-    if (!weapons.empty() && weapons[currentWeaponIndex]) {
-        std::string wName = weapons[currentWeaponIndex]->GetName();
-        if (isAimLocked) wName += " [視点固定]";
-        DrawString(static_cast<int>(screenX) - 35, static_cast<int>(screenY) - static_cast<int>(renderRadius) - 22, wName.c_str(), isAimLocked ? GetColor(255, 220, 0) : GetColor(200, 220, 255));
+        // 死亡演出中: 頭上に「DOWN」と表示
+        FontManager::GetInstance().DrawStringCenter(static_cast<int>(screenX), static_cast<int>(screenY) - static_cast<int>(renderRadius) - 26, "DOWN", GetColor(255, 60, 60), 20);
     }
 
     // 【サーチ的な感じでブレ幅（予測線）を描画】
-    if (currentStage && cellSize > 0.0f)
+    if (!m_isDying && currentStage && cellSize > 0.0f)
     {
         float zoomCellSize = cellSize * Camera::ZoomScale;
         float maxRange = cellSize * 12.0f;
@@ -929,9 +986,14 @@ void Player::TakeDamage(int amount, const std::string& attackerName, int attacke
     
     if (status.IsDead())
     {
-        SetActive(false);
-        if (m_model) m_model->PlayDie();
-        // ここに将来的にゲームオーバー画面（ResultScene）への遷移を追加します
+        if (!m_isDying)
+        {
+            m_isDying = true;
+            m_deathStayTimer = 100; // 約1.7秒間、死んだ場所で停止し倒れるアニメーションを表示
+            knockbackVelocity = Vector2(0.0f, 0.0f);
+            m_isMoving = false;
+            if (m_model) m_model->PlayDie();
+        }
     }
 }
 
@@ -946,6 +1008,76 @@ void Player::OnCollisionStay(Collider *otherCollider)
 
 void Player::OnCollisionExit(Collider *otherCollider)
 {
+}
+
+bool Player::IsWorldPosInLight(const Vector2& targetPos) const
+{
+    if (!currentStage || cellSize <= 0.0f) return false;
+
+    float dx = targetPos.x - position.x;
+    float dy = targetPos.y - position.y;
+    float distSq = dx * dx + dy * dy;
+
+    int stageWidth = currentStage->GetWidth();
+    int stageHeight = currentStage->GetHeight();
+
+    // 遮蔽物レイキャスト判定ラムダ
+    auto isRayBlocked = [&](float toX, float toY, float totalDist) -> bool {
+        if (totalDist <= cellSize * 0.5f) return false;
+        int raySteps = static_cast<int>(totalDist / (cellSize * 0.35f));
+        if (raySteps < 2) raySteps = 2;
+        for (int s = 1; s < raySteps; ++s)
+        {
+            float t = static_cast<float>(s) / raySteps;
+            float wx = position.x + (toX - position.x) * t;
+            float wy = position.y + (toY - position.y) * t;
+            int gx = static_cast<int>(wx / cellSize);
+            int gy = static_cast<int>(wy / cellSize);
+            if (gx < 0 || gx >= stageWidth || gy < 0 || gy >= stageHeight || currentStage->IsLightBlockingWall(gx, gy))
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // 1. 足元の全方位明かり範囲（指揮者の時は至近距離のみ）
+    bool isConductor = (m_characterId == 1);
+    float closeRadius = isConductor ? (radius + 4.0f) : (cellSize * m_closeRadiusCells * GetSightMultiplier());
+    if (distSq < closeRadius * closeRadius)
+    {
+        float dist = std::sqrt(distSq);
+        if (!isRayBlocked(targetPos.x, targetPos.y, dist))
+        {
+            return true;
+        }
+    }
+
+    // 2. 前方60度扇形スポットライト範囲（指揮者以外かつライトON時のみ）
+    if (m_characterId != 1 && m_isLightOn)
+    {
+        float maxSpotDist = cellSize * m_maxSpotDistCells * GetSightMultiplier();
+        if (distSq < maxSpotDist * maxSpotDist)
+        {
+            float dist = std::sqrt(distSq);
+            if (dist > 0.001f)
+            {
+                // エイム向きベクトルとの内積
+                float forwardProj = (dx * facingDir.x + dy * facingDir.y) / dist;
+                float cosHalfAngle = std::cos(m_fanAngleHalf); // 約0.866 (30度)
+
+                if (forwardProj >= cosHalfAngle)
+                {
+                    if (!isRayBlocked(targetPos.x, targetPos.y, dist))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY, float brightRatio) const
@@ -1424,4 +1556,13 @@ void Player::UpdateAutoAim(const Vector2& moveDir)
             facingDir = Vector2(dx / dist, dy / dist);
         }
     }
+}
+
+bool Player::IsVisibleToPlayer() const
+{
+    // 自機プレイヤーは透明化スキル中であっても半透明表示されるため、常に可視とみなす
+    if (!isRemote) return true;
+
+    // リモートプレイヤーや2Pは基底クラスの画面内判定に従う
+    return Character::IsVisibleToPlayer();
 }

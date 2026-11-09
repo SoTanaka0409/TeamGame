@@ -11,7 +11,11 @@ class Enemy;
  */
 enum class PlayMode
 {
-    SOLO           ///< ソロプレイ
+    SOLO,           ///< ソロプレイ
+    LOCAL_PVP,      ///< ローカルでの画面分割対戦プレイ (1P vs 2P)
+    LOCAL_COOP,     ///< ローカルでの協力プレイ（画面分割など）
+    NETWORK_HOST,   ///< ネットワークプレイでのホスト
+    NETWORK_CLIENT  ///< ネットワークプレイでのクライアント
 };
 
 /**
@@ -21,7 +25,8 @@ enum class GameState
 {
     PLAYING,        ///< ゲームプレイ中
     PAUSED,         ///< ポーズメニューを開いている状態
-    SETTINGS        ///< 設定画面を開いている状態
+    SETTINGS,       ///< 設定画面を開いている状態
+    CONTROLS        ///< 操作説明画面を開いている状態
 };
 
 /**
@@ -32,6 +37,7 @@ class GameScene : public Scene
 {
   private:
     class Player *player;                ///< プレイヤー
+    class Player *remotePlayer = nullptr;///< リモートプレイヤーまたは2Pプレイヤー
     std::vector<Enemy*> enemies;         ///< 敵キャラクターのリスト
     StageManager stageManager;           ///< ステージマネージャー
 
@@ -46,6 +52,9 @@ class GameScene : public Scene
     bool prevLeft = false;               ///< 前フレームでの左入力状態
     bool prevRight = false;              ///< 前フレームでの右入力状態
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
+    bool prevHelpKey = false;            ///< 前フレームでのヘルプキー入力状態
+    bool prevClick = false;              ///< 前フレームでのマウスクリック状態
+    bool isShowingControlsGuide = false; ///< ゲーム中の操作説明オーバーレイ表示フラグ
 
     float gameTimer = 0.0f;              ///< 経過時間のタイマー
     float introTimer = 0.0f;             ///< カメラ演出用のタイマー
@@ -59,6 +68,11 @@ class GameScene : public Scene
     int horrorEffectTimer = 0;           ///< ホラー演出用のタイマー
     bool isCleared = false;              ///< クリア済みフラグ
     Vector2 m_cameraOffset = Vector2(0.0f, 0.0f); ///< エイム方向に応じた動的カメラオフセット
+
+    /**
+     * @brief ネットワークパケットの処理
+     */
+    void ProcessNetworkPackets();
 
   public:
     GameScene(PlayMode mode = PlayMode::SOLO);
@@ -78,4 +92,6 @@ class GameScene : public Scene
     {
         return &stageManager.GetCurrentStage();
     }
+
+    class Player* GetPlayer() const { return player; }
 };

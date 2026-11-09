@@ -244,7 +244,7 @@ Vector2 PathfindingComponent::GetMoveDirection(const Vector2& currentPos, float 
 
 bool PathfindingComponent::HasPath() const
 {
-    return currentWaypointIndex < pathWaypoints.size();
+    return currentWaypointIndex < static_cast<int>(pathWaypoints.size());
 }
 
 void PathfindingComponent::ClearPath()

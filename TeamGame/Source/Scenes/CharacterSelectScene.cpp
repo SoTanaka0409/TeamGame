@@ -1,4 +1,5 @@
-﻿#include "CharacterSelectScene.h"
+#include "CharacterSelectScene.h"
+#include "SoundManager.h"
 #include "WeaponSelectScene.h"
 #include "TitleScene.h"
 #include "../Managers/SceneManager.h"
@@ -14,6 +15,8 @@ CharacterSelectScene::~CharacterSelectScene() {
 }
 
 void CharacterSelectScene::Init() {
+    // タイトル〜キャラ選択までBGMを継続再生
+    SoundManager::GetInstance().PlayBGM("title_bgm", 0.85f);
     // =========================================================================
     // 【2D画像配列への読み込み & 番号管理】
     // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
@@ -58,8 +61,14 @@ void CharacterSelectScene::Update() {
         m_selectedIndex = (m_selectedIndex + 1) % count;
     }
 
-    if (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE)) {
+    bool anyConfirmHeld = (input.IsKeyHeld(KEY_INPUT_Z) || input.IsKeyHeld(KEY_INPUT_RETURN) || input.IsKeyHeld(KEY_INPUT_SPACE) || input.IsMouseHeld(MOUSE_INPUT_LEFT));
+    if (!anyConfirmHeld) {
+        m_hasReleasedConfirm = true;
+    }
+
+    if (m_hasReleasedConfirm && (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE) || input.IsMousePressed(MOUSE_INPUT_LEFT))) {
         if (m_selectedIndex >= 0 && m_selectedIndex < count) {
+            SoundManager::GetInstance().PlayTapSE();
             PlayerSelectionManager::GetInstance().SetSelectedCharacter(m_characters[m_selectedIndex]);
             SceneManager::GetInstance().ChangeScene(std::make_shared<WeaponSelectScene>());
         }
@@ -89,12 +98,12 @@ void CharacterSelectScene::Draw() {
     FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] / [A][D] で移動、[Z] / [Enter] で決定、[Esc] で戻る )", GetColor(200, 210, 225), 20);
 
     int count = static_cast<int>(m_characters.size());
-    int cardW = 270;
+    int cardW = 282;
     int cardH = 430;
-    int gap = 30;
+    int gap = 22;
     int totalW = count * cardW + (count - 1) * gap;
     int startX = (1920 - totalW) / 2;
-    int startY = 180;
+    int startY = 175;
 
     for (int i = 0; i < count; i++) {
         const auto& chara = m_characters[i];
@@ -102,11 +111,14 @@ void CharacterSelectScene::Draw() {
         bool isSelected = (i == m_selectedIndex);
 
         if (isSelected) {
-            DrawBox(cardX - 4, startY - 4, cardX + cardW + 4, startY + cardH + 4, chara.themeColor, TRUE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(30, 40, 60), TRUE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(255, 255, 255), FALSE);
+            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(32, 44, 68), TRUE);
+            // 均一なセレクション太枠線
+            DrawBox(cardX - 3, startY - 3, cardX + cardW + 3, startY + cardH + 3, chara.themeColor, FALSE);
+            DrawBox(cardX - 2, startY - 2, cardX + cardW + 2, startY + cardH + 2, chara.themeColor, FALSE);
+            DrawBox(cardX - 1, startY - 1, cardX + cardW + 1, startY + cardH + 1, GetColor(255, 255, 255), FALSE);
+            DrawBox(cardX, startY, cardX + cardW, startY + cardH, chara.themeColor, FALSE);
         } else {
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(20, 25, 35), TRUE);
+            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(20, 26, 38), TRUE);
             DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(60, 75, 95), FALSE);
         }
 
@@ -118,8 +130,7 @@ void CharacterSelectScene::Draw() {
         int avX2 = cardX + cardW - avatarMargin;
         int avY2 = avY1 + avatarH;
 
-        DrawBox(avX1, avY1, avX2, avY2, GetColor(10, 15, 22), TRUE);
-        DrawBox(avX1, avY1, avX2, avY2, chara.themeColor, FALSE);
+        DrawBox(avX1, avY1, avX2, avY2, GetColor(12, 16, 24), TRUE);
 
         if (i < static_cast<int>(m_previewHandles.size()) && m_previewHandles[i] != -1) {
             // 登録プレビュー画像の描画
@@ -131,6 +142,8 @@ void CharacterSelectScene::Draw() {
             DrawCircle(circleX, circleY, 36, chara.themeColor, TRUE);
             FontManager::GetInstance().DrawFormatString(circleX - 8, circleY - 12, GetColor(255, 255, 255), 24, "%d", chara.id);
         }
+        // アバターの枠線を画像の上に重ねて綺麗に整える
+        DrawBox(avX1, avY1, avX2, avY2, chara.themeColor, FALSE);
 
         // キャラ情報テキスト
         int textY = avY2 + 15;
@@ -140,12 +153,15 @@ void CharacterSelectScene::Draw() {
         FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.typeName.c_str(), GetColor(150, 180, 210), 16);
         textY += 32;
 
-        // ステータス表示
-        FontManager::GetInstance().DrawFormatString(cardX + 25, textY, GetColor(100, 255, 100), 16, "HP      : %d", chara.maxHp);
+        // ステータス表示 (カード枠内・左余白18pxで長文スキルもはみ出さず綺麗に収める)
+        FontManager::GetInstance().DrawFormatString(cardX + 18, textY, GetColor(100, 255, 100), 16, "HP      : %d", chara.maxHp);
         textY += 24;
-        FontManager::GetInstance().DrawFormatString(cardX + 25, textY, GetColor(100, 200, 255), 16, "SPEED   : %.1f", chara.moveSpeed);
+        FontManager::GetInstance().DrawFormatString(cardX + 18, textY, GetColor(100, 200, 255), 16, "SPEED   : %.1f", chara.moveSpeed);
         textY += 24;
-        FontManager::GetInstance().DrawFormatString(cardX + 25, textY, GetColor(255, 215, 0), 16, "SKILL   : %s", chara.skillName.c_str());
+
+        // 長いスキル名（例: High risk high return）もカード枠内に収まるようフォントサイズを自動調整
+        int skillFontSize = (chara.skillName.length() > 16) ? 14 : 16;
+        FontManager::GetInstance().DrawFormatString(cardX + 18, textY, GetColor(255, 215, 0), skillFontSize, "SKILL   : %s", chara.skillName.c_str());
         textY += 28;
 
         // 選択案内
@@ -155,19 +171,20 @@ void CharacterSelectScene::Draw() {
         }
     }
 
-    // 画面下部の詳細説明枠 (キャラクターの性能・特徴・スキルを確実に表示)
+    // 画面下部の詳細説明枠 (カード列の横幅 totalW と startX に完全に一致させ、縁ズレを解消)
     if (m_selectedIndex >= 0 && m_selectedIndex < count) {
         const auto& curChara = m_characters[m_selectedIndex];
-        int infoX = 360;
-        int infoY = 665;
-        int infoW = 1200;
-        int infoH = 120;
+        int infoX = startX;
+        int infoY = startY + cardH + 28;
+        int infoW = totalW;
+        int infoH = 135;
 
         // 背景半透明パネル
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
-        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, GetColor(20, 28, 42), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, GetColor(20, 28, 44), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, curChara.themeColor, FALSE);
+        DrawBox(infoX + 1, infoY + 1, infoX + infoW - 1, infoY + infoH - 1, curChara.themeColor, FALSE);
 
         // ヘッダー（名前とタイプ）
         FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 22, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());

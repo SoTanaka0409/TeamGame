@@ -55,6 +55,7 @@ public:
      * @return 現在の体力
      */
     int GetCurrentHp() const;
+    int GetHp() const { return GetCurrentHp(); }
 
     /**
      * @brief 体力を回復する

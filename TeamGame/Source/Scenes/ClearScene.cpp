@@ -1,4 +1,5 @@
-﻿#include "ClearScene.h"
+#include "ClearScene.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
@@ -40,6 +41,8 @@ ClearScene::~ClearScene()
 
 void ClearScene::Init()
 {
+    // クリア音・ファンファーレBGMを再生
+    SoundManager::GetInstance().PlayBGM("clear_bgm", 0.85f);
     Scene::Init();
     animTimer = 0.0f;
     prevEnter = true; // 前のシーンの押しっぱなし事故防止
@@ -53,7 +56,12 @@ void ClearScene::Update()
 
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
-    bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
+    bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0 || (GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
+
+    if (!currEnter)
+    {
+        hasReleasedConfirm = true;
+    }
 
     if (currUp && !prevUp)
     {
@@ -64,10 +72,11 @@ void ClearScene::Update()
         menuCursor = (menuCursor + 1) % 2;
     }
 
-    // シーン遷移後2秒間は決定操作をロック（連打・押しっぱなしによる意図しない即時選択を防止）
-    bool canConfirm = (animTimer >= 2.0f);
+    // シーン遷移後2秒間＆一度キーを離すまでは決定操作をロック（連打・押しっぱなしによる意図しない即時選択を防止）
+    bool canConfirm = (animTimer >= 2.0f) && hasReleasedConfirm;
     if (canConfirm && currEnter && !prevEnter)
     {
+        SoundManager::GetInstance().PlayTapSE();
         if (menuCursor == 0)
         {
             // もう一度プレイ
@@ -139,26 +148,37 @@ void ClearScene::Draw()
     DrawString(centerX - titleWidth / 2, titleY, headerText.c_str(), headerColor);
 
     // リザルト枠（UITextWindow による描画）
-    int panelW = 700;
+    int panelW = 740;
     int panelH = 380;
     int panelX = centerX - panelW / 2;
-    int panelY = 240;
+    int panelY = 230;
 
     if (statsWindow)
     {
-        statsWindow->SetTitle("STAGE RESULT", GetColor(255, 220, 0));
+        statsWindow->SetFixedSize(panelW, panelH);
+        statsWindow->SetTitle(""); // タイトルはパネル中央に美しく自前描画
         statsWindow->Draw(panelX, panelY);
     }
     else
     {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
         DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(20, 30, 45), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 200, 255), FALSE);
     }
 
-    // スコア＆統計情報表示
+    // パネル上部タイトル「STAGE RESULT」を中央揃えで描画
+    SetFontSize(28);
+    const char* resultTitle = "STAGE RESULT";
+    int resTitleW = GetDrawStringWidth(resultTitle, -1);
+    DrawString(centerX - resTitleW / 2, panelY + 24, resultTitle, GetColor(255, 220, 0));
+    DrawLine(panelX + 40, panelY + 62, panelX + panelW - 40, panelY + 62, GetColor(0, 180, 240));
+
+    // スコア＆統計情報表示 (区切り線の下から整然と配置)
     SetFontSize(24);
+    int itemStartY = panelY + 85;
+    int itemStep = 56;
+
     int minutes = static_cast<int>(stats.clearTimeSec) / 60;
     float seconds = fmodf(stats.clearTimeSec, 60.0f);
     char timeStr[64];
@@ -170,13 +190,13 @@ void ClearScene::Draw()
     char scoreStr[64];
     snprintf(scoreStr, sizeof(scoreStr), "最終スコア   : %d pts", stats.rankScore);
 
-    DrawString(panelX + 80, panelY + 45, timeStr, GetColor(255, 255, 255));
-    DrawString(panelX + 80, panelY + 115, enemyStr, GetColor(255, 255, 255));
-    DrawString(panelX + 80, panelY + 185, scoreStr, GetColor(255, 255, 255));
+    DrawString(panelX + 80, itemStartY + 0 * itemStep, timeStr, GetColor(255, 255, 255));
+    DrawString(panelX + 80, itemStartY + 1 * itemStep, enemyStr, GetColor(255, 255, 255));
+    DrawString(panelX + 80, itemStartY + 2 * itemStep, scoreStr, GetColor(255, 255, 255));
 
-    // ランク表示（「評価ランク : 」と ランク大文字 "S" などの横位置・縦位置を精密に揃える）
+    // ランク表示（「評価ランク   : 」と ランク大文字 "S" などの横位置・縦位置を精密に揃える）
     const char* rankLabel = "評価ランク   : ";
-    DrawString(panelX + 80, panelY + 260, rankLabel, GetColor(255, 255, 255));
+    DrawString(panelX + 80, itemStartY + 3 * itemStep, rankLabel, GetColor(255, 255, 255));
 
     int labelWidth = GetDrawStringWidth(rankLabel, -1);
 
@@ -185,9 +205,9 @@ void ClearScene::Draw()
     else if (stats.rankName == "B") rankColor = GetColor(100, 255, 100);
     else if (stats.rankName == "C") rankColor = GetColor(200, 150, 100);
 
-    // ランク文字を強調大文字フォント(40pt)で位置調整して描画
-    SetFontSize(40);
-    DrawString(panelX + 80 + labelWidth + 5, panelY + 248, stats.rankName.c_str(), rankColor);
+    // ランク文字を強調大文字フォント(38pt)で位置調整して描画
+    SetFontSize(38);
+    DrawString(panelX + 80 + labelWidth + 5, itemStartY + 3 * itemStep - 8, stats.rankName.c_str(), rankColor);
 
     // メニュー選択
     SetFontSize(28);

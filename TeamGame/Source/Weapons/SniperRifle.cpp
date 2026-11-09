@@ -49,7 +49,7 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
             float finalAngle = currentAngle + randomAngle;
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
-            int dmg = data ? data->damage : 36;
+            int dmg = GetDamage();
             // 敵を最大2体まで貫通する弾丸を生成
             new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius,
                        teamId, dmg, shooterName, isPanic, sniperVisual, /*pierce=*/ 2);
@@ -68,6 +68,6 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
     }
     else if (currentAmmo <= 0 && !isReloading)
     {
-        Reload();
+        Reload(pos, teamId);
     }
 }

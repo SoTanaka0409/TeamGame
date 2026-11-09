@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -187,6 +187,9 @@
     <ClCompile Include="Source\Managers\CharacterManager.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Managers\ChatManager.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Managers\CutinManager.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -214,6 +217,9 @@
     <ClCompile Include="Source\Managers\MatchManager.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Managers\NetworkManager.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Managers\ObjectManager.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -224,6 +230,9 @@
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Managers\SoundManager.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\SoundVisualizer.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Managers\WeaponManager.cpp">
@@ -275,6 +284,9 @@
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\Stage\StageTest_main.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="Source\UI\ControlsGuide.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="Source\UI\UITextWindow.cpp">
@@ -337,11 +349,14 @@
     <ClInclude Include="Source\Managers\InputManager.h" />
     <ClInclude Include="Source\Managers\ItemManager.h" />
     <ClInclude Include="Source\Managers\MatchManager.h" />
+    <ClInclude Include="Source\Managers\NetworkManager.h" />
     <ClInclude Include="Source\Managers\ObjectManager.h" />
+    <ClInclude Include="Source\Managers\PacketTypes.h" />
     <ClInclude Include="Source\Managers\ResourceManager.h" />
     <ClInclude Include="Source\Managers\SceneManager.h" />
     <ClInclude Include="Source\Managers\SkillManager.h" />
     <ClInclude Include="Source\Managers\SoundManager.h" />
+    <ClInclude Include="Source\Managers\SoundVisualizer.h" />
     <ClInclude Include="Source\Managers\WeaponManager.h" />
     <ClInclude Include="Source\Objects\Item.h" />
     <ClInclude Include="Source\Objects\Object2D.h" />
@@ -359,6 +374,7 @@
     <ClInclude Include="Source\Stage\StageGenerator.h" />
     <ClInclude Include="Source\Stage\StageManager.h" />
     <ClInclude Include="Source\Stage\StageTypes.h" />
+    <ClInclude Include="Source\UI\ControlsGuide.h" />
     <ClInclude Include="Source\UI\UITextWindow.h" />
     <ClInclude Include="Source\Weapons\Bullet.h" />
     <ClInclude Include="Source\Weapons\EnemyBullet.h" />

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Scene.h"
 #include "../Core/PlayerSelection.h"
@@ -24,6 +24,7 @@ private:
     int m_selectedSlot2Index = 0;                 // 現在の選択カーソル
 
     char m_prevKeys[256]{};
+    bool m_hasReleasedConfirm = false; ///< シーン開始後に決定キーが一度離されたかのフラグ
     bool IsKeyJustPressed(int keyCode);
 
     // ========================================================

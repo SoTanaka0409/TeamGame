@@ -31,6 +31,7 @@ private:
     int currentWeaponIndex;              ///< 現在装備中の武器インデックス
     int autoPingTimer;                   ///< オートピン送信タイマー
     bool m_isMoving = false;             ///< 移動中フラグ
+    int m_footstepTimer = 0;             ///< 歩行足音SE用タイマー (草・土)
 
 
 public:
@@ -145,6 +146,13 @@ public:
     bool IsLightOn() const { return m_isLightOn; }
 
     /**
+     * @brief 指定したワールド座標がライト照射範囲（または近接視野）内にあるか判定
+     * @param targetPos 判定対象のワールド座標（敵や音源の位置）
+     * @return true: ライトの範囲内（見えている）, false: ライトの範囲外（暗闇に隠れている）
+     */
+    bool IsWorldPosInLight(const Vector2& targetPos) const;
+
+    /**
      * @brief ライトのON/OFF切り替え
      */
     void ToggleLight() { if (m_characterId == 1) return; m_isLightOn = !m_isLightOn; }
@@ -168,6 +176,12 @@ public:
      * @brief リモートプレイヤーフラグの設定
      */
     void SetRemote(bool val) { isRemote = val; }
+
+    /**
+     * @brief プレイヤーから見える範囲（画面内かつ可視状態）にいるかどうか
+     * @details 自機プレイヤーは透明化中も半透明表示されるため常にtrue、2P/リモート時は画面内判定に従います。
+     */
+    virtual bool IsVisibleToPlayer() const override;
     
     /**
      * @brief スキルのセット
@@ -232,7 +246,16 @@ public:
      */
     void UpdateAutoAim(const Vector2& moveDir = Vector2(0.0f, 0.0f));
 
+    /**
+     * @brief 死亡演出待機中（死んだ場所で停止中）かどうか
+     */
+    bool IsDying() const { return m_isDying; }
+    int GetDeathStayTimer() const { return m_deathStayTimer; }
+    void ResetDying() { m_isDying = false; m_deathStayTimer = 0; }
+
 private:
+    bool m_isDying = false;           ///< 死亡演出中フラグ（死んだ場所で停止中）
+    int m_deathStayTimer = 0;         ///< 死亡時の停止演出タイマー（フレーム数）
     float m_lightAngle = 0.0f;  ///< ライト照射角度
     bool m_isLightOn = true;    ///< ライトON/OFF
     bool m_prevMouseRight = false; ///< 前フレーム右クリック状態

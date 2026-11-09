@@ -141,6 +141,9 @@
     <ClCompile Include="Source\Managers\ItemManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Managers\NetworkManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Managers\ObjectManager.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
@@ -151,6 +154,9 @@
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
     <ClCompile Include="Source\Managers\SoundManager.cpp">
+      <Filter>ソース ファイル\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Managers\SoundVisualizer.cpp">
       <Filter>ソース ファイル\Managers</Filter>
     </ClCompile>
     <ClCompile Include="Source\Managers\WeaponManager.cpp">
@@ -203,6 +209,9 @@
     </ClCompile>
     <ClCompile Include="Source\Stage\StageTest_main.cpp">
       <Filter>ソース ファイル\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UI\ControlsGuide.cpp">
+      <Filter>ソース ファイル\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\UITextWindow.cpp">
       <Filter>ソース ファイル\UI</Filter>
@@ -314,7 +323,13 @@
     <ClInclude Include="Source\Managers\ItemManager.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Managers\NetworkManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Managers\ObjectManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\PacketTypes.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\ResourceManager.h">
@@ -327,6 +342,9 @@
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\SoundManager.h">
+      <Filter>ヘッダー ファイル\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Managers\SoundVisualizer.h">
       <Filter>ヘッダー ファイル\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Managers\WeaponManager.h">
@@ -379,6 +397,9 @@
     </ClInclude>
     <ClInclude Include="Source\Stage\StageTypes.h">
       <Filter>ヘッダー ファイル\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UI\ControlsGuide.h">
+      <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\UITextWindow.h">
       <Filter>ヘッダー ファイル\UI</Filter>

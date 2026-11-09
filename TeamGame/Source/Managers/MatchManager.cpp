@@ -3,6 +3,7 @@
 #include "GameBalanceManager.h"
 #include "../Characters/Character.h"
 #include "../Characters/Enemy.h"
+#include "../Characters/Player.h"
 #include "../Stage/Stage.h"
 #include "Vector2.h"
 #include <cstdlib>
@@ -82,6 +83,11 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
                 ch->status.Heal(ch->status.GetMaxHp());
                 ch->SetActive(true);
                 ch->invincibleTimer = 180;
+                Player* p = dynamic_cast<Player*>(ch);
+                if (p) {
+                    p->ResetDying();
+                    if (p->GetModel()) p->GetModel()->PlayIdle();
+                }
                 Enemy* e = dynamic_cast<Enemy*>(ch);
                 if (e) {
                     e->StopHomingSuicide();

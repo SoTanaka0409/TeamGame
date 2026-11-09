@@ -1,9 +1,9 @@
-﻿#include "Handgun.h"
+#include "Handgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
-
+#include "SoundManager.h"
 
 #include "Enemy.h"
 
@@ -48,11 +48,12 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
             // Create bullet using CSV data & spread direction
-            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, data->damage, shooterName, isPanic);
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, GetDamage(), shooterName, isPanic);
             if (scene->GetEffectManager())
             {
                 scene->GetEffectManager()->AddMuzzleFlashEffect(pos.x + dir.x * 25.0f, pos.y + dir.y * 25.0f, finalAngle, 16.0f);
             }
+            SoundManager::GetInstance().Play3D("handgun_shot", pos, 1200.0f, 1.25f, teamId);
             NotifyEnemiesOfGunshot(pos, teamId);
             ResetCoolTime();
             UseAmmo(1);
@@ -61,6 +62,6 @@ void Handgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
     else if (currentAmmo <= 0 && !isReloading)
     {
         // Auto-reload on empty
-        Reload();
+        Reload(pos, teamId);
     }
 }

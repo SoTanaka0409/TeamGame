@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Scene.h"
 #include "../UI/UITextWindow.h"
 
@@ -46,4 +46,5 @@ class ResultScene : public Scene
     UI::UITextWindow* resultPanelWindow = nullptr; ///< リザルト結果用テキストウィンドウ
 
     float animTimer = 0.0f;                       ///< 走査線アニメーション用タイマー (sou からの復元)
+    bool hasReleasedConfirm = false;              ///< 決定キー解放フラグ
 };

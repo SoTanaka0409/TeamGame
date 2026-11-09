@@ -20,6 +20,7 @@ protected:
     bool isReloading;
     int reloadTimer;
     GunBarrelVisualConfig barrelVisual; ///< 銃身（バレル）の描画アセット設定
+    float damageMultiplier = 1.0f;      ///< 攻撃力・ダメージ倍率（Bot用調整等）
 
 public:
     explicit Weapon(const std::string &name);
@@ -28,7 +29,7 @@ public:
 
     virtual void Update();
     virtual void Fire(const Vector2 &pos, const Vector2 &dir, int teamId = 0, bool isMoving = false, const std::string& shooterName = "", bool isPanic = false) = 0;
-    virtual void Reload();
+    virtual void Reload(const Vector2 &pos = Vector2(-9999.0f, -9999.0f), int teamId = 0);
 
     /**
      * @brief 銃身（ガンバレル）の描画処理
@@ -50,6 +51,22 @@ public:
     bool IsReloading() const { return isReloading; }
     const WeaponData* GetData() const { return data; }
     virtual float GetMoveSpreadPenalty() const { return 0.0f; }
+
+    /**
+     * @brief ダメージ倍率を設定する（Bot用半分設定など）
+     */
+    void SetDamageMultiplier(float mult) { damageMultiplier = mult; }
+    float GetDamageMultiplier() const { return damageMultiplier; }
+
+    /**
+     * @brief 最終的な弾丸1発のダメージを取得
+     */
+    int GetDamage() const
+    {
+        if (!data) return 0;
+        int dmg = static_cast<int>(data->damage * damageMultiplier + 0.5f);
+        return (dmg < 1) ? 1 : dmg;
+    }
 
     const GunBarrelVisualConfig& GetBarrelVisual() const { return barrelVisual; }
     void SetBarrelVisual(const GunBarrelVisualConfig& visual) { barrelVisual = visual; }
