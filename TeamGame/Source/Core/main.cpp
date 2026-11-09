@@ -7,6 +7,7 @@
 #include "SoundManager.h"
 #include "GameBalanceManager.h"
 #include "ItemManager.h"
+#include "DebugManager.h"
 #include "../Skills/SkillData.h"
 #include <string>
 
@@ -114,7 +115,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     int frameCount = 0;
     float currentFps = 60.0f;
     float frameTimeMs = 16.6f;
-    bool showFps = true; // [F3]キーで表示/非表示を切り替え可能
+    bool showFps = false; // デバッグモード時または[F3]キーでのみ表示
 
     // メインループ
     // ESCによる強制終了を削除し、ポーズ画面から終了させる
@@ -135,18 +136,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         SceneManager::GetInstance().Update();
         SceneManager::GetInstance().Draw();
 
-        // リアルタイムFPSバッジの描画（最前面に常時表示・F3で非表示可）
-        if (showFps)
+        // リアルタイムFPSバッジの描画（デバッグモード時またはF3有効時のみ表示）
+        if (showFps || DebugManager::GetInstance().IsDebugMode())
         {
             unsigned int fpsColor = (currentFps >= 55.0f) ? GetColor(80, 255, 120) :
                                     (currentFps >= 35.0f) ? GetColor(255, 200, 50) :
                                                             GetColor(255, 70, 70);
 
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-            DrawBox(10, 10, 200, 40, GetColor(10, 15, 25), TRUE);
+            // 右上のデバッグ情報パネル（x=1420〜1900）の直下に配置して他のUIと重ならないようにする
+            int fpsX = 1420;
+            int fpsY = 195;
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
+            DrawBox(fpsX, fpsY, fpsX + 220, fpsY + 34, GetColor(10, 15, 25), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(10, 10, 200, 40, fpsColor, FALSE);
-            DrawFormatString(18, 17, fpsColor, "FPS: %5.1f (%4.1fms)", currentFps, frameTimeMs);
+            DrawBox(fpsX, fpsY, fpsX + 220, fpsY + 34, fpsColor, FALSE);
+            DrawFormatString(fpsX + 12, fpsY + 8, fpsColor, "FPS: %5.1f (%4.1fms)", currentFps, frameTimeMs);
         }
 
         // 裏画面の内容を表画面に反映

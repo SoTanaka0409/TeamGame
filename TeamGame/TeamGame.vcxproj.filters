@@ -401,6 +401,9 @@
     <ClInclude Include="Source\UI\ControlsGuide.h">
       <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\UI\HudStyle.h">
+      <Filter>ヘッダー ファイル\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\UI\UITextWindow.h">
       <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>

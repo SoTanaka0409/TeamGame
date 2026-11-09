@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include "FontManager.h"
 #define NOMINMAX
 #include "Player.h"
@@ -19,6 +19,7 @@
 #include "../Skills/Skill.h"
 #include "../Skills/SkillData.h"
 #include "../Managers/SkillManager.h"
+#include "../UI/HudStyle.h"
 #include <cmath>
 #include <algorithm>
 
@@ -685,12 +686,6 @@ void Player::Draw()
             DrawLine(x1, y1, x2, y2, GetColor(255, 255, 255), 2);
         }
 
-        // プレイヤー頭上に現在装備中の武器名を表示（自キャラの円と重ならない位置に上移動）
-        if (!weapons.empty() && weapons[currentWeaponIndex]) {
-            std::string wName = weapons[currentWeaponIndex]->GetName();
-            if (isAimLocked) wName += " [視点固定]";
-            DrawString(static_cast<int>(screenX) - 35, static_cast<int>(screenY) - static_cast<int>(renderRadius) - 22, wName.c_str(), isAimLocked ? GetColor(255, 220, 0) : GetColor(200, 220, 255));
-        }
     }
     else
     {
@@ -778,13 +773,6 @@ void Player::Draw()
         }
     }
 
-    if (!weapons.empty())
-    {
-        DrawString(static_cast<int>(screenX) - 20,
-                   static_cast<int>(screenY) - 30,
-                   weapons[currentWeaponIndex]->GetName().c_str(),
-                   GetColor(255, 255, 255));
-    }
 
     // 未発覚敵の近接ナイフ暗殺案内UI表示
     auto scene = SceneManager::GetInstance().GetCurrentScene();
@@ -1301,108 +1289,88 @@ void Player::DrawUI(int screenX, int screenY)
 {
     if (weapons.empty()) return;
 
-    // 広々と見やすいUIパネルパラメータ (横幅320px, 高さ190px)
-    const int panelW = 320;
-    const int panelH = 190;
+    Weapon* currentWeapon = weapons[currentWeaponIndex];
+    if (!currentWeapon) return;
+
+    // ソリッドでコンパクトなUIパネルパラメータ (横幅260px, 高さ154px)
+    const int panelW = 260;
+    const int panelH = (m_inputType != PlayerInputType::KEYBOARD_MOUSE) ? 176 : 154;
     const int marginX = 16;
+    const int contentW = panelW - marginX * 2;
 
     // 画面下端からはみ出さないよう座標補正
     if (screenY + panelH > 1060) {
         screenY = 1060 - panelH;
     }
 
-    // 1. UI背景パネル（ダークブルー半透明）
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-    DrawBox(screenX, screenY, screenX + panelW, screenY + panelH, GetColor(12, 16, 26), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-    // 外枠ボーダーと立体アクセント
-    DrawBox(screenX, screenY, screenX + panelW, screenY + panelH, GetColor(45, 75, 110), FALSE);
-    DrawBox(screenX + 1, screenY + 1, screenX + panelW - 1, screenY + panelH - 1, GetColor(20, 35, 55), FALSE);
-    // 左端の青色シアンアクセントライン
-    DrawBox(screenX, screenY, screenX + 5, screenY + panelH, GetColor(0, 180, 240), TRUE);
-
-    Weapon* currentWeapon = weapons[currentWeaponIndex];
-    if (!currentWeapon) return;
+    // 1. スレート背景パネル（1px枠 + コーナーティック）
+    HudStyle::DrawPanel(screenX, screenY, panelW, panelH, true);
 
     int curY = screenY + 14;
 
-    // 2. 武器ヘッダー表示
+    // 2. 武器スロット表示
     const WeaponData* data = currentWeapon->GetData();
     if (data && data->uiImageHandle != -1)
     {
         DrawGraph(screenX + marginX, curY, data->uiImageHandle, TRUE);
-        curY += 45;
+        curY += 40;
     }
     else
     {
-        // 武器タイトル用背景枠
-        DrawBox(screenX + marginX, curY, screenX + panelW - marginX, curY + 34, GetColor(25, 40, 65), TRUE);
-        DrawBox(screenX + marginX, curY, screenX + panelW - marginX, curY + 34, GetColor(0, 160, 230), FALSE);
-
+        std::string wName = currentWeapon->GetName();
+        if (isAimLocked) wName += " [LOCK]";
         char weaponTitle[64];
-        snprintf(weaponTitle, sizeof(weaponTitle), "SLOT [%d]  %s", currentWeaponIndex + 1, currentWeapon->GetName().c_str());
+        snprintf(weaponTitle, sizeof(weaponTitle), "[%d] %s", currentWeaponIndex + 1, wName.c_str());
 
-        FontManager::GetInstance().DrawString(screenX + marginX + 10, curY + 7, weaponTitle, GetColor(240, 245, 255), 18);
-        curY += 44;
+        FontManager::GetInstance().DrawString(screenX + marginX, curY, weaponTitle, isAimLocked ? HudStyle::ColAmber() : HudStyle::ColText(), 15);
+        curY += 25;
     }
 
     // 3. 弾薬 (AMMO) 表示
     int currentAmmo = currentWeapon->GetCurrentAmmo();
     int maxAmmo = currentWeapon->GetMaxAmmo();
 
-    FontManager::GetInstance().DrawString(screenX + marginX, curY, "AMMO", GetColor(180, 190, 210), 15);
+    FontManager::GetInstance().DrawString(screenX + marginX, curY + 4, "AMMO", HudStyle::ColSubText(), 13);
 
     if (currentWeapon->IsReloading()) {
-        FontManager::GetInstance().DrawString(screenX + marginX + 70, curY - 1, "RELOADING...", GetColor(255, 200, 50), 18);
+        FontManager::GetInstance().DrawString(screenX + marginX + 60, curY + 2, "RELOADING...", HudStyle::ColAmber(), 15);
     } else {
-        char ammoText[64];
+        char ammoText[16];
         snprintf(ammoText, sizeof(ammoText), "%d", currentAmmo);
-        char maxAmmoText[64];
+        char maxAmmoText[16];
         snprintf(maxAmmoText, sizeof(maxAmmoText), " / %d", maxAmmo);
 
-        unsigned int ammoColor = (currentAmmo == 0) ? GetColor(255, 60, 60) : GetColor(255, 220, 40);
+        unsigned int ammoColor = HudStyle::GetAmmoColor(currentAmmo, maxAmmo);
 
         int font22 = FontManager::GetInstance().GetFont(22);
-        int font16 = FontManager::GetInstance().GetFont(16);
-        DrawStringToHandle(screenX + marginX + 70, curY - 5, ammoText, ammoColor, font22);
+        int font13 = FontManager::GetInstance().GetFont(13);
+        DrawStringToHandle(screenX + marginX + 60, curY - 3, ammoText, ammoColor, font22);
         int numW = GetDrawStringWidthToHandle(ammoText, static_cast<int>(strlen(ammoText)), font22);
-        DrawStringToHandle(screenX + marginX + 70 + numW, curY, maxAmmoText, GetColor(160, 170, 180), font16);
+        DrawStringToHandle(screenX + marginX + 60 + numW, curY + 4, maxAmmoText, HudStyle::ColSubText(), font13);
     }
-    curY += 34;
+    curY += 31;
 
-    // 4. 体力 (HP) 表示 & ゲージバー
+    // 4. 体力 (HP) 表示 & 細身ゲージバー
     int curHp = status.GetCurrentHp();
     int maxHp = status.GetMaxHp();
     float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / maxHp : 0.0f;
-    if (hpRatio < 0.0f) hpRatio = 0.0f;
-    if (hpRatio > 1.0f) hpRatio = 1.0f;
+    if (hpRatio < 0.0f) hpRatio = 0.0f; else if (hpRatio > 1.0f) hpRatio = 1.0f;
+
+    FontManager::GetInstance().DrawString(screenX + marginX, curY, "HP", HudStyle::ColSubText(), 13);
 
     char hpStr[32];
-    snprintf(hpStr, sizeof(hpStr), "HP  %d / %d", curHp, maxHp);
-    FontManager::GetInstance().DrawString(screenX + marginX, curY, hpStr, GetColor(200, 220, 240), 15);
+    snprintf(hpStr, sizeof(hpStr), "%d / %d", curHp, maxHp);
+    FontManager::GetInstance().DrawStringRight(screenX + marginX + contentW, curY, hpStr, HudStyle::ColText(), 13);
 
-    curY += 20;
-    int barW = panelW - marginX * 2 - 10;
-    int barH = 10;
-    DrawBox(screenX + marginX, curY, screenX + marginX + barW, curY + barH, GetColor(30, 40, 50), TRUE);
-    DrawBox(screenX + marginX, curY, screenX + marginX + barW, curY + barH, GetColor(70, 90, 110), FALSE);
-
-    unsigned int hpBarColor = GetColor(50, 220, 100);
-    if (hpRatio <= 0.3f) hpBarColor = GetColor(255, 60, 60);
-    else if (hpRatio <= 0.6f) hpBarColor = GetColor(255, 200, 40);
-
-    int fillW = static_cast<int>(barW * hpRatio);
-    if (fillW > 0) {
-        DrawBox(screenX + marginX + 1, curY + 1, screenX + marginX + fillW - 1, curY + barH - 1, hpBarColor, TRUE);
-    }
-    curY += 22;
+    curY += 18;
+    HudStyle::DrawGauge(screenX + marginX, curY, contentW, 5, hpRatio, HudStyle::GetHpColor(hpRatio));
+    curY += 15;
 
     // 5. スキル (SKILL) 表示
     Skill* skill = GetEquippedSkill();
     if (skill)
     {
-        FontManager::GetInstance().DrawString(screenX + marginX, curY, "SKILL", GetColor(180, 190, 210), 15);
+        FontManager::GetInstance().DrawString(screenX + marginX, curY, "SKILL", HudStyle::ColSubText(), 13);
 
         int ct = skill->GetCoolTimeTimer();
         int activeFrames = 0;
@@ -1410,7 +1378,6 @@ void Player::DrawUI(int screenX, int screenY)
         if (skill->GetData()) maxDuration = skill->GetData()->duration;
         if (maxDuration <= 0) maxDuration = 300;
 
-        // 透明化 (Transparency) の持続中判定
         if (IsTransparent()) {
             activeFrames = GetEffectRemainingFrames(SkillMinorTag::Transparency);
         } else if (IsHighRisk()) {
@@ -1420,27 +1387,17 @@ void Player::DrawUI(int screenX, int screenY)
         if (activeFrames > 0) {
             char activeText[32];
             snprintf(activeText, sizeof(activeText), "ACTIVE %.1fs", activeFrames / 60.0f);
-            DrawString(screenX + marginX + 70, curY, activeText, GetColor(0, 255, 180));
+            FontManager::GetInstance().DrawString(screenX + marginX + 60, curY, activeText, HudStyle::ColAmber(), 13);
 
-            curY += 18;
-            int actBarW = panelW - marginX * 2 - 10;
-            int actBarH = 6;
+            curY += 16;
             float actRatio = static_cast<float>(activeFrames) / static_cast<float>(maxDuration);
-            if (actRatio < 0.0f) actRatio = 0.0f;
-            if (actRatio > 1.0f) actRatio = 1.0f;
-
-            DrawBox(screenX + marginX, curY, screenX + marginX + actBarW, curY + actBarH, GetColor(20, 40, 30), TRUE);
-            DrawBox(screenX + marginX, curY, screenX + marginX + actBarW, curY + actBarH, GetColor(0, 200, 140), FALSE);
-            int fillActW = static_cast<int>(actBarW * actRatio);
-            if (fillActW > 0) {
-                DrawBox(screenX + marginX + 1, curY + 1, screenX + marginX + fillActW - 1, curY + actBarH - 1, GetColor(0, 255, 180), TRUE);
-            }
+            HudStyle::DrawGauge(screenX + marginX + 60, curY, contentW - 60, 4, actRatio, HudStyle::ColAmber());
         } else if (ct > 0) {
             char ctText[32];
-            snprintf(ctText, sizeof(ctText), "CT %d.%.1fs", ct / 60, (ct % 60) / 6.0f);
-            DrawString(screenX + marginX + 70, curY, ctText, GetColor(170, 180, 190));
+            snprintf(ctText, sizeof(ctText), "COOLDOWN %.1fs", ct / 60.0f);
+            FontManager::GetInstance().DrawString(screenX + marginX + 60, curY, ctText, HudStyle::ColSubText(), 13);
         } else {
-            DrawString(screenX + marginX + 70, curY, "[ READY ] (F)", GetColor(0, 230, 255));
+            FontManager::GetInstance().DrawString(screenX + marginX + 60, curY, "READY [F]", HudStyle::ColAmber(), 13);
         }
     }
 
@@ -1449,11 +1406,11 @@ void Player::DrawUI(int screenX, int screenY)
     {
         if (m_autoAimTarget)
         {
-            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: LOCKED ON ]", GetColor(255, 80, 80), 16);
+            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 18, "[ AUTO-AIM: LOCKED ]", HudStyle::ColEnemy(), 12);
         }
         else
         {
-            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 22, "[ AUTO-AIM: SEARCHING ]", GetColor(80, 220, 100), 16);
+            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 18, "[ AUTO-AIM: SEARCHING ]", HudStyle::ColSubText(), 12);
         }
     }
 }

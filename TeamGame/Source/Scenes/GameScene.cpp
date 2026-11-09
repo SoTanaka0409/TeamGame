@@ -1,4 +1,5 @@
-#include "../UI/ControlsGuide.h"
+﻿#include "../UI/ControlsGuide.h"
+#include "../UI/HudStyle.h"
 #include "GameScene.h"
 #include "Camera.h"
 #include "EffectManager.h"
@@ -738,55 +739,22 @@ void GameScene::Draw()
         player->RenderBloodSplatterOverlay(1920, 1080);
     }
     
-    DrawString(15, 15, "[ESC] メニュー / 操作説明", GetColor(255, 255, 255));
-    DrawString(15, 45, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), GetColor(200, 200, 200));
-    DrawString(15, 70, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), GetColor(200, 200, 200));
+    // 左上: [ESC] MENU のみ（背景プレートなし、控えめなサブテキスト色）
+    FontManager::GetInstance().DrawString(24, 18, "[ESC] MENU", HudStyle::ColSubText(), 15);
 
-    // 薄明時間帯（月光照射）のUIバナー表示
-    if (brightTimer > 0.0f)
+    // デバッグ情報 (Theme / Variation) はデバッグモード時のみ表示
+    if (DebugManager::GetInstance().IsDebugMode())
     {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-        DrawBox(1920 / 2 - 250, 65, 1920 / 2 + 250, 105, GetColor(250, 200, 50), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(1920 / 2 - 250, 65, 1920 / 2 + 250, 105, GetColor(255, 255, 255), FALSE);
-        DrawFormatString(1920 / 2 - 230, 75, GetColor(0, 0, 0), "【薄明・月光時間帯】 月明かり照射中 (残り %.1f秒)", brightTimer / 60.0f);
+        FontManager::GetInstance().DrawString(24, 40, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), HudStyle::ColSubText(), 14);
+        FontManager::GetInstance().DrawString(24, 58, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), HudStyle::ColSubText(), 14);
     }
 
-    // 15秒周期の相互音波ピン探知通知バナー表示
-    if (sonarNotificationTimer > 0.0f)
-    {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-        DrawBox(1920 / 2 - 260, 115, 1920 / 2 + 260, 155, GetColor(0, 150, 255), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(1920 / 2 - 260, 115, 1920 / 2 + 260, 155, GetColor(255, 255, 255), FALSE);
-        DrawString(1920 / 2 - 240, 125, "【音波探知発信】 全員の互いの位置をソナー探知！", GetColor(255, 255, 255));
-    }
-
-    // 画面左下にプレイヤーのHP・武器UIを表示
-    if (player && player->IsActive()) {
-        player->DrawUI(25, 850);
-    }
-    if ((currentPlayMode == PlayMode::LOCAL_COOP || currentPlayMode == PlayMode::LOCAL_PVP) && remotePlayer && remotePlayer->IsActive()) {
-        remotePlayer->DrawUI(1920 / 2 + 25, 850);
-    }
-
-    if (state == GameState::PLAYING && introTimer > 0.0f)
-    {
-        SetFontSize(80);
-        if (introTimer > 60.0f) {
-            DrawString(1920 / 2 - 150, 1080 / 2 - 100, "READY...", GetColor(255, 200, 50));
-        } else {
-            DrawString(1920 / 2 - 180, 1080 / 2 - 100, "BRAWL!", GetColor(255, 50, 50));
-        }
-        SetFontSize(32);
-    }
-
-    // 画面上部中央: チームキル数バー (Brawl Stars風HUD)
+    // 画面上部中央: 統合キル数パネル (プロフェッショナル HUD)
     int maxKills = MatchManager::GetInstance().GetTargetKillCount();
-    int barWidth = 460;
-    int barHeight = 24;
-    int startX = 1920 / 2 - barWidth / 2;
-    int startY = 15;
+    int topPanelW = 680;
+    int topPanelH = 32;
+    int topPanelX = (1920 - topPanelW) / 2;
+    int topPanelY = 18;
 
     // バトルロワイヤル状態（Botが錯乱中）かどうかの判定
     bool isBattleRoyaleActive = false;
@@ -812,38 +780,88 @@ void GameScene::Draw()
         float timeSec = GetNowCount() / 1000.0f;
         int pulseAlpha = static_cast<int>(180 + std::sin(timeSec * 12.0f) * 60);
 
-        // 背景ボックス（黒＆マゼンタ）
-        DrawBox(brX, brY, brX + brW, brY + brH, GetColor(15, 10, 20), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, pulseAlpha);
-        DrawBox(brX + 2, brY + 2, brX + brW - 2, brY + brH - 2, GetColor(220, 20, 120), FALSE);
-        DrawBox(brX + 4, brY + 4, brX + brW - 4, brY + brH - 4, GetColor(255, 50, 50), FALSE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        HudStyle::DrawPanel(brX, brY, brW, brH, true, HudStyle::ColEnemy(), pulseAlpha);
 
         // バトロワ警告テキスト
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 6, "!! BATTLE ROYALE : ALL-OUT WAR !!", GetColor(255, 230, 40), 26, 9);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 6, "!! BATTLE ROYALE : ALL-OUT WAR !!", HudStyle::ColAmber(), 26, 9);
 
         char brSubText[64];
         snprintf(brSubText, sizeof(brSubText), "全員孤立・敵対中！ 残り時間: %.1f秒", panicRemainingFrames / 60.0f);
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 34, brSubText, GetColor(255, 255, 255), 18, 6);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 34, brSubText, HudStyle::ColText(), 18, 6);
     }
     else
     {
-        // 背景バー
-        DrawBox(startX, startY, startX + barWidth, startY + barHeight, GetColor(40, 40, 40), TRUE);
-        DrawBox(startX, startY + 32, startX + barWidth, startY + 32 + barHeight, GetColor(40, 40, 40), TRUE);
+        // 1本の一体型パネル
+        HudStyle::DrawPanel(topPanelX, topPanelY, topPanelW, topPanelH, true);
 
         int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
         int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
 
-        // 自チーム（味方/プレイヤー）のキル数バー (青)
-        int allyBarW = (int)((float)team0Kills / maxKills * barWidth);
-        DrawBox(startX, startY, startX + allyBarW, startY + barHeight, GetColor(50, 150, 255), TRUE);
-        FontManager::GetInstance().DrawFormatString(startX - 230, startY + 1, GetColor(255, 255, 255), 20, "味方チーム (KILLS): %d/%d", team0Kills, maxKills);
+        // 左: 味方キル数 (鋼色)
+        char allyText[64];
+        snprintf(allyText, sizeof(allyText), "ALLY  %d / %d", team0Kills, maxKills);
+        FontManager::GetInstance().DrawString(topPanelX + 16, topPanelY + 8, allyText, HudStyle::ColAlly(), 15);
 
-        // 敵チームのキル数バー (赤)
-        int enemyBarW = (int)((float)team1Kills / maxKills * barWidth);
-        DrawBox(startX, startY + 32, startX + enemyBarW, startY + 32 + barHeight, GetColor(255, 60, 60), TRUE);
-        FontManager::GetInstance().DrawFormatString(startX - 230, startY + 33, GetColor(255, 255, 255), 20, "敵チーム (KILLS): %d/%d", team1Kills, maxKills);
+        // 右: 敵キル数 (赤)
+        char enemyText[64];
+        snprintf(enemyText, sizeof(enemyText), "%d / %d  ENEMY", team1Kills, maxKills);
+        int enemyW = FontManager::GetInstance().GetStringWidth(enemyText, 15);
+        FontManager::GetInstance().DrawString(topPanelX + topPanelW - 16 - enemyW, topPanelY + 8, enemyText, HudStyle::ColEnemy(), 15);
+
+        // 中央: 対向ゲージ (味方は中央から左へ、敵は中央から右へ)
+        int centerX = 1920 / 2;
+        int halfGaugeW = 120;
+        int gaugeH = 6;
+        int gaugeY = topPanelY + (topPanelH - gaugeH) / 2;
+
+        float allyRatio = (maxKills > 0) ? static_cast<float>(team0Kills) / maxKills : 0.0f;
+        float enemyRatio = (maxKills > 0) ? static_cast<float>(team1Kills) / maxKills : 0.0f;
+
+        // 味方ゲージ (中央から左へ伸長)
+        HudStyle::DrawSplitGauge(centerX - 4 - halfGaugeW, gaugeY, halfGaugeW, gaugeH, allyRatio, HudStyle::ColAlly(), true);
+        // 敵ゲージ (中央から右へ伸長)
+        HudStyle::DrawSplitGauge(centerX + 4, gaugeY, halfGaugeW, gaugeH, enemyRatio, HudStyle::ColEnemy(), false);
+
+        // 中央セパレータティック
+        DrawBox(centerX - 1, topPanelY + 8, centerX + 1, topPanelY + topPanelH - 8, HudStyle::ColBorder(), TRUE);
+    }
+
+    // 上部中央: 通知バナーの縦積みスタック（重なりを防止）
+    int bannerStackY = (isBattleRoyaleActive ? 80 : topPanelY + topPanelH + 8);
+
+    // 薄明時間帯（MOONLIGHT）バナー
+    if (brightTimer > 0.0f)
+    {
+        char moonBuf[64];
+        snprintf(moonBuf, sizeof(moonBuf), "MOONLIGHT ACTIVE  %.1fs", brightTimer / 60.0f);
+        HudStyle::DrawBanner(1920 / 2, bannerStackY, 320, 26, moonBuf, HudStyle::ColAmber(), 14);
+        bannerStackY += 26 + 6;
+    }
+
+    // ソナーピン（SONAR PING）探知バナー
+    if (sonarNotificationTimer > 0.0f)
+    {
+        HudStyle::DrawBanner(1920 / 2, bannerStackY, 340, 26, "SONAR PING DETECTED", HudStyle::ColAlly(), 14);
+        bannerStackY += 26 + 6;
+    }
+
+    // 画面左下にプレイヤーのHP・武器UIを表示
+    if (player && player->IsActive()) {
+        player->DrawUI(24, 904);
+    }
+    if ((currentPlayMode == PlayMode::LOCAL_COOP || currentPlayMode == PlayMode::LOCAL_PVP) && remotePlayer && remotePlayer->IsActive()) {
+        remotePlayer->DrawUI(1920 / 2 + 24, 904);
+    }
+
+    if (state == GameState::PLAYING && introTimer > 0.0f)
+    {
+        SetFontSize(80);
+        if (introTimer > 60.0f) {
+            DrawString(1920 / 2 - 150, 1080 / 2 - 100, "READY...", GetColor(255, 200, 50));
+        } else {
+            DrawString(1920 / 2 - 180, 1080 / 2 - 100, "BRAWL!", GetColor(255, 50, 50));
+        }
+        SetFontSize(32);
     }
 
     int activeAllyCount = GetActiveAllyCount();

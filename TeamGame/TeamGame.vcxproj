@@ -375,6 +375,7 @@
     <ClInclude Include="Source\Stage\StageManager.h" />
     <ClInclude Include="Source\Stage\StageTypes.h" />
     <ClInclude Include="Source\UI\ControlsGuide.h" />
+    <ClInclude Include="Source\UI\HudStyle.h" />
     <ClInclude Include="Source\UI\UITextWindow.h" />
     <ClInclude Include="Source\Weapons\Bullet.h" />
     <ClInclude Include="Source\Weapons\EnemyBullet.h" />
