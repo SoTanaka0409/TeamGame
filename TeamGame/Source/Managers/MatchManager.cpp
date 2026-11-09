@@ -1,4 +1,4 @@
-#include "MatchManager.h"
+﻿#include "MatchManager.h"
 #include "ObjectManager.h"
 #include "GameBalanceManager.h"
 #include "../Characters/Character.h"
@@ -9,6 +9,7 @@
 #include <cstdlib>
 
 #include "FontManager.h"
+#include "../UI/HudStyle.h"
 #include <DxLib.h>
 
 void MatchManager::Reset()
@@ -151,80 +152,68 @@ void MatchManager::DrawKillNotifications()
 {
     if (killLogs.empty()) return;
 
-    int rightMargin = 30;
-    int baseTopY = 90;
-    int bannerH = 46;
-    int spacing = 8;
+    int rightMargin = 24;
+    int baseTopY = 18;
+    int logW = 340;
+    int logH = 30;
+    int spacing = 6;
 
     for (size_t i = 0; i < killLogs.size(); ++i)
     {
         const auto& log = killLogs[i];
-        int y = baseTopY + static_cast<int>(i) * (bannerH + spacing);
+        int x = 1920 - rightMargin - logW;
+        int y = baseTopY + static_cast<int>(i) * (logH + spacing);
 
         // フェードアウト処理 (残り40フレームで透明化)
-        int alpha = 230;
+        int alpha = HudStyle::DefaultBgAlpha;
         if (log.remainingFrames < 40) {
-            alpha = static_cast<int>(230.0f * (log.remainingFrames / 40.0f));
+            alpha = static_cast<int>(HudStyle::DefaultBgAlpha * (log.remainingFrames / 40.0f));
         }
 
-        // バナー幅の計算
-        std::string text = log.attackerName + "  >>  " + log.victimName;
-        int textW = FontManager::GetInstance().GetStringWidth(text.c_str(), 20, 6);
-        int bannerW = textW + 70;
-        if (bannerW < 280) bannerW = 280;
-
-        int x = 1920 - rightMargin - bannerW;
-
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-
-        // バナー背景（漆黒ベース）
-        DrawBox(x, y, x + bannerW, y + bannerH, GetColor(15, 15, 20), TRUE);
-
-        // バナーの左アクセントカラーバー＆縁取り
-        unsigned int accentCol = GetColor(180, 180, 190);
+        // 1. パネル背景と枠線（自分のキルは琥珀、自分のデスは赤）
         if (log.isPlayerKill) {
-            // プレイヤーのキル: 鮮烈なゴールド / シアン
-            accentCol = GetColor(255, 215, 0);
-            DrawBox(x, y, x + 8, y + bannerH, accentCol, TRUE);
-            DrawBox(x, y, x + bannerW, y + bannerH, accentCol, FALSE);
+            HudStyle::DrawPanel(x, y, logW, logH, true, HudStyle::ColAmber(), alpha);
         } else if (log.isPlayerDeath) {
-            // プレイヤーのデス: 警戒レッド
-            accentCol = GetColor(255, 40, 50);
-            DrawBox(x, y, x + 8, y + bannerH, accentCol, TRUE);
-            DrawBox(x, y, x + bannerW, y + bannerH, accentCol, FALSE);
+            HudStyle::DrawPanel(x, y, logW, logH, true, HudStyle::ColEnemy(), alpha);
         } else {
-            // 通常のキル（味方キルまたは敵キル）
-            accentCol = (log.attackerTeamId == 0) ? GetColor(60, 160, 255) : GetColor(255, 80, 80);
-            DrawBox(x, y, x + 6, y + bannerH, accentCol, TRUE);
-            DrawBox(x, y, x + bannerW, y + bannerH, GetColor(50, 50, 60), FALSE);
+            HudStyle::DrawPanel(x, y, logW, logH, false, 0, alpha);
         }
 
-        // テキスト描画 (Killer: チームカラー / Victim: チームカラー)
-        unsigned int killerCol = (log.attackerTeamId == 0) ? GetColor(100, 200, 255) : GetColor(255, 110, 110);
-        if (log.isPlayerKill) killerCol = GetColor(255, 235, 60);
+        // 2. テキスト描画 (Killer > Victim)
+        int textY = y + 7;
 
-        unsigned int victimCol = (log.victimTeamId == 0) ? GetColor(120, 190, 255) : GetColor(255, 120, 120);
-        if (log.isPlayerDeath) victimCol = GetColor(255, 70, 70);
-
-        int textStartX = x + 18;
-        int textY = y + 12;
-
-        FontManager::GetInstance().DrawString(textStartX, textY, log.attackerName.c_str(), killerCol, 20, 6);
-        int killerW = FontManager::GetInstance().GetStringWidth(log.attackerName.c_str(), 20, 6);
-
-        // アイコン (クロスボーン/矢印)
-        FontManager::GetInstance().DrawString(textStartX + killerW + 8, textY, ">>", GetColor(255, 255, 255), 20, 8);
-        int arrowW = FontManager::GetInstance().GetStringWidth(">>", 20, 8);
-
-        FontManager::GetInstance().DrawString(textStartX + killerW + 8 + arrowW + 8, textY, log.victimName.c_str(), victimCol, 20, 6);
-
-        // プレイヤーのキルまたはデスの場合はバッジアイコンを右端に表示
+        std::string killerText = log.isPlayerKill ? "YOU" : log.attackerName;
+        unsigned int killerCol = HudStyle::ColEnemy();
         if (log.isPlayerKill) {
-            FontManager::GetInstance().DrawString(x + bannerW - 55, textY + 2, "KILL", GetColor(255, 230, 0), 16, 9);
-        } else if (log.isPlayerDeath) {
-            FontManager::GetInstance().DrawString(x + bannerW - 55, textY + 2, "DEAD", GetColor(255, 60, 60), 16, 9);
+            killerCol = HudStyle::ColAmber();
+        } else if (log.attackerTeamId == 0) {
+            killerCol = HudStyle::ColAlly();
         }
 
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        std::string victimText = log.isPlayerDeath ? "YOU" : log.victimName;
+        unsigned int victimCol = HudStyle::ColEnemy();
+        if (log.isPlayerDeath) {
+            victimCol = HudStyle::ColEnemy();
+        } else if (log.victimTeamId == 0) {
+            victimCol = HudStyle::ColAlly();
+        }
+
+        // Killer
+        FontManager::GetInstance().DrawString(x + 14, textY, killerText.c_str(), killerCol, 14);
+        int killerW = FontManager::GetInstance().GetStringWidth(killerText.c_str(), 14);
+
+        // Separator (>)
+        FontManager::GetInstance().DrawString(x + 14 + killerW + 6, textY, ">", HudStyle::ColSubText(), 14);
+        int sepW = FontManager::GetInstance().GetStringWidth(">", 14);
+
+        // Victim
+        FontManager::GetInstance().DrawString(x + 14 + killerW + 6 + sepW + 6, textY, victimText.c_str(), victimCol, 14);
+
+        // 右端バッジ (自分のキル: KILL / 自分のデス: DEAD)
+        if (log.isPlayerKill) {
+            FontManager::GetInstance().DrawStringRight(x + logW - 14, textY, "KILL", HudStyle::ColAmber(), 13);
+        } else if (log.isPlayerDeath) {
+            FontManager::GetInstance().DrawStringRight(x + logW - 14, textY, "DEAD", HudStyle::ColEnemy(), 13);
+        }
     }
 }
