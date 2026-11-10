@@ -16,14 +16,26 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
     auto loadTileGraph = [](const std::vector<const char*>& fileNames) -> int {
         const std::vector<const char*> baseDirs = {
             "Resource/Textures/",
+            "Resource/Nature/Rock/",
+            "Resource/Nature/Grass/",
+            "Resource/Nature/02_岩/",
+            "Resource/Nature/01_草/",
             "Resource/Images/",
             "Resource/",
             "TeamGame/Resource/Textures/",
+            "TeamGame/Resource/Nature/Rock/",
+            "TeamGame/Resource/Nature/Grass/",
+            "TeamGame/Resource/Nature/02_岩/",
+            "TeamGame/Resource/Nature/01_草/",
             "Resouce/",
             "",
             "TeamGame/Resource/",
             "TeamGame/Resouce/",
             "../Resource/",
+            "../Resource/Nature/Rock/",
+            "../Resource/Nature/Grass/",
+            "../Resource/Nature/02_岩/",
+            "../Resource/Nature/01_草/",
             "../Resouce/",
             "c:/Users/student/Desktop/team/Resource/",
             "c:/Users/student/Desktop/team/Resouce/"
@@ -52,15 +64,19 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
     if (m_hGrassModel == -1)
     {
         const std::vector<const char*> grassModelPaths = {
-            "Resource/grass_02_plain_dark.mv1",
+            "Resource/Nature/Grass/grass_02_plain_dark.mv1",
+            "TeamGame/Resource/Nature/Grass/grass_02_plain_dark.mv1",
+            "../Resource/Nature/Grass/grass_02_plain_dark.mv1",
+            "Resource/Nature/Grass/grass.mv1",
             "Resource/Nature/01_草/grass_02_plain_dark.mv1",
-            "TeamGame/Resource/grass_02_plain_dark.mv1",
             "TeamGame/Resource/Nature/01_草/grass_02_plain_dark.mv1",
-            "../Resource/grass_02_plain_dark.mv1",
             "../Resource/Nature/01_草/grass_02_plain_dark.mv1",
+            "Resource/Nature/01_草/grass.mv1",
+            "Resource/grass_02_plain_dark.mv1",
+            "TeamGame/Resource/grass_02_plain_dark.mv1",
+            "../Resource/grass_02_plain_dark.mv1",
             "c:/Users/student/Desktop/3D/自然物/01_草/grass_02_plain_dark.mv1",
-            "Resource/grass.mv1",
-            "Resource/Nature/01_草/grass.mv1"
+            "Resource/grass.mv1"
         };
         for (const char* path : grassModelPaths)
         {
@@ -107,12 +123,15 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
     const char* rockModelNames[4] = { "rock_01.mv1", "rock_02.mv1", "rock_03.mv1", "rock_04.mv1" };
     const char* rockTexNames[4]   = { "rock_01_diffuse.png", "rock_02_diffuse.png", "rock_03_diffuse.png", "rock_04_diffuse.png" };
     const std::vector<const char*> modelSearchDirs = {
-        "Resource/",
+        "Resource/Nature/Rock/",
+        "TeamGame/Resource/Nature/Rock/",
+        "../Resource/Nature/Rock/",
         "Resource/Nature/02_岩/",
-        "TeamGame/Resource/",
         "TeamGame/Resource/Nature/02_岩/",
-        "../Resource/",
         "../Resource/Nature/02_岩/",
+        "Resource/",
+        "TeamGame/Resource/",
+        "../Resource/",
         "c:/Users/student/Desktop/3D/自然物/02_岩/"
     };
 
