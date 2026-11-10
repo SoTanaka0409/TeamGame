@@ -48,6 +48,21 @@ void CharacterSelectScene::Init() {
         int handle = -1;
         if (!chara.previewPath.empty()) {
             handle = LoadGraph(chara.previewPath.c_str());
+            if (handle == -1) {
+                // 実行ディレクトリ差分およびASCII別名のフォールバック
+                std::vector<std::string> fallbacks = {
+                    "TeamGame/" + chara.previewPath,
+                    "../" + chara.previewPath,
+                    "../../" + chara.previewPath,
+                    "Resource/Images/Characters/character_" + std::to_string(chara.id) + ".png",
+                    "TeamGame/Resource/Images/Characters/character_" + std::to_string(chara.id) + ".png",
+                    "Resource/GreenCharacter/preview.png"
+                };
+                for (const auto& fb : fallbacks) {
+                    handle = LoadGraph(fb.c_str());
+                    if (handle != -1) break;
+                }
+            }
         }
         m_previewHandles.push_back(handle);
     }
@@ -296,7 +311,20 @@ void CharacterSelectScene::Draw() {
         DrawBox(avX1, avY1, avX2, avY2, GetColor(12, 16, 24), TRUE);
 
         if (i < static_cast<int>(m_previewHandles.size()) && m_previewHandles[i] != -1) {
-            DrawExtendGraph(avX1 + 1, avY1 + 1, avX2 - 1, avY2 - 1, m_previewHandles[i], TRUE);
+            int imgW = 0, imgH = 0;
+            GetGraphSize(m_previewHandles[i], &imgW, &imgH);
+            if (imgW > 0 && imgH > 0) {
+                float targetW = static_cast<float>(avX2 - avX1 - 4);
+                float targetH = static_cast<float>(avY2 - avY1 - 4);
+                float scale = (std::min)(targetW / imgW, targetH / imgH);
+                int fitW = static_cast<int>(imgW * scale);
+                int fitH = static_cast<int>(imgH * scale);
+                int fitX = avX1 + 2 + static_cast<int>((targetW - fitW) / 2.0f);
+                int fitY = avY1 + 2 + static_cast<int>((targetH - fitH) / 2.0f);
+                DrawExtendGraph(fitX, fitY, fitX + fitW, fitY + fitH, m_previewHandles[i], TRUE);
+            } else {
+                DrawExtendGraph(avX1 + 1, avY1 + 1, avX2 - 1, avY2 - 1, m_previewHandles[i], TRUE);
+            }
         } else {
             int circleX = cardX + cardW / 2;
             int circleY = avY1 + avatarH / 2;
@@ -399,7 +427,20 @@ void CharacterSelectScene::Draw() {
         int avY = infoCardY + 12;
         DrawBox(avX, avY, avX + avW, avY + avH, GetColor(18, 24, 34), TRUE);
         if (m_selectedIndex < static_cast<int>(m_previewHandles.size()) && m_previewHandles[m_selectedIndex] != -1) {
-            DrawExtendGraph(avX + 1, avY + 1, avX + avW - 1, avY + avH - 1, m_previewHandles[m_selectedIndex], TRUE);
+            int imgW = 0, imgH = 0;
+            GetGraphSize(m_previewHandles[m_selectedIndex], &imgW, &imgH);
+            if (imgW > 0 && imgH > 0) {
+                float targetW = static_cast<float>(avW - 4);
+                float targetH = static_cast<float>(avH - 4);
+                float scale = (std::min)(targetW / imgW, targetH / imgH);
+                int fitW = static_cast<int>(imgW * scale);
+                int fitH = static_cast<int>(imgH * scale);
+                int fitX = avX + 2 + static_cast<int>((targetW - fitW) / 2.0f);
+                int fitY = avY + 2 + static_cast<int>((targetH - fitH) / 2.0f);
+                DrawExtendGraph(fitX, fitY, fitX + fitW, fitY + fitH, m_previewHandles[m_selectedIndex], TRUE);
+            } else {
+                DrawExtendGraph(avX + 1, avY + 1, avX + avW - 1, avY + avH - 1, m_previewHandles[m_selectedIndex], TRUE);
+            }
         } else {
             int circleX = avX + avW / 2;
             int circleY = avY + avH / 2;

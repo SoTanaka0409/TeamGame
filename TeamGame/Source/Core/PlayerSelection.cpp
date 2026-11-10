@@ -59,31 +59,43 @@ std::vector<SelectionCharacterData> PlayerSelectionManager::GetAvailableCharacte
                 }
             }
 
-            // キャラクターIDに応じたテーマカラーおよびカットイン画像
+            // キャラクターIDに応じたテーマカラー、モデルパス、プレビュー画像、カットイン画像
             switch (cData.id) {
             case 1:
                 selData.themeColor = 0xAA44FF;
                 selData.cutinImagePath = "Resource/Cutin/cutin_1.png";
+                selData.modelPath = "Resource/Models/Characters/01_指揮者/character.mv1";
+                selData.previewPath = "Resource/Images/Characters/01_指揮者.png";
                 break;
             case 2:
                 selData.themeColor = 0x00A2FF;
                 selData.cutinImagePath = "Resource/Cutin/cutin_2.png";
+                selData.modelPath = "Resource/Models/Characters/02_反逆者/character.mv1";
+                selData.previewPath = "Resource/Images/Characters/02_反逆者.png";
                 break;
             case 3:
                 selData.themeColor = 0x00FF88;
                 selData.cutinImagePath = "Resource/Cutin/cutin_3.png";
+                selData.modelPath = "Resource/Models/Characters/03_バカ/character.mv1";
+                selData.previewPath = "Resource/Images/Characters/03_バカ.png";
                 break;
             case 4:
                 selData.themeColor = 0xFF4444;
                 selData.cutinImagePath = "Resource/Cutin/cutin_4.png";
+                selData.modelPath = "Resource/Models/Characters/04_主婦/character.mv1";
+                selData.previewPath = "Resource/Images/Characters/04_主婦.png";
                 break;
             case 5:
                 selData.themeColor = 0xFFBB00;
                 selData.cutinImagePath = "Resource/Cutin/cutin_5.png";
+                selData.modelPath = "Resource/Models/Characters/05_悪魔/character.mv1";
+                selData.previewPath = "Resource/Images/Characters/05_悪魔.png";
                 break;
             default:
                 selData.themeColor = 0x00FF88;
                 selData.cutinImagePath = "Resource/Cutin/cutin_" + std::to_string(cData.id) + ".png";
+                selData.modelPath = "Resource/GreenCharacter/character.mv1";
+                selData.previewPath = "Resource/GreenCharacter/preview.png";
                 break;
             }
 
@@ -95,11 +107,11 @@ std::vector<SelectionCharacterData> PlayerSelectionManager::GetAvailableCharacte
 
     // CSV読み込みに失敗した場合の安全フォールバック（一番最初はバカ、指揮者は後半）
     return {
-        { 3, "バカ",   "Assault",  "周囲を錯乱させ同士討ちを起こす [Panic shoot] を放つ暴走アタッカー",  33, 1.7f, 25, 3, "Panic shoot", 0x00FF88, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_3.png" },
-        { 2, "反逆者", "Speed",    "敵味方双方から姿を消す [Transparency] を持つ神出鬼没な反逆者",   28, 2.1f, 18, 2, "Transparency", 0x00A2FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_2.png" },
-        { 4, "主婦",   "Heavy",    "周囲の物や弾を綺麗サッパリ吹き飛ばし敵HPの半分を削る [Clean time] を持つ最強の主婦",  53, 1.1f, 30, 4, "Clean time", 0xFF4444, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_4.png" },
-        { 5, "悪魔",   "Sniper",   "敵の位置を暴くが自身も音を放つ [High risk high return] を宿した悪魔", 30, 1.4f, 45, 5, "High risk", 0xFFBB00, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_5.png" },
-        { 1, "指揮者", "Tactical", "味方Botを特攻自爆させるが敵は無傷、自身もライトが見えず暗闇を彷徨う無能指揮者",  37, 1.6f, 20, 1, "Homing Kill", 0xAA44FF, "Resource/GreenCharacter/character.mv1", "Resource/GreenCharacter/preview.png", 8.9f, 0.3f, "Resource/Cutin/cutin_1.png" }
+        { 3, "バカ",   "Assault",  "周囲を錯乱させ同士討ちを起こす [Panic shoot] を放つ暴走アタッカー",  33, 1.7f, 25, 3, "Panic shoot", 0x00FF88, "Resource/Models/Characters/03_バカ/character.mv1", "Resource/Images/Characters/03_バカ.png", 8.9f, 0.3f, "Resource/Cutin/cutin_3.png" },
+        { 2, "反逆者", "Speed",    "敵味方双方から姿を消す [Transparency] を持つ神出鬼没な反逆者",   28, 2.1f, 18, 2, "Transparency", 0x00A2FF, "Resource/Models/Characters/02_反逆者/character.mv1", "Resource/Images/Characters/02_反逆者.png", 8.9f, 0.3f, "Resource/Cutin/cutin_2.png" },
+        { 4, "主婦",   "Heavy",    "周囲の物や弾を綺麗サッパリ吹き飛ばし敵HPの半分を削る [Clean time] を持つ最強の主婦",  53, 1.1f, 30, 4, "Clean time", 0xFF4444, "Resource/Models/Characters/04_主婦/character.mv1", "Resource/Images/Characters/04_主婦.png", 8.9f, 0.3f, "Resource/Cutin/cutin_4.png" },
+        { 5, "悪魔",   "Sniper",   "敵の位置を暴くが自身も音を放つ [High risk high return] を宿した悪魔", 30, 1.4f, 45, 5, "High risk", 0xFFBB00, "Resource/Models/Characters/05_悪魔/character.mv1", "Resource/Images/Characters/05_悪魔.png", 8.9f, 0.3f, "Resource/Cutin/cutin_5.png" },
+        { 1, "指揮者", "Tactical", "味方Botを特攻自爆させるが敵は無傷、自身もライトが見えず暗闇を彷徨う無能指揮者",  37, 1.6f, 20, 1, "Homing Kill", 0xAA44FF, "Resource/Models/Characters/01_指揮者/character.mv1", "Resource/Images/Characters/01_指揮者.png", 8.9f, 0.3f, "Resource/Cutin/cutin_1.png" }
     };
 }
 
