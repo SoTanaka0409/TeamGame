@@ -71,7 +71,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
     // ウィンドウモードで起動設定
-    ChangeWindowMode(TRUE);
+    ChangeWindowMode(true);
 
     // ウィンドウサイズを画面サイズに合わせる
     SetGraphMode(screenWidth, screenHeight, 32);
