@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include "../UI/UITextWindow.h"
 #include <string>
@@ -60,6 +60,9 @@ class TitleScene : public Scene
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
     bool prevC = false;                  ///< 前フレームでのCキー入力状態
     bool hasReleasedConfirm = false;     ///< シーン開始後に決定キーが一度離されたかのフラグ
+    bool prevMouseLeft = false;          ///< 前フレームでのマウス左クリック状態
+    int prevMouseX = -1;                 ///< 前フレームのマウスX座標
+    int prevMouseY = -1;                 ///< 前フレームのマウスY座標
     
     void LoadServerConfig();             ///< server_config.ini の読み込み
 
@@ -80,6 +83,10 @@ class TitleScene : public Scene
     int settingsBgIndex = -1;    ///< 設定画面背景画像の配列番号
     int modeSelectBgIndex = -1;  ///< モード選択背景画像の配列番号
     int windowFrameIndex = -1;   ///< UITextWindow用枠画像の配列番号
+    int btnStartImgIndex = -1;   ///< GAME START 画像の配列番号
+    int btnSettingsImgIndex = -1;///< SETTINGS 画像の配列番号
+    int btnExitImgIndex = -1;    ///< EXIT 画像の配列番号
+    int btnBannerImgIndex = -1;  ///< 選択用血痕スプラッターバナー画像の配列番号
 
     // UITextWindow によるメッセージ・情報枠描画
     mutable class UI::UITextWindow* messageWindow = nullptr; ///< 通知メッセージ用テキストウィンドウ

@@ -275,9 +275,6 @@
     <ClInclude Include="Source\Core\CharacterFactory.h">
       <Filter>ヘッダー ファイル\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\FontManager.h">
-      <Filter>ヘッダー ファイル\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\GameSettings.h">
       <Filter>ヘッダー ファイル\Core</Filter>
     </ClInclude>
@@ -466,25 +463,19 @@
     <None Include="Resource\GreenCharacter\preview.png">
       <Filter>リソース ファイル</Filter>
     </None>
-    <None Include="Resource\grass.mv1">
+    <None Include="Resource\Nature\Grass\grass_02_plain_dark.mv1">
       <Filter>リソース ファイル</Filter>
     </None>
-    <None Include="Resource\grass_02_plain_dark.mv1">
+    <None Include="Resource\Nature\Rock\rock_01.mv1">
       <Filter>リソース ファイル</Filter>
     </None>
-    <None Include="Resource\rock.mv1">
+    <None Include="Resource\Nature\Rock\rock_02.mv1">
       <Filter>リソース ファイル</Filter>
     </None>
-    <None Include="Resource\rock_01.mv1">
+    <None Include="Resource\Nature\Rock\rock_03.mv1">
       <Filter>リソース ファイル</Filter>
     </None>
-    <None Include="Resource\rock_02.mv1">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Resource\rock_03.mv1">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Resource\rock_04.mv1">
+    <None Include="Resource\Nature\Rock\rock_04.mv1">
       <Filter>リソース ファイル</Filter>
     </None>
     <None Include="Resource\Title.png">
@@ -497,6 +488,18 @@
       <Filter>リソース ファイル</Filter>
     </None>
     <None Include="Resource\Titleu.jpg">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_GameStart.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_Settings.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_Exit.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_BloodBanner.png">
       <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>
