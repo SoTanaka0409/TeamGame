@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include <vector>
 #include "../Core/PlayerSelection.h"
@@ -17,10 +17,22 @@ public:
     void Draw() override;
     void Finalize() override;
 
+    enum class SelectState {
+        SELECTING,      ///< キャラクター選択中
+        CONFIRMING      ///< 決定確認モーダル表示中
+    };
+
 private:
-    int m_cursorIndex;
-    int m_selectedIndex;
+    int m_cursorIndex = 0;
+    int m_selectedIndex = 0;
+    SelectState m_state = SelectState::SELECTING;
+    int m_confirmCursor = 0; ///< 0: 決定 (YES), 1: 選び直す (CANCEL)
+
     bool m_hasReleasedConfirm = false; ///< シーン開始後に決定キーが一度離されたかのフラグ
+    int m_prevMouseX = -1;
+    int m_prevMouseY = -1;
+    bool m_prevMouseLeft = false;
+
     std::vector<SelectionCharacterData> m_characters;
     std::vector<int> m_previewHandles;
 
