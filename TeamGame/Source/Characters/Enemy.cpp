@@ -163,49 +163,51 @@ void Enemy::UpdateWeaponTactic()
     }
 
     std::string wName = equippedWeapon->GetName();
+    constexpr float ENEMY_RANGE_SCALE = 2.0f / 3.0f; // 敵Botの射程を2/3に短縮
+
     if (wName.find("Sniper") != std::string::npos)
     {
         // スナイパー: 遠距離狙撃・接近されたら全力後退引き撃ち
-        weaponTactic.optimalRangeMin = 500.0f;
-        weaponTactic.optimalRangeMax = 850.0f;
-        weaponTactic.disengageDistance = 380.0f;
+        weaponTactic.optimalRangeMin = 500.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.optimalRangeMax = 850.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.disengageDistance = 380.0f * ENEMY_RANGE_SCALE;
         weaponTactic.allowRetreatKiting = true;
         weaponTactic.circleStrafe = false;
         weaponTactic.recklessRush = false;
-        effectiveRangeCells = 12.0f;
+        effectiveRangeCells = 12.0f * ENEMY_RANGE_SCALE;
     }
     else if (wName.find("Shotgun") != std::string::npos)
     {
         // ショットガン: 超至近距離肉薄・突撃
-        weaponTactic.optimalRangeMin = 50.0f;
-        weaponTactic.optimalRangeMax = 180.0f;
+        weaponTactic.optimalRangeMin = 50.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.optimalRangeMax = 180.0f * ENEMY_RANGE_SCALE;
         weaponTactic.disengageDistance = 0.0f;
         weaponTactic.allowRetreatKiting = false;
         weaponTactic.circleStrafe = false;
         weaponTactic.recklessRush = true;
-        effectiveRangeCells = 5.0f;
+        effectiveRangeCells = 5.0f * ENEMY_RANGE_SCALE;
     }
     else if (wName.find("Submachine") != std::string::npos || wName.find("SMG") != std::string::npos)
     {
         // サブマシンガン: 中近距離サークル旋回・弾幕制圧
-        weaponTactic.optimalRangeMin = 180.0f;
-        weaponTactic.optimalRangeMax = 380.0f;
-        weaponTactic.disengageDistance = 140.0f;
+        weaponTactic.optimalRangeMin = 180.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.optimalRangeMax = 380.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.disengageDistance = 140.0f * ENEMY_RANGE_SCALE;
         weaponTactic.allowRetreatKiting = false;
         weaponTactic.circleStrafe = true;
         weaponTactic.recklessRush = false;
-        effectiveRangeCells = 7.5f;
+        effectiveRangeCells = 7.5f * ENEMY_RANGE_SCALE;
     }
     else
     {
         // ハンドガン / その他標準
-        weaponTactic.optimalRangeMin = 250.0f;
-        weaponTactic.optimalRangeMax = 450.0f;
-        weaponTactic.disengageDistance = 160.0f;
+        weaponTactic.optimalRangeMin = 250.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.optimalRangeMax = 450.0f * ENEMY_RANGE_SCALE;
+        weaponTactic.disengageDistance = 160.0f * ENEMY_RANGE_SCALE;
         weaponTactic.allowRetreatKiting = false;
         weaponTactic.circleStrafe = false;
         weaponTactic.recklessRush = false;
-        effectiveRangeCells = 9.0f;
+        effectiveRangeCells = 9.0f * ENEMY_RANGE_SCALE;
     }
 }
 
@@ -282,17 +284,19 @@ void Enemy::SetEquippedWeapon(Weapon* w)
     if (equippedWeapon)
     {
         equippedWeapon->SetDamageMultiplier(0.5f); // Botの武器攻撃力（ダメージ）を半分にする
+        equippedWeapon->SetRangeMultiplier(2.0f / 3.0f); // 敵Botの射程を2/3に短縮（プレイヤー射程は維持）
     }
     UpdateWeaponTactic();
 }
 
 float Enemy::GetEffectiveRange() const
 {
-    if (equippedWeapon && equippedWeapon->GetData())
+    if (equippedWeapon)
     {
-        return equippedWeapon->GetData()->range;
+        return equippedWeapon->GetRange();
     }
-    return effectiveRangeCells * cellSize;
+    // 武器未装備時の予備射程（敵Botは2/3に短縮）
+    return effectiveRangeCells * cellSize * (2.0f / 3.0f);
 }
 
 void Enemy::OnHearGunshot(const Vector2 &soundPos, float loudness, int shooterTeamId)
@@ -960,7 +964,8 @@ void Enemy::Update()
                 strafeTimer = 60 + (rand() % 40);
             }
             Vector2 tangentDir(-facingDir.y * strafeDirection, facingDir.x * strafeDirection);
-            float distError = dist - 260.0f; // 理想交戦距離
+            float idealDist = (weaponTactic.optimalRangeMin + weaponTactic.optimalRangeMax) * 0.5f;
+            float distError = dist - idealDist; // 理想交戦距離
             Vector2 circleDir = tangentDir + facingDir * (distError > 0 ? 0.4f : -0.3f);
             float cLen = std::sqrt(circleDir.x * circleDir.x + circleDir.y * circleDir.y);
             if (cLen > 0.001f) circleDir = Vector2(circleDir.x / cLen, circleDir.y / cLen);

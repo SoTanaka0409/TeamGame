@@ -1,4 +1,4 @@
-#include "../Managers/WeaponManager.h"
+﻿#include "../Managers/WeaponManager.h"
 #include "../Managers/SoundManager.h"
 #include "SubmachineGun.h"
 #include "Bullet.h"
@@ -78,7 +78,7 @@ void SubmachineGun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, boo
             Vector2 finalDir(std::cos(finalAngle), std::sin(finalAngle));
 
             // カスタム描画アセット（弾丸）を適用して生成
-            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius,
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, GetRange(), data->bulletRadius,
                        teamId, GetDamage(), shooterName, isPanic, m_config.bulletVisual);
 
             // マズルフラッシュ演出
