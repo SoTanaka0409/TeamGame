@@ -357,13 +357,13 @@ void GameScene::Update()
         if (currEsc && !prevEsc) state = GameState::PLAYING;
         if (currUp && !prevUp) pauseMenuCursor--;
         if (currDown && !prevDown) pauseMenuCursor++;
-        if (pauseMenuCursor < 0) pauseMenuCursor = 4;
-        if (pauseMenuCursor > 4) pauseMenuCursor = 0;
+        if (pauseMenuCursor < 0) pauseMenuCursor = 3;
+        if (pauseMenuCursor > 3) pauseMenuCursor = 0;
 
         int mouseX = 0, mouseY = 0;
         GetMousePoint(&mouseX, &mouseY);
         const int panelW = 680;
-        const int panelH = 680;
+        const int panelH = 580;
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
         const int itemW = 580;
@@ -373,7 +373,7 @@ void GameScene::Update()
         const int itemStartY = panelY + 115;
 
         bool mouseClickedItem = false;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 4; i++)
         {
             int iy = itemStartY + i * itemSpacing;
             if (mouseX >= itemStartX && mouseX <= itemStartX + itemW &&
@@ -392,18 +392,14 @@ void GameScene::Update()
             if (pauseMenuCursor == 0) state = GameState::PLAYING;
             else if (pauseMenuCursor == 1)
             {
-                state = GameState::CONTROLS;
-            }
-            else if (pauseMenuCursor == 2)
-            {
                 SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
             }
-            else if (pauseMenuCursor == 3)
+            else if (pauseMenuCursor == 2)
             {
                 state = GameState::SETTINGS;
                 settingsMenuCursor = 0;
             }
-            else if (pauseMenuCursor == 4)
+            else if (pauseMenuCursor == 3)
             {
                 SceneManager::GetInstance().ChangeScene(std::make_shared<TitleScene>());
             }
@@ -464,7 +460,7 @@ void GameScene::Update()
     {
         if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || (currClick && !prevClick))
         {
-            state = GameState::PAUSED;
+            state = GameState::SETTINGS;
         }
     }
 
@@ -755,7 +751,7 @@ void GameScene::Draw()
 
         // 2. メインパネル枠
         const int panelW = 680;
-        const int panelH = 680;
+        const int panelH = 580;
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
 
@@ -790,15 +786,14 @@ void GameScene::Draw()
             bool isSpecial;
         };
 
-        const MenuItemInfo items[5] = {
+        const MenuItemInfo items[4] = {
             { "ゲーム再開", "RESUME GAME", "戦闘画面に戻ってプレイを続行します", "▶", false },
-            { "操作説明", "CONTROLS GUIDE", "キーボード・マウスの操作方法とルールを確認", "？", true },
             { "やり直し", "RESTART", "現在のステージを最初からリスタートします", "↺", false },
             { "各種設定", "SETTINGS", "エイム固定モード等の設定を変更します", "⚙", false },
             { "タイトルへ", "EXIT TO TITLE", "タイトル画面へ戻ります", "✕", false }
         };
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 4; i++)
         {
             int iy = itemStartY + i * itemSpacing;
             bool isSelected = (i == pauseMenuCursor);

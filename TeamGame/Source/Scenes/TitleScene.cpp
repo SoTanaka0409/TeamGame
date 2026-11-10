@@ -6,6 +6,7 @@
 #include "SceneManager.h"
 #include "SoundManager.h"
 #include "GameSettings.h"
+#include "../UI/ControlsGuide.h"
 #include <string>
 #include <random>
 
@@ -183,7 +184,7 @@ if (!currEnter && !currMouseLeft)
         const int menuSpacing = 60;
 
         // マウス操作（ホバーで選択、クリックで決定）
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
             int bx1 = boxX1;
             int bx2 = boxX2;
@@ -202,6 +203,12 @@ if (!currEnter && !currMouseLeft)
                     }
                     else if (cursor == 1)
                     {
+                        state = TitleState::CONTROLS;
+                        waitTimer = 0;
+                        hasReleasedConfirm = false;
+                    }
+                    else if (cursor == 2)
+                    {
                         state = TitleState::MAIN;
                         cursor = 1;
                     }
@@ -211,8 +218,8 @@ if (!currEnter && !currMouseLeft)
 
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 1;
-        if (cursor > 1) cursor = 0;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
@@ -223,23 +230,44 @@ if (!currEnter && !currMouseLeft)
             }
             else if (cursor == 1)
             {
+                state = TitleState::CONTROLS;
+                waitTimer = 0;
+                hasReleasedConfirm = false;
+            }
+            else if (cursor == 2)
+            {
                 state = TitleState::MAIN;
                 cursor = 1;
             }
         }
 
-        if (currEsc)
+        if (currEsc && !prevEsc)
         {
             SoundManager::GetInstance().PlayTapSE();
             state = TitleState::MAIN;
             cursor = 1;
         }
     }
+    else if (state == TitleState::CONTROLS)
+    {
+        if (hasReleasedConfirm && waitTimer >= 15)
+        {
+            if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || mouseClicked)
+            {
+                SoundManager::GetInstance().PlayTapSE();
+                state = TitleState::SETTINGS;
+                cursor = 1;
+                waitTimer = 0;
+                hasReleasedConfirm = false;
+            }
+        }
+    }
 
     prevUp = currUp;
     prevDown = currDown;
     prevEnter = currEnter;
-prevMouseLeft = currMouseLeft;
+    prevEsc = currEsc;
+    prevMouseLeft = currMouseLeft;
     prevMouseX = mouseX;
     prevMouseY = mouseY;
 }
@@ -247,6 +275,20 @@ prevMouseLeft = currMouseLeft;
 void TitleScene::Draw()
 {
     Scene::Draw();
+
+    if (state == TitleState::CONTROLS)
+    {
+        if (titleBgIndex != -1)
+        {
+            DrawFullScreen2DImage(titleBgIndex, false);
+        }
+        else
+        {
+            DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+        }
+        UI::ControlsGuide::Draw(1920, 1080);
+        return;
+    }
 
     // =========================================================================
     // 1. 背景画像の描画（配列番号から呼び出し）
@@ -425,7 +467,7 @@ void TitleScene::Draw()
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
         const int boxY1 = menuStartY - 25;
-        const int boxY2 = menuStartY + 2 * menuSpacing + 75;
+        const int boxY2 = menuStartY + 3 * menuSpacing + 75;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 175);
         DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(15, 20, 35), TRUE);
@@ -436,9 +478,10 @@ void TitleScene::Draw()
         std::string modeVal = GameSettings::GetInstance().isAimLockHoldMode ? "長押し (Hold)" : "切り替え (Toggle)";
         std::string items[] = {
             std::string("エイム固定 (Eキー) : ") + modeVal,
+            "操作説明 (ヘルプ / ガイド)",
             "戻る"
         };
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
             unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(215, 225, 235);
             if (i == cursor)
@@ -450,9 +493,21 @@ void TitleScene::Draw()
 
         // 枠内下部に補足説明を表示（枠内に確実に収まる）
         SetFontSize(18);
-        const char* noteText = GameSettings::GetInstance().isAimLockHoldMode ?
-            "※ [長押し]: Eキーを押している間だけエイムを固定します" :
-            "※ [切り替え]: Eキーを押すごとに固定のON/OFFを切り替えます";
+        const char* noteText = "";
+        if (cursor == 0)
+        {
+            noteText = GameSettings::GetInstance().isAimLockHoldMode ?
+                "※ [長押し]: Eキーを押している間だけエイムを固定します" :
+                "※ [切り替え]: Eキーを押すごとに固定のON/OFFを切り替えます";
+        }
+        else if (cursor == 1)
+        {
+            noteText = "※ キーボード・マウスの操作方法とゲームルールを確認します";
+        }
+        else
+        {
+            noteText = "※ メインメニューに戻ります";
+        }
         DrawString(boxX1 + 40, boxY2 - 38, noteText, GetColor(140, 180, 220));
         SetFontSize(32);
     }
