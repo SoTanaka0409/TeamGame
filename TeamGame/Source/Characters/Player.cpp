@@ -103,11 +103,9 @@ void Player::Update()
 
     if (invincibleTimer > 0) invincibleTimer--;
 
-    if (!isRemote)
+    if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
     {
-        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
-        {
-            // 懐中電灯スイッチ (右クリック)
+        // 懐中電灯スイッチ (右クリック)
             bool currMouseRight = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
             if (currMouseRight && !m_prevMouseRight)
             {
@@ -116,8 +114,7 @@ void Player::Update()
                     m_isLightOn = !m_isLightOn;
                 }
             }
-            m_prevMouseRight = currMouseRight;
-        }
+        m_prevMouseRight = currMouseRight;
     }
 
     // 草むら隠れ状態判定
@@ -137,9 +134,7 @@ void Player::Update()
     m_isMoving = false;
     Vector2 moveDir(0.0f, 0.0f);
 
-    if (!isRemote)
-    {
-        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
+    if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
             // 1P: WASDキー移動
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_A)) { moveDir.x -= 1.0f; m_isMoving = true; }
@@ -162,7 +157,7 @@ void Player::Update()
         }
         else // GAMEPAD_1 または GAMEPAD_2
         {
-            int padIdx = (m_inputType == PlayerInputType::GAMEPAD_2) ? DX_INPUT_PAD2 : DX_INPUT_PAD1;
+            int padIdx = DX_INPUT_PAD1;
             // 2P: ゲームパッド入力 (PAD1 または PAD2)
             int ax = 0, ay = 0;
             GetJoypadAnalogInput(&ax, &ay, padIdx);
@@ -183,7 +178,6 @@ void Player::Update()
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_UP))    { moveDir.y -= 1.0f; m_isMoving = true; }
             if (InputManager::GetInstance().IsKeyHeld(KEY_INPUT_DOWN))  { moveDir.y += 1.0f; m_isMoving = true; }
         }
-    }
 
     if (m_isMoving)
     {
@@ -345,9 +339,7 @@ void Player::Update()
         weapons[currentWeaponIndex]->Update();
     }
 
-    if (!isRemote)
-    {
-        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
+    if (m_inputType == PlayerInputType::KEYBOARD_MOUSE)
         {
             // 視点固定（Eキー）の処理
             bool isEKeyHeld = InputManager::GetInstance().IsKeyHeld(KEY_INPUT_E);
@@ -425,7 +417,7 @@ void Player::Update()
         }
         else // GAMEPAD_1 または GAMEPAD_2
         {
-            int padIdx = (m_inputType == PlayerInputType::GAMEPAD_2) ? DX_INPUT_PAD2 : DX_INPUT_PAD1;
+            int padIdx = DX_INPUT_PAD1;
             bool hasAimInput = false;
 
             // 右アナログスティック入力
@@ -514,18 +506,15 @@ void Player::Update()
             
             prevPadState = padState;
         }
-    }
 
     bool isKnifePressed = false;
     bool isReloadPressed = false;
-    if (!isRemote)
-    {
-        if (m_inputType == PlayerInputType::KEYBOARD_MOUSE) {
+    if (m_inputType == PlayerInputType::KEYBOARD_MOUSE) {
             isKnifePressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_SPACE);
             isReloadPressed = InputManager::GetInstance().IsKeyPressed(KEY_INPUT_R);
         }
         else {
-            int padIdx = (m_inputType == PlayerInputType::GAMEPAD_2) ? DX_INPUT_PAD2 : DX_INPUT_PAD1;
+            int padIdx = DX_INPUT_PAD1;
             int pad = GetJoypadInputState(padIdx);
             isKnifePressed = ((pad & PAD_INPUT_2) != 0) ||
                              InputManager::GetInstance().IsKeyPressed(KEY_INPUT_RSHIFT) ||
@@ -535,7 +524,6 @@ void Player::Update()
                               InputManager::GetInstance().IsKeyPressed(KEY_INPUT_O) ||
                               InputManager::GetInstance().IsKeyPressed(KEY_INPUT_NUMPAD1);
         }
-    }
     
     if (isReloadPressed && !weapons.empty())
     {
@@ -1518,8 +1506,5 @@ void Player::UpdateAutoAim(const Vector2& moveDir)
 bool Player::IsVisibleToPlayer() const
 {
     // 自機プレイヤーは透明化スキル中であっても半透明表示されるため、常に可視とみなす
-    if (!isRemote) return true;
-
-    // リモートプレイヤーや2Pは基底クラスの画面内判定に従う
-    return Character::IsVisibleToPlayer();
+    return true;
 }

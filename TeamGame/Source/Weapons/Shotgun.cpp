@@ -1,4 +1,4 @@
-#include "Shotgun.h"
+﻿#include "Shotgun.h"
 #include "Bullet.h"
 #include "ObjectManager.h"
 #include "Scene.h"
@@ -60,7 +60,7 @@ void Shotgun::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool isMo
                 float finalAngle = baseAngle + angleOffset;
                 Vector2 fireDir(std::cos(finalAngle), std::sin(finalAngle));
 
-                new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, data->range, data->bulletRadius, teamId, GetDamage(), shooterName, isPanic);
+                new Bullet(pos.x, pos.y, fireDir, data->bulletSpeed, GetRange(), data->bulletRadius, teamId, GetDamage(), shooterName, isPanic);
             }
             if (scene->GetEffectManager())
             {

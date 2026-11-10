@@ -6,14 +6,11 @@
 #include "SceneManager.h"
 #include "SoundManager.h"
 #include "GameSettings.h"
-#include "NetworkManager.h"
+#include "../UI/ControlsGuide.h"
 #include <string>
 #include <random>
 
-namespace {
-    constexpr int LAN_PORT = 30000;
-    constexpr int LAN_UDP_PORT = 30000;
-}
+
 
 TitleScene::TitleScene()
 {
@@ -36,7 +33,6 @@ TitleScene::TitleScene()
     btnExitImgIndex     = Load2DImage("Title_Exit.png");
     btnBannerImgIndex   = Load2DImage("Title_BloodBanner.png");
 
-    LoadServerConfig();
 }
 
 void TitleScene::Init()
@@ -48,32 +44,16 @@ void TitleScene::Init()
     SoundManager::GetInstance().PlayBGM("title_bgm", 0.85f);
 }
 
-void TitleScene::LoadServerConfig()
-{
-    char hostBuf[256] = "localhost";
-    GetPrivateProfileStringA("Server", "Host", "localhost", hostBuf, sizeof(hostBuf), ".\\server_config.ini");
-    serverHost = hostBuf;
-    serverPort = GetPrivateProfileIntA("Server", "Port", 8080, ".\\server_config.ini");
-    serverUseSSL = (GetPrivateProfileIntA("Server", "UseSSL", 0, ".\\server_config.ini") != 0);
-}
+
 
 
 TitleScene::~TitleScene()
 {
-    // UITextWindow の解放
     delete messageWindow;
     messageWindow = nullptr;
 
     delete settingsWindow;
     settingsWindow = nullptr;
-
-    if (udpHandle != -1)
-    {
-        DeleteUDPSocket(udpHandle);
-    }
-    if ((state == TitleState::WAITING || state == TitleState::WEB_HOST_WAITING) && !NetworkManager::GetInstance().IsConnected()) {
-        NetworkManager::GetInstance().Disconnect();
-    }
 }
 
 void TitleScene::Update()
@@ -98,13 +78,8 @@ void TitleScene::Update()
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
     bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
-    bool currC = (CheckHitKey(KEY_INPUT_C) != 0);
-
-    waitTimer++;
-    if (copyNotifyTimer > 0) copyNotifyTimer--;
-    if (statusMessageTimer > 0) statusMessageTimer--;
-
-    if (!currEnter && !currMouseLeft)
+waitTimer++;
+if (!currEnter && !currMouseLeft)
     {
         hasReleasedConfirm = true;
     }
@@ -142,8 +117,7 @@ void TitleScene::Update()
                 SoundManager::GetInstance().PlayTapSE();
                 if (cursor == 0)
                 {
-                    NetworkManager::GetInstance().Disconnect();
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
+                        SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
                     prevMouseLeft = currMouseLeft;
                     prevMouseX = mouseX;
                     prevMouseY = mouseY;
@@ -179,7 +153,6 @@ void TitleScene::Update()
             if (cursor == 0)
             {
                 // モードはシングルのみ: 直接キャラクター選択画面へ遷移
-                NetworkManager::GetInstance().Disconnect();
                 SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
                 prevMouseLeft = currMouseLeft;
                 prevMouseX = mouseX;
@@ -202,277 +175,21 @@ void TitleScene::Update()
             }
         }
     }
-    else if (state == TitleState::MODE_SELECT)
-    {
-        if (currUp && !prevUp) cursor--;
-        if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 5;
-        if (cursor > 5) cursor = 0;
-
-        if (currEnter && !prevEnter)
-        {
-            SoundManager::GetInstance().PlayTapSE();
-            if (cursor == 0) // Solo
-            {
-                NetworkManager::GetInstance().Disconnect();
-                SceneManager::GetInstance().ChangeScene(std::make_shared<CharacterSelectScene>());
-            }
-            else if (cursor == 1) // Local PvP
-            {
-                NetworkManager::GetInstance().Disconnect();
-                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_PVP));
-            }
-            else if (cursor == 2) // Local Coop
-            {
-                NetworkManager::GetInstance().Disconnect();
-                SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::LOCAL_COOP));
-            }
-            else if (cursor == 3) // Web Online
-            {
-                state = TitleState::WEB_SELECT;
-                cursor = 0;
-            }
-            else if (cursor == 4) // LAN Play
-            {
-                state = TitleState::LAN_SELECT;
-                cursor = 0;
-            }
-            else if (cursor == 5) // Back
-            {
-                state = TitleState::MAIN;
-                cursor = 0;
-            }
-        }
-    }
-    else if (state == TitleState::WEB_SELECT)
-    {
-        if (currUp && !prevUp) cursor--;
-        if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 2;
-        if (cursor > 2) cursor = 0;
-
-        if (currEnter && !prevEnter)
-        {
-            if (cursor == 0) // Create Room (Host)
-            {
-                // 4桁の部屋番号をランダム生成
-                int randNum = 1000 + (rand() % 9000);
-                sprintf_s(roomCodeBuffer, sizeof(roomCodeBuffer), "%04d", randNum);
-
-                DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
-                DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
-                DrawFormatString(1920 / 2 - 200, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to server...");
-                ScreenFlip();
-
-                if (NetworkManager::GetInstance().ConnectWeb(serverHost, serverPort, roomCodeBuffer, true, serverUseSSL))
-                {
-                    state = TitleState::WEB_HOST_WAITING;
-                    copiedIP = roomCodeBuffer;
-                }
-                else
-                {
-                    statusMessage = "Webサーバー接続失敗 (" + serverHost + ")";
-                    statusMessageTimer = 300;
-                }
-            }
-            else if (cursor == 1) // Join Room (Client)
-            {
-                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(0, 0, 0), TRUE);
-                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(200, 200, 200), FALSE);
-                DrawString(1920 / 2 - 280, 1080 / 2 - 40, "4桁の部屋番号を入力 (Enterで決定):", GetColor(255, 255, 255));
-                ScreenFlip();
-
-                roomCodeBuffer[0] = '\0';
-                KeyInputString(1920 / 2 - 280, 1080 / 2 + 10, 15, roomCodeBuffer, FALSE);
-
-                if (strlen(roomCodeBuffer) > 0)
-                {
-                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
-                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
-                    DrawFormatString(1920 / 2 - 200, 1080 / 2 - 10, GetColor(255, 255, 0), "Joining room %s ...", roomCodeBuffer);
-                    ScreenFlip();
-
-                    if (NetworkManager::GetInstance().ConnectWeb(serverHost, serverPort, roomCodeBuffer, false, serverUseSSL))
-                    {
-                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
-                        return;
-                    }
-                    else
-                    {
-                        statusMessage = "接続失敗: 部屋「" + std::string(roomCodeBuffer) + "」に接続できませんでした";
-                        statusMessageTimer = 300;
-                    }
-                }
-            }
-            else if (cursor == 2) // Back
-            {
-                state = TitleState::MODE_SELECT;
-                cursor = 4;
-            }
-        }
-    }
-    else if (state == TitleState::WEB_HOST_WAITING)
-    {
-        // 相手が部屋に入ってきたかチェック
-        if (NetworkManager::GetInstance().HasGuestJoined())
-        {
-            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_HOST));
-            return;
-        }
-
-        // Cキーで部屋番号をクリップボードにコピー
-        if (currC && !prevC)
-        {
-            SetClipboardText(copiedIP.c_str());
-            copyNotifyTimer = 180;
-        }
-
-        if (currEsc) // キャンセル
-        {
-            NetworkManager::GetInstance().Disconnect();
-            state = TitleState::WEB_SELECT;
-            cursor = 0;
-        }
-    }
-    else if (state == TitleState::LAN_SELECT)
-    {
-        if (currUp && !prevUp) cursor--;
-        if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 2;
-        if (cursor > 2) cursor = 0;
-
-        if (currEnter && !prevEnter)
-        {
-            if (cursor == 0) // Host LAN
-            {
-                if (NetworkManager::GetInstance().Listen(LAN_PORT))
-                {
-                    udpHandle = MakeUDPSocket(-1);
-                    state = TitleState::WAITING;
-                }
-            }
-            else if (cursor == 1) // Join LAN
-            {
-                state = TitleState::JOIN_SELECT;
-                cursor = 0;
-            }
-            else if (cursor == 2) // Back
-            {
-                state = TitleState::MODE_SELECT;
-                cursor = 3;
-            }
-        }
-    }
-    else if (state == TitleState::JOIN_SELECT)
-    {
-        if (currUp && !prevUp) cursor--;
-        if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 3;
-        if (cursor > 3) cursor = 0;
-
-        if (currEnter && !prevEnter)
-        {
-            if (cursor == 0) // Join LAN Auto
-            {
-                udpHandle = MakeUDPSocket(LAN_UDP_PORT);
-                state = TitleState::JOINING_LAN;
-                waitTimer = 0;
-            }
-            else if (cursor == 1) // Paste IP & Connect (クリップボードから接続)
-            {
-                char clipBuf[256] = { 0 };
-                if (GetClipboardText(clipBuf) > 0)
-                {
-                    std::string targetIP = clipBuf;
-                    size_t first = targetIP.find_first_not_of(" \t\r\n");
-                    size_t last = targetIP.find_last_not_of(" \t\r\n");
-                    if (first != std::string::npos && last != std::string::npos)
-                    {
-                        targetIP = targetIP.substr(first, last - first + 1);
-                    }
-                    else
-                    {
-                        targetIP = "";
-                    }
-
-                    if (!targetIP.empty())
-                    {
-                        DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
-                        DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
-                        DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", targetIP.c_str());
-                        ScreenFlip();
-
-                        if (NetworkManager::GetInstance().Connect(targetIP.c_str(), LAN_PORT))
-                        {
-                            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
-                            return;
-                        }
-                        else
-                        {
-                            statusMessage = "接続失敗: " + targetIP + " に接続できませんでした";
-                            statusMessageTimer = 300;
-                        }
-                    }
-                    else
-                    {
-                        statusMessage = "クリップボードが空です";
-                        statusMessageTimer = 180;
-                    }
-                }
-                else
-                {
-                    statusMessage = "クリップボードにテキストがありません";
-                    statusMessageTimer = 180;
-                }
-            }
-            else if (cursor == 2) // Join LAN Manual
-            {
-                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(0, 0, 0), TRUE);
-                DrawBox(1920 / 2 - 300, 1080 / 2 - 60, 1920 / 2 + 300, 1080 / 2 + 60, GetColor(200, 200, 200), FALSE);
-                DrawString(1920 / 2 - 280, 1080 / 2 - 40, "IP Address (Ctrl+V で貼付け可能):", GetColor(255, 255, 255));
-                ScreenFlip();
-                
-                KeyInputString(1920 / 2 - 280, 1080 / 2 + 10, 63, ipBuffer, FALSE);
-
-                if (strlen(ipBuffer) > 0)
-                {
-                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(0, 0, 0), TRUE);
-                    DrawBox(1920 / 2 - 250, 1080 / 2 - 50, 1920 / 2 + 250, 1080 / 2 + 50, GetColor(100, 200, 255), FALSE);
-                    DrawFormatString(1920 / 2 - 220, 1080 / 2 - 10, GetColor(255, 255, 0), "Connecting to %s ...", ipBuffer);
-                    ScreenFlip();
-
-                    if (NetworkManager::GetInstance().Connect(ipBuffer, LAN_PORT))
-                    {
-                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
-                        return;
-                    }
-                    else
-                    {
-                        statusMessage = std::string("接続失敗: ") + ipBuffer + " に接続できませんでした";
-                        statusMessageTimer = 300;
-                    }
-                }
-            }
-            else if (cursor == 3) // Back
-            {
-                state = TitleState::MODE_SELECT;
-                cursor = 3;
-            }
-        }
-    }
     else if (state == TitleState::SETTINGS)
     {
-        const int menuStartX = 1920 / 2 - 100;
-        const int menuStartY = 400;
-        const int menuSpacing = 60;
+        const int boxW = 920;
+        const int boxX1 = (1920 - boxW) / 2;
+        const int boxX2 = boxX1 + boxW;
+        const int menuStartY = 335;
+        const int menuSpacing = 68;
 
         // マウス操作（ホバーで選択、クリックで決定）
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
-            int bx1 = menuStartX - 60;
-            int bx2 = menuStartX + 440;
-            int by1 = menuStartY + i * menuSpacing - 10;
-            int by2 = menuStartY + (i + 1) * menuSpacing - 10;
+            int bx1 = boxX1 + 35;
+            int bx2 = boxX2 - 35;
+            int by1 = menuStartY + i * menuSpacing - 6;
+            int by2 = menuStartY + i * menuSpacing + 42;
             if (mouseX >= bx1 && mouseX <= bx2 && mouseY >= by1 && mouseY <= by2)
             {
                 if (mouseMoved && cursor != i) cursor = i;
@@ -486,6 +203,12 @@ void TitleScene::Update()
                     }
                     else if (cursor == 1)
                     {
+                        state = TitleState::CONTROLS;
+                        waitTimer = 0;
+                        hasReleasedConfirm = false;
+                    }
+                    else if (cursor == 2)
+                    {
                         state = TitleState::MAIN;
                         cursor = 1;
                     }
@@ -495,104 +218,47 @@ void TitleScene::Update()
 
         if (currUp && !prevUp) cursor--;
         if (currDown && !prevDown) cursor++;
-        if (cursor < 0) cursor = 1;
-        if (cursor > 1) cursor = 0;
+        if (cursor < 0) cursor = 2;
+        if (cursor > 2) cursor = 0;
 
         if (currEnter && !prevEnter)
         {
             SoundManager::GetInstance().PlayTapSE();
-            if (cursor == 0) // Toggle Aim Lock Mode
+            if (cursor == 0)
             {
                 GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
             }
-            else if (cursor == 1) // Back
+            else if (cursor == 1)
+            {
+                state = TitleState::CONTROLS;
+                waitTimer = 0;
+                hasReleasedConfirm = false;
+            }
+            else if (cursor == 2)
             {
                 state = TitleState::MAIN;
                 cursor = 1;
             }
         }
-    }
-    else if (state == TitleState::WAITING)
-    {
-        waitTimer++;
-        NetworkManager::GetInstance().UpdateConnection();
-        
-        if (NetworkManager::GetInstance().IsConnected())
-        {
-            SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_HOST));
-            return;
-        }
 
-        // Cキーで自分のIPアドレスをクリップボードにコピー
-        if (currC && !prevC)
+        if (currEsc && !prevEsc)
         {
-            IPDATA myip[10];
-            int num = 0;
-            if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
-            {
-                char ipStr[64];
-                sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[0].d1, myip[0].d2, myip[0].d3, myip[0].d4);
-                SetClipboardText(ipStr);
-                copiedIP = ipStr;
-                copyNotifyTimer = 180;
-            }
-        }
-        
-        if (currEsc) // キャンセル
-        {
-            NetworkManager::GetInstance().Disconnect();
-            if (udpHandle != -1) { DeleteUDPSocket(udpHandle); udpHandle = -1; }
-            state = TitleState::MODE_SELECT;
-            cursor = 2;
-        }
-
-        // Broadcast presence
-        if (udpHandle != -1 && waitTimer % 60 == 0)
-        {
-            // Global broadcast
-            IPDATA ip = {255, 255, 255, 255};
-            NetWorkSendUDP(udpHandle, ip, LAN_UDP_PORT, "HOST", 4);
-            
-            // Subnet broadcast fallback
-            IPDATA myip[10];
-            int num = 0;
-            if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
-            {
-                for (int i = 0; i < num; i++)
-                {
-                    IPDATA bcast = myip[i];
-                    bcast.d4 = 255;
-                    NetWorkSendUDP(udpHandle, bcast, LAN_UDP_PORT, "HOST", 4);
-                }
-            }
+            SoundManager::GetInstance().PlayTapSE();
+            state = TitleState::MAIN;
+            cursor = 1;
         }
     }
-    else if (state == TitleState::JOINING_LAN)
+    else if (state == TitleState::CONTROLS)
     {
-        if (currEsc)
+        if (hasReleasedConfirm && waitTimer >= 15)
         {
-            if (udpHandle != -1) { DeleteUDPSocket(udpHandle); udpHandle = -1; }
-            state = TitleState::JOIN_SELECT;
-            cursor = 0;
-        }
-        
-        // Listen for broadcast
-        if (udpHandle != -1)
-        {
-            IPDATA hostIP;
-            int hostPort;
-            char buf[16];
-            if (NetWorkRecvUDP(udpHandle, &hostIP, &hostPort, buf, sizeof(buf), FALSE) > 0)
+            if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || mouseClicked)
             {
-                char ipStr[64];
-                sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", hostIP.d1, hostIP.d2, hostIP.d3, hostIP.d4);
-                if (NetworkManager::GetInstance().Connect(ipStr, LAN_PORT))
-                {
-                    DeleteUDPSocket(udpHandle);
-                    udpHandle = -1;
-                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>(PlayMode::NETWORK_CLIENT));
-                    return;
-                }
+                SoundManager::GetInstance().PlayTapSE();
+                state = TitleState::SETTINGS;
+                cursor = 1;
+                waitTimer = 0;
+                hasReleasedConfirm = false;
             }
         }
     }
@@ -600,7 +266,7 @@ void TitleScene::Update()
     prevUp = currUp;
     prevDown = currDown;
     prevEnter = currEnter;
-    prevC = currC;
+    prevEsc = currEsc;
     prevMouseLeft = currMouseLeft;
     prevMouseX = mouseX;
     prevMouseY = mouseY;
@@ -609,6 +275,20 @@ void TitleScene::Update()
 void TitleScene::Draw()
 {
     Scene::Draw();
+
+    if (state == TitleState::CONTROLS)
+    {
+        if (titleBgIndex != -1)
+        {
+            DrawFullScreen2DImage(titleBgIndex, false);
+        }
+        else
+        {
+            DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+        }
+        UI::ControlsGuide::Draw(1920, 1080);
+        return;
+    }
 
     // =========================================================================
     // 1. 背景画像の描画（配列番号から呼び出し）
@@ -634,11 +314,7 @@ void TitleScene::Draw()
             DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
         }
     }
-    else if (state == TitleState::MODE_SELECT && modeSelectBgIndex != -1)
-    {
-        // モード選択画面専用の背景画像を配列番号から描画
-        DrawFullScreen2DImage(modeSelectBgIndex, false);
-    }
+
     else if (titleBgIndex != -1)
     {
         // タイトル画面全般の背景画像を配列番号から描画
@@ -655,10 +331,16 @@ void TitleScene::Draw()
     // =========================================================================
     if (state == TitleState::SETTINGS)
     {
-        // 設定画面ヘッダー
-        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(20, 30, 45), TRUE);
-        DrawBox(1920 / 2 - 250, 180, 1920 / 2 + 250, 240, GetColor(0, 180, 255), FALSE);
-        DrawString(1920 / 2 - 90, 200, "=== SETTINGS ===", GetColor(255, 255, 255));
+        // 設定画面ヘッダー（中央揃え・600px幅フレーム）
+        const int hW = 600;
+        const int hX1 = (1920 - hW) / 2;
+        const int hX2 = hX1 + hW;
+        DrawBox(hX1, 160, hX2, 230, GetColor(20, 30, 45), TRUE);
+        DrawBox(hX1, 160, hX2, 230, GetColor(0, 180, 255), FALSE);
+        DrawBox(hX1 + 2, 162, hX2 - 2, 228, GetColor(30, 70, 110), FALSE);
+
+        int textW = GetDrawStringWidth("=== SETTINGS ===", -1);
+        DrawString((1920 - textW) / 2, 180, "=== SETTINGS ===", GetColor(255, 255, 255));
     }
     else
     {
@@ -756,10 +438,20 @@ void TitleScene::Draw()
                 }
             }
 
+            // 画面下部に選択中項目の日本語表記を表示
+            SetFontSize(22);
+            const char* mainJpTexts[3] = {
+                "【 ゲーム開始 】 ソロプレイ戦闘を開始します",
+                "【 各種設定 】 エイム固定モードや操作説明を設定・確認します",
+                "【 ゲーム終了 】 アプリケーションを終了します"
+            };
+            int jpW = GetDrawStringWidth(mainJpTexts[cursor], -1);
+            DrawString((1920 - jpW) / 2, 835, mainJpTexts[cursor], GetColor(255, 215, 0));
+
             // 下部に控えめな操作ガイドを表示
-            SetFontSize(20);
-            int guideW = GetDrawStringWidth("[W/S] キー または マウスで選択  /  [ENTER] または クリックで決定", -1);
-            DrawString((1920 - guideW) / 2, 870, "[W/S] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200));
+            SetFontSize(18);
+            int guideW = GetDrawStringWidth("[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", -1);
+            DrawString((1920 - guideW) / 2, 875, "[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200));
             SetFontSize(32);
         }
         else
@@ -779,190 +471,102 @@ void TitleScene::Draw()
             }
         }
     }
-    else if (state == TitleState::MODE_SELECT)
-    {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-        DrawBox(menuStartX - 110, menuStartY - 20, menuStartX + 420, menuStartY + 6 * menuSpacing + 80, GetColor(10, 15, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(menuStartX - 110, menuStartY - 20, menuStartX + 420, menuStartY + 6 * menuSpacing + 80, GetColor(60, 80, 110), FALSE);
-
-        const char* items[] = { 
-            "1. Solo Brawl (ソロ・AIデスマッチ)", 
-            "2. Local PvP (画面分割 1P vs 2P対戦)", 
-            "3. Local Co-op (画面分割 協力プレイ)", 
-            "4. Web Online (インターネット対戦)", 
-            "5. LAN Play (ローカルLAN対戦)", 
-            "Back" 
-        };
-        for (int i = 0; i < 6; i++)
-        {
-            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
-        }
-
-        // 選択中モードの解説表示 (企業審査員への配慮)
-        SetFontSize(22);
-        if (cursor == 0) {
-            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【ソロ】敵Botと戦いながらキル数を競うモード (1人ですぐ遊べます)", GetColor(180, 220, 255));
-        } else if (cursor == 1) {
-            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【3vs3 画面分割対戦】両チームとも人間1人＋Bot2体！(1P: WASD+マウス / 2P: パッドまたは矢印キー)", GetColor(255, 220, 100));
-        } else if (cursor == 2) {
-            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【画面分割Co-op】2人で協力して敵Botを撃破するモード", GetColor(180, 255, 180));
-        } else if (cursor == 3) {
-            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【オンライン】4桁の部屋番号でマッチングするインターネット対戦", GetColor(200, 200, 200));
-        } else if (cursor == 4) {
-            DrawString(menuStartX - 100, menuStartY + 6 * menuSpacing + 20, "【LAN対戦】同一ネットワーク内のPC同士で直接接続して対戦", GetColor(200, 200, 200));
-        }
-        SetFontSize(32);
-    }
-    else if (state == TitleState::WEB_SELECT)
-    {
-        const char* items[] = { 
-            "Create Room (部屋を作成・ホスト)", 
-            "Join Room (部屋番号で参加)", 
-            "Back" 
-        };
-        for (int i = 0; i < 3; i++)
-        {
-            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
-        }
-
-        // 接続先サーバー情報を小さく表示
-        SetFontSize(20);
-        DrawFormatString(menuStartX, menuStartY + 3 * menuSpacing + 20, GetColor(150, 150, 150),
-            "接続サーバー: %s:%d (%s)", serverHost.c_str(), serverPort, serverUseSSL ? "SSL" : "No-SSL");
-        SetFontSize(32);
-    }
-    else if (state == TitleState::WEB_HOST_WAITING)
-    {
-        DrawString(1920 / 2 - 200, 360, "=== Web Online 待機中 ===", GetColor(100, 220, 255));
-
-        SetFontSize(48);
-        DrawFormatString(1920 / 2 - 220, 440, GetColor(255, 255, 0), "部屋番号:  %s", copiedIP.c_str());
-        SetFontSize(32);
-
-        DrawString(1920 / 2 - 250, 530, "[C] キー: 部屋番号をクリップボードにコピー", GetColor(100, 255, 100));
-        DrawString(1920 / 2 - 250, 580, "相手に部屋番号を教えてください (ESCでキャンセル)", GetColor(200, 200, 200));
-
-        if (copyNotifyTimer > 0)
-        {
-            DrawBox(1920 / 2 - 250, 280, 1920 / 2 + 250, 330, GetColor(0, 100, 0), TRUE);
-            DrawBox(1920 / 2 - 250, 280, 1920 / 2 + 250, 330, GetColor(100, 255, 100), FALSE);
-            DrawFormatString(1920 / 2 - 230, 295, GetColor(255, 255, 255), "★ 部屋番号 %s をコピーしました!", copiedIP.c_str());
-        }
-
-        if ((waitTimer / 30) % 2 == 0)
-        {
-            DrawString(1920 / 2 - 200, 660, "Waiting for Player 2 to join ...", GetColor(255, 255, 100));
-        }
-
-        SetFontSize(20);
-        DrawFormatString(1920 / 2 - 200, 750, GetColor(140, 140, 140), "サーバー: %s:%d", serverHost.c_str(), serverPort);
-        SetFontSize(32);
-    }
-    else if (state == TitleState::LAN_SELECT)
-    {
-        const char* items[] = { 
-            "Host Game (LAN待機)", 
-            "Join Game (LAN参加)", 
-            "Back" 
-        };
-        for (int i = 0; i < 3; i++)
-
-        {
-            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
-        }
-    }
-    else if (state == TitleState::JOIN_SELECT)
-    {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 420, menuStartY + 4 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 420, menuStartY + 4 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
-
-        const char* items[] = { 
-            "Join LAN (Auto Search)", 
-            "Paste IP & Connect (クリップボードから接続)", 
-            "Enter IP Manually (手動入力)", 
-            "Back" 
-        };
-        for (int i = 0; i < 4; i++)
-        {
-            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
-        }
-    }
     else if (state == TitleState::SETTINGS)
     {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
-        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(15, 20, 35), TRUE);
+        // 拡大したメイン設定ボックス (幅920px・十分な余白と洗練されたネオン枠)
+        const int boxW = 920;
+        const int boxX1 = (1920 - boxW) / 2;
+        const int boxX2 = boxX1 + boxW;
+        const int boxY1 = 280;
+        const int boxY2 = 780;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+        DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(15, 22, 36), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(menuStartX - 60, menuStartY - 20, menuStartX + 440, menuStartY + 2 * menuSpacing + 20, GetColor(0, 160, 240), FALSE);
+        DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(0, 160, 240), FALSE);
+        DrawBox(boxX1 + 2, boxY1 + 2, boxX2 - 2, boxY2 - 2, GetColor(30, 70, 110), FALSE);
 
-        std::string items[] = {
-            std::string("Aim Lock Mode (E key) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "Hold" : "Toggle"),
-            "Back"
+        const int sMenuStartY = 335;
+        const int sMenuSpacing = 68;
+
+        // 選択項目は英語表記 (AIM LOCK, CONTROLS GUIDE, BACK)
+        std::string modeVal = GameSettings::GetInstance().isAimLockHoldMode ? "HOLD" : "TOGGLE";
+        std::string items[3] = {
+            std::string("AIM LOCK (E-KEY) : ") + modeVal,
+            "CONTROLS GUIDE",
+            "BACK"
         };
-        for (int i = 0; i < 2; i++)
+
+        for (int i = 0; i < 3; i++)
         {
-            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-            if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-            DrawString(menuStartX, menuStartY + i * menuSpacing, items[i].c_str(), color);
-        }
-    }
-    else if (state == TitleState::WAITING)
-    {
-        DrawString(1920 / 2 - 200, 1080 / 2, "Waiting for Player 2 to join...", GetColor(255, 255, 0));
-        
-        IPDATA myip[10];
-        int num = 0;
-        if (GetMyIPAddress(myip, 10, &num) == 0 && num > 0)
-        {
-            for (int i = 0; i < num; i++)
+            int iy = sMenuStartY + i * sMenuSpacing;
+            bool isSelected = (i == cursor);
+
+            if (isSelected)
             {
-                char ipStr[64];
-                sprintf_s(ipStr, sizeof(ipStr), "%d.%d.%d.%d", myip[i].d1, myip[i].d2, myip[i].d3, myip[i].d4);
-                DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (i * 25), (std::string("Your IP: ") + ipStr).c_str(), GetColor(255, 255, 255));
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(25, 45, 75), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(0, 200, 255), FALSE);
+                DrawBox(boxX1 + 35, iy - 6, boxX1 + 43, iy + 42, GetColor(255, 215, 0), TRUE);
+                DrawString(boxX1 + 55, iy, "▶", GetColor(255, 215, 0));
             }
-            DrawFormatString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 10, GetColor(180, 220, 255), "Port: %d", LAN_PORT);
-            DrawString(1920 / 2 - 200, 1080 / 2 + 40 + (num * 25) + 35, "[C] キー: 自分のIPアドレスをクリップボードにコピー", GetColor(100, 255, 100));
+            else
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(12, 18, 28), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(35, 50, 70), FALSE);
+            }
+
+            unsigned int color = isSelected ? GetColor(255, 255, 0) : GetColor(210, 225, 240);
+            DrawString(boxX1 + 85, iy, items[i].c_str(), color);
         }
 
-        if (copyNotifyTimer > 0)
-        {
-            DrawBox(1920 / 2 - 250, 1080 / 2 - 90, 1920 / 2 + 250, 1080 / 2 - 50, GetColor(0, 100, 0), TRUE);
-            DrawBox(1920 / 2 - 250, 1080 / 2 - 90, 1920 / 2 + 250, 1080 / 2 - 50, GetColor(100, 255, 100), FALSE);
-            DrawFormatString(1920 / 2 - 230, 1080 / 2 - 75, GetColor(255, 255, 255), "★ IPアドレスをコピーしました! (%s)", copiedIP.c_str());
-        }
-        
-        if ((waitTimer / 30) % 2 == 0)
-        {
-            DrawString(1920 / 2 - 150, 1080 / 2 - 40, "Searching for guests...", GetColor(200, 200, 200));
-        }
-    }
-    else if (state == TitleState::JOINING_LAN)
-    {
-        DrawString(1920 / 2 - 200, 1080 / 2, "Searching for Hosts on LAN...", GetColor(255, 255, 0));
-        
-        if ((waitTimer / 30) % 2 == 0)
-        {
-            DrawString(1920 / 2 - 150, 1080 / 2 - 50, "Searching...", GetColor(200, 200, 200));
-        }
-    }
+        // 区切り線
+        int divY = 555;
+        DrawLine(boxX1 + 40, divY, boxX2 - 40, divY, GetColor(0, 140, 200));
 
-    // エラー・通知メッセージの赤バナー警告表示 (sou からの復元)
-    if (statusMessageTimer > 0 && !statusMessage.empty())
-    {
-        int msgWidth = GetDrawStringWidth(statusMessage.c_str(), -1);
-        int halfW = (std::max)(350, msgWidth / 2 + 30);
-        DrawBox(1920 / 2 - halfW, 1080 - 100, 1920 / 2 + halfW, 1080 - 50, GetColor(160, 30, 30), TRUE);
-        DrawBox(1920 / 2 - halfW, 1080 - 100, 1920 / 2 + halfW, 1080 - 50, GetColor(255, 150, 150), FALSE);
-        DrawString(1920 / 2 - msgWidth / 2, 1080 - 80, statusMessage.c_str(), GetColor(255, 255, 255));
+        // 画面下部: 選択項目の日本語表記＆解説パネル
+        int infoY1 = 575;
+        int infoY2 = 745;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+        DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(45, 70, 100), FALSE);
+        DrawBox(boxX1 + 35, infoY1, boxX1 + 43, infoY2, GetColor(232, 170, 60), TRUE); // 琥珀アクセント
+
+        if (cursor == 0)
+        {
+            SetFontSize(24);
+            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: エイム固定モード 】", GetColor(255, 215, 0));
+            SetFontSize(19);
+            std::string modeJa = GameSettings::GetInstance().isAimLockHoldMode ? "長押し (HOLD)" : "切り替え (TOGGLE)";
+            DrawString(boxX1 + 58, infoY1 + 48, (std::string("日本語表記: エイム固定 (Eキー) [") + modeJa + "]").c_str(), GetColor(220, 235, 250));
+            const char* descText = GameSettings::GetInstance().isAimLockHoldMode ?
+                "※ Eキーを押している間だけ照準を固定します (Enterまたはクリックで「切り替え」に変更)" :
+                "※ Eキーを押すごとに固定のON/OFFを切り替えます (Enterまたはクリックで「長押し」に変更)";
+            DrawString(boxX1 + 58, infoY1 + 78, descText, GetColor(140, 185, 225));
+        }
+        else if (cursor == 1)
+        {
+            SetFontSize(24);
+            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: 操作説明画面 】", GetColor(255, 215, 0));
+            SetFontSize(19);
+            DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 操作説明 (ヘルプ / ガイド)", GetColor(220, 235, 250));
+            DrawString(boxX1 + 58, infoY1 + 78, "※ 移動・射撃・スキル・暗闇索敵などの全操作ガイドおよびルールを表示します", GetColor(140, 185, 225));
+        }
+        else if (cursor == 2)
+        {
+            SetFontSize(24);
+            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: メインメニューへ戻る 】", GetColor(255, 215, 0));
+            SetFontSize(19);
+            DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 戻る (タイトルメニューへ)", GetColor(220, 235, 250));
+            DrawString(boxX1 + 58, infoY1 + 78, "※ 現在の設定内容を保持したまま、タイトルメイン画面に戻ります", GetColor(140, 185, 225));
+        }
+
+        SetFontSize(16);
+        DrawString(boxX1 + 58, infoY1 + 118, "[ W / S / ↑ / ↓ / マウス ] 選択    [ ENTER / クリック ] 決定・切替    [ ESC ] 戻る", GetColor(120, 160, 200));
+        SetFontSize(32);
     }
 }

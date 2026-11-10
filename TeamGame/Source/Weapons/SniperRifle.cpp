@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 #include <cstdlib>
 #include "SniperRifle.h"
 #include "Bullet.h"
@@ -51,7 +51,7 @@ void SniperRifle::Fire(const Vector2 &pos, const Vector2 &dir, int teamId, bool 
 
             int dmg = GetDamage();
             // 敵を最大2体まで貫通する弾丸を生成
-            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, data->range, data->bulletRadius,
+            new Bullet(pos.x, pos.y, finalDir, data->bulletSpeed, GetRange(), data->bulletRadius,
                        teamId, dmg, shooterName, isPanic, sniperVisual, /*pierce=*/ 2);
             
             // スナイパー特有の重厚な銃声

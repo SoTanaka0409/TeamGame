@@ -44,9 +44,6 @@ public:
      */
     static void SpawnMatchBots(const Stage& stage, float cellSize, Player* player, ObjectManager* objectManager, std::vector<Enemy*>& enemiesOut);
 
-    /**
-     * @brief 画面分割PvP時のボットを生成（両チームに人間プレイヤー1人＋ボット2体を均等配分: 合計 3 vs 3）
-     */
-    static void SpawnPvPBots(const Stage& stage, float cellSize, Player* player1, Player* player2, ObjectManager* objectManager, std::vector<Enemy*>& enemiesOut);
+
 };
 

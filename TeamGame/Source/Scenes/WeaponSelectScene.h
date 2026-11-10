@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Scene.h"
 #include "../Core/PlayerSelection.h"
@@ -18,13 +18,24 @@ public:
     void Draw() override;
     void Finalize() override;
 
+    enum class SelectState {
+        SELECTING,      ///< 武器選択中
+        CONFIRMING      ///< 出撃確認モーダル表示中
+    };
+
 private:
     WeaponSelectData m_slot1Weapon;               // スロット1 (ハンドガン固定)
     std::vector<WeaponSelectData> m_slot2Options;  // スロット2 選択肢
     int m_selectedSlot2Index = 0;                 // 現在の選択カーソル
+    SelectState m_state = SelectState::SELECTING;
+    int m_confirmCursor = 0;                     ///< 0: 出撃開始 (START), 1: 装備を変更 (CANCEL)
 
     char m_prevKeys[256]{};
     bool m_hasReleasedConfirm = false; ///< シーン開始後に決定キーが一度離されたかのフラグ
+    int m_prevMouseX = -1;
+    int m_prevMouseY = -1;
+    bool m_prevMouseLeft = false;
+
     bool IsKeyJustPressed(int keyCode);
 
     // ========================================================

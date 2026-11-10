@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector2.h"
 #include "../Managers/WeaponManager.h"
 #include "BulletVisualConfig.h"
@@ -21,6 +21,7 @@ protected:
     int reloadTimer;
     GunBarrelVisualConfig barrelVisual; ///< 銃身（バレル）の描画アセット設定
     float damageMultiplier = 1.0f;      ///< 攻撃力・ダメージ倍率（Bot用調整等）
+    float rangeMultiplier = 1.0f;       ///< 射程倍率（Bot用調整等）
 
 public:
     explicit Weapon(const std::string &name);
@@ -57,6 +58,21 @@ public:
      */
     void SetDamageMultiplier(float mult) { damageMultiplier = mult; }
     float GetDamageMultiplier() const { return damageMultiplier; }
+
+    /**
+     * @brief 射程倍率を設定する（Bot用調整など）
+     */
+    void SetRangeMultiplier(float mult) { rangeMultiplier = mult; }
+    float GetRangeMultiplier() const { return rangeMultiplier; }
+
+    /**
+     * @brief 最終的な弾丸の射程距離を取得
+     */
+    float GetRange() const
+    {
+        if (!data) return 0.0f;
+        return data->range * rangeMultiplier;
+    }
 
     /**
      * @brief 最終的な弾丸1発のダメージを取得
