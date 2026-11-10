@@ -490,5 +490,17 @@
     <None Include="Resource\Titleu.jpg">
       <Filter>リソース ファイル</Filter>
     </None>
+    <None Include="Resource\Title_GameStart.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_Settings.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_Exit.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Resource\Title_BloodBanner.png">
+      <Filter>リソース ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>

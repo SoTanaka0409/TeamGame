@@ -406,5 +406,9 @@
     <None Include="Resource\Title02.png" />
     <None Include="Resource\Title2.png" />
     <None Include="Resource\Titleu.jpg" />
+    <None Include="Resource\Title_GameStart.png" />
+    <None Include="Resource\Title_Settings.png" />
+    <None Include="Resource\Title_Exit.png" />
+    <None Include="Resource\Title_BloodBanner.png" />
   </ItemGroup>
 </Project>
