@@ -1,5 +1,7 @@
 ﻿#include "Animation.h"
 #include <cmath>
+#include <string>
+#include <cctype>
 
 Animation::Animation(int modelHandle)
     : m_modelHandle(modelHandle),
@@ -12,11 +14,8 @@ Animation::Animation(int modelHandle)
       m_isLoop(true),
       m_isFinished(false)
 {
-    // 標準モデルの初期マッピング (GreenCharacter等の標準アニメーション番号)
-    m_motionMap[MotionType::Idle]  = 0;
-    m_motionMap[MotionType::Walk]  = 1;
-    m_motionMap[MotionType::Die]   = 2;
-    m_motionMap[MotionType::Shoot] = 0; // 射撃専用モーションが無ければ待機を兼用
+    // モデルのアニメーション構造を自動解析して正確にマッピング
+    DetectAnimationsFromModel(modelHandle);
 }
 
 Animation::~Animation()
@@ -41,6 +40,100 @@ void Animation::SetModelHandle(int modelHandle)
     m_animTime = 0.0f;
     m_totalAnimTime = 0.0f;
     m_isFinished = false;
+
+    // ハンドル再設定時にもアニメーション対応表を再構成
+    DetectAnimationsFromModel(modelHandle);
+}
+
+void Animation::DetectAnimationsFromModel(int modelHandle)
+{
+    if (modelHandle == -1)
+    {
+        // デフォルトマッピング
+        m_motionMap[MotionType::Idle]  = 0;
+        m_motionMap[MotionType::Walk]  = 1;
+        m_motionMap[MotionType::Die]   = 2;
+        m_motionMap[MotionType::Shoot] = 0;
+        return;
+    }
+
+    int animCount = MV1GetAnimNum(modelHandle);
+    if (animCount <= 0)
+    {
+        m_motionMap[MotionType::Idle]  = 0;
+        m_motionMap[MotionType::Walk]  = 1;
+        m_motionMap[MotionType::Die]   = 2;
+        m_motionMap[MotionType::Shoot] = 0;
+        return;
+    }
+
+    int idleIdx = -1;
+    int walkIdx = -1;
+    int dieIdx = -1;
+    int shootIdx = -1;
+
+    for (int i = 0; i < animCount; ++i)
+    {
+        const TCHAR* rawName = MV1GetAnimName(modelHandle, i);
+        std::string lowerName = "";
+        if (rawName)
+        {
+            lowerName = rawName;
+            for (char& c : lowerName) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+
+        if (lowerName.find("attack") != std::string::npos || lowerName.find("shoot") != std::string::npos ||
+            lowerName.find("shot") != std::string::npos || lowerName.find("fire") != std::string::npos)
+        {
+            shootIdx = i;
+        }
+        else if (lowerName.find("die") != std::string::npos || lowerName.find("death") != std::string::npos ||
+                 lowerName.find("dead") != std::string::npos)
+        {
+            dieIdx = i;
+        }
+        else if (lowerName.find("idle") != std::string::npos || lowerName.find("idl") != std::string::npos ||
+                 lowerName.find("stand") != std::string::npos || lowerName.find("wait") != std::string::npos)
+        {
+            idleIdx = i;
+        }
+        else if (lowerName.find("walk") != std::string::npos || lowerName.find("wa") != std::string::npos ||
+                 lowerName.find("run") != std::string::npos || lowerName.find("move") != std::string::npos)
+        {
+            walkIdx = i;
+        }
+    }
+
+    // 名前解析で見つからなかった場合の多重フォールバック
+    if (animCount == 4)
+    {
+        // 5キャラクターのモデル構成: [0]Attack, [1]Die, [2]Idle, [3]Walk
+        if (shootIdx == -1) shootIdx = 0;
+        if (dieIdx == -1)   dieIdx   = 1;
+        if (idleIdx == -1)  idleIdx  = 2;
+        if (walkIdx == -1)  walkIdx  = 3;
+    }
+    else if (animCount == 3)
+    {
+        // GreenCharacter構成: [0]Die, [1]Idle, [2]Walk
+        if (dieIdx == -1)   dieIdx   = 0;
+        if (idleIdx == -1)  idleIdx  = 1;
+        if (walkIdx == -1)  walkIdx  = 2;
+        if (shootIdx == -1) shootIdx = idleIdx;
+    }
+    else
+    {
+        if (idleIdx == -1)  idleIdx  = 0;
+        if (walkIdx == -1)  walkIdx  = (animCount > 1) ? 1 : idleIdx;
+        if (dieIdx == -1)   dieIdx   = (animCount > 2) ? 2 : idleIdx;
+        if (shootIdx == -1) shootIdx = (animCount > 3) ? 3 : idleIdx;
+    }
+
+    if (idleIdx != -1)  m_motionMap[MotionType::Idle]  = idleIdx;
+    if (walkIdx != -1)  m_motionMap[MotionType::Walk]  = walkIdx;
+    if (dieIdx != -1)   m_motionMap[MotionType::Die]   = dieIdx;
+    if (shootIdx != -1) m_motionMap[MotionType::Shoot] = shootIdx;
+    else if (idleIdx != -1) m_motionMap[MotionType::Shoot] = idleIdx;
 }
 
 void Animation::SetMotionIndex(MotionType motion, int animIndex)
@@ -50,13 +143,21 @@ void Animation::SetMotionIndex(MotionType motion, int animIndex)
 
 void Animation::Play(MotionType motion, bool loop, float speed)
 {
-    // 死亡モーション等の再生中は、他のモーションで上書きしない
+    // 死亡モーション再生中は、他のいかなるモーションでも上書きしない
     if (m_currentMotion == MotionType::Die && !m_isFinished && motion != MotionType::Die)
     {
         return;
     }
 
-    // 既に同じモーションがループ再生中であれば継続
+    // 射撃・攻撃モーション再生中（単発）は、毎フレームのIdle/Walk呼び出しで即座に打ち消されないよう保護
+    // （ただし死亡モーションが発生した場合は即座に死亡を優先）
+    if (m_currentMotion == MotionType::Shoot && !m_isFinished &&
+        motion != MotionType::Die && motion != MotionType::Shoot)
+    {
+        return;
+    }
+
+    // 既に同じモーションが再生中であれば、再生速度の更新のみ行って継続
     if (m_currentMotion == motion && m_attachIndex != -1 && !m_isFinished && m_isLoop == loop)
     {
         m_playSpeed = speed;
