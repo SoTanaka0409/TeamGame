@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Character.h"
 #include <vector>
 #include <cmath>
@@ -175,9 +175,7 @@ public:
     /**
      * @brief リモートプレイヤーフラグの設定
      */
-    void SetRemote(bool val) { isRemote = val; }
-
-    /**
+/**
      * @brief プレイヤーから見える範囲（画面内かつ可視状態）にいるかどうか
      * @details 自機プレイヤーは透明化中も半透明表示されるため常にtrue、2P/リモート時は画面内判定に従います。
      */
@@ -224,9 +222,7 @@ public:
     /**
      * @brief リモートプレイヤーかどうか
      */
-    bool IsRemote() const { return isRemote; }
-
-    /**
+/**
      * @brief 視点固定（エイムロック）状態かどうか
      */
     bool IsAimLocked() const { return isAimLocked; }
@@ -259,7 +255,6 @@ private:
     float m_lightAngle = 0.0f;  ///< ライト照射角度
     bool m_isLightOn = true;    ///< ライトON/OFF
     bool m_prevMouseRight = false; ///< 前フレーム右クリック状態
-    bool isRemote = false;      ///< リモートプレイヤーフラグ
     bool isAimLocked = false;   ///< 視点固定（エイムロック）フラグ
     bool prevAimLockKey = false; ///< 前フレームの視点固定キー状態
     PlayerInputType m_inputType = PlayerInputType::KEYBOARD_MOUSE; ///< 操作タイプ
