@@ -65,16 +65,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // .exe直接起動時でもResourceフォルダを正しく参照できるようカレントディレクトリを調整
     EnsureResourceWorkingDirectory();
 
-    // デスクトップの解像度を取得してフルスクリーンに近い形にする
-    // GetSystemMetrics は Windows API
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
     // ウィンドウモードで起動設定
-    ChangeWindowMode(true);
+    ChangeWindowMode(TRUE);
 
-    // ウィンドウサイズを画面サイズに合わせる
-    SetGraphMode(screenWidth, screenHeight, 32);
+    // 内部描画解像度は 1920x1080 (Full HD) を維持（全UIや3Dカメラの基準座標）
+    SetGraphMode(1920, 1080, 32);
+
+    // ウィンドウの表示サイズを 1280x720 に縮小スケーリングして表示
+    SetWindowSizeChangeEnableFlag(TRUE, TRUE);
+    SetWindowSize(1280, 720);
 
     // ウィンドウタイトルの設定
     SetMainWindowText("TeamGame");
