@@ -177,19 +177,19 @@ if (!currEnter && !currMouseLeft)
     }
     else if (state == TitleState::SETTINGS)
     {
-        const int boxW = 580;
+        const int boxW = 920;
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
-        const int menuStartY = 400;
-        const int menuSpacing = 60;
+        const int menuStartY = 335;
+        const int menuSpacing = 68;
 
         // マウス操作（ホバーで選択、クリックで決定）
         for (int i = 0; i < 3; i++)
         {
-            int bx1 = boxX1;
-            int bx2 = boxX2;
-            int by1 = menuStartY + i * menuSpacing - 10;
-            int by2 = menuStartY + (i + 1) * menuSpacing - 10;
+            int bx1 = boxX1 + 35;
+            int bx2 = boxX2 - 35;
+            int by1 = menuStartY + i * menuSpacing - 6;
+            int by2 = menuStartY + i * menuSpacing + 42;
             if (mouseX >= bx1 && mouseX <= bx2 && mouseY >= by1 && mouseY <= by2)
             {
                 if (mouseMoved && cursor != i) cursor = i;
@@ -331,16 +331,16 @@ void TitleScene::Draw()
     // =========================================================================
     if (state == TitleState::SETTINGS)
     {
-        // 設定画面ヘッダー（中央揃え・580px幅フレーム）
-        const int hW = 580;
+        // 設定画面ヘッダー（中央揃え・600px幅フレーム）
+        const int hW = 600;
         const int hX1 = (1920 - hW) / 2;
         const int hX2 = hX1 + hW;
-        DrawBox(hX1, 180, hX2, 240, GetColor(20, 30, 45), TRUE);
-        DrawBox(hX1, 180, hX2, 240, GetColor(0, 180, 255), FALSE);
-        DrawBox(hX1 + 2, 182, hX2 - 2, 238, GetColor(30, 70, 110), FALSE);
+        DrawBox(hX1, 160, hX2, 230, GetColor(20, 30, 45), TRUE);
+        DrawBox(hX1, 160, hX2, 230, GetColor(0, 180, 255), FALSE);
+        DrawBox(hX1 + 2, 162, hX2 - 2, 228, GetColor(30, 70, 110), FALSE);
 
-        int textW = GetDrawStringWidth("=== 設 定 ===", -1);
-        DrawString((1920 - textW) / 2, 200, "=== 設 定 ===", GetColor(255, 255, 255));
+        int textW = GetDrawStringWidth("=== SETTINGS ===", -1);
+        DrawString((1920 - textW) / 2, 180, "=== SETTINGS ===", GetColor(255, 255, 255));
     }
     else
     {
@@ -438,10 +438,20 @@ void TitleScene::Draw()
                 }
             }
 
+            // 画面下部に選択中項目の日本語表記を表示
+            SetFontSize(22);
+            const char* mainJpTexts[3] = {
+                "【 ゲーム開始 】 ソロプレイ戦闘を開始します",
+                "【 各種設定 】 エイム固定モードや操作説明を設定・確認します",
+                "【 ゲーム終了 】 アプリケーションを終了します"
+            };
+            int jpW = GetDrawStringWidth(mainJpTexts[cursor], -1);
+            DrawString((1920 - jpW) / 2, 835, mainJpTexts[cursor], GetColor(255, 215, 0));
+
             // 下部に控えめな操作ガイドを表示
-            SetFontSize(20);
-            int guideW = GetDrawStringWidth("[W/S] キー または マウスで選択  /  [ENTER] または クリックで決定", -1);
-            DrawString((1920 - guideW) / 2, 870, "[W/S] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200));
+            SetFontSize(18);
+            int guideW = GetDrawStringWidth("[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", -1);
+            DrawString((1920 - guideW) / 2, 875, "[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200));
             SetFontSize(32);
         }
         else
@@ -463,52 +473,100 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::SETTINGS)
     {
-        const int boxW = 580;
+        // 拡大したメイン設定ボックス (幅920px・十分な余白と洗練されたネオン枠)
+        const int boxW = 920;
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
-        const int boxY1 = menuStartY - 25;
-        const int boxY2 = menuStartY + 3 * menuSpacing + 75;
+        const int boxY1 = 280;
+        const int boxY2 = 780;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 175);
-        DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(15, 20, 35), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+        DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(15, 22, 36), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(0, 160, 240), FALSE);
         DrawBox(boxX1 + 2, boxY1 + 2, boxX2 - 2, boxY2 - 2, GetColor(30, 70, 110), FALSE);
 
-        std::string modeVal = GameSettings::GetInstance().isAimLockHoldMode ? "長押し (Hold)" : "切り替え (Toggle)";
-        std::string items[] = {
-            std::string("エイム固定 (Eキー) : ") + modeVal,
-            "操作説明 (ヘルプ / ガイド)",
-            "戻る"
+        const int sMenuStartY = 335;
+        const int sMenuSpacing = 68;
+
+        // 選択項目は英語表記 (AIM LOCK, CONTROLS GUIDE, BACK)
+        std::string modeVal = GameSettings::GetInstance().isAimLockHoldMode ? "HOLD" : "TOGGLE";
+        std::string items[3] = {
+            std::string("AIM LOCK (E-KEY) : ") + modeVal,
+            "CONTROLS GUIDE",
+            "BACK"
         };
+
         for (int i = 0; i < 3; i++)
         {
-            unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(215, 225, 235);
-            if (i == cursor)
+            int iy = sMenuStartY + i * sMenuSpacing;
+            bool isSelected = (i == cursor);
+
+            if (isSelected)
             {
-                DrawString(boxX1 + 35, menuStartY + i * menuSpacing, "▶", GetColor(255, 215, 0));
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(25, 45, 75), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(0, 200, 255), FALSE);
+                DrawBox(boxX1 + 35, iy - 6, boxX1 + 43, iy + 42, GetColor(255, 215, 0), TRUE);
+                DrawString(boxX1 + 55, iy, "▶", GetColor(255, 215, 0));
             }
-            DrawString(boxX1 + 65, menuStartY + i * menuSpacing, items[i].c_str(), color);
+            else
+            {
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(12, 18, 28), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(35, 50, 70), FALSE);
+            }
+
+            unsigned int color = isSelected ? GetColor(255, 255, 0) : GetColor(210, 225, 240);
+            DrawString(boxX1 + 85, iy, items[i].c_str(), color);
         }
 
-        // 枠内下部に補足説明を表示（枠内に確実に収まる）
-        SetFontSize(18);
-        const char* noteText = "";
+        // 区切り線
+        int divY = 555;
+        DrawLine(boxX1 + 40, divY, boxX2 - 40, divY, GetColor(0, 140, 200));
+
+        // 画面下部: 選択項目の日本語表記＆解説パネル
+        int infoY1 = 575;
+        int infoY2 = 745;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
+        DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(10, 15, 25), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(45, 70, 100), FALSE);
+        DrawBox(boxX1 + 35, infoY1, boxX1 + 43, infoY2, GetColor(232, 170, 60), TRUE); // 琥珀アクセント
+
         if (cursor == 0)
         {
-            noteText = GameSettings::GetInstance().isAimLockHoldMode ?
-                "※ [長押し]: Eキーを押している間だけエイムを固定します" :
-                "※ [切り替え]: Eキーを押すごとに固定のON/OFFを切り替えます";
+            SetFontSize(24);
+            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: エイム固定モード 】", GetColor(255, 215, 0));
+            SetFontSize(19);
+            std::string modeJa = GameSettings::GetInstance().isAimLockHoldMode ? "長押し (HOLD)" : "切り替え (TOGGLE)";
+            DrawString(boxX1 + 58, infoY1 + 48, (std::string("日本語表記: エイム固定 (Eキー) [") + modeJa + "]").c_str(), GetColor(220, 235, 250));
+            const char* descText = GameSettings::GetInstance().isAimLockHoldMode ?
+                "※ Eキーを押している間だけ照準を固定します (Enterまたはクリックで「切り替え」に変更)" :
+                "※ Eキーを押すごとに固定のON/OFFを切り替えます (Enterまたはクリックで「長押し」に変更)";
+            DrawString(boxX1 + 58, infoY1 + 78, descText, GetColor(140, 185, 225));
         }
         else if (cursor == 1)
         {
-            noteText = "※ キーボード・マウスの操作方法とゲームルールを確認します";
+            SetFontSize(24);
+            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: 操作説明画面 】", GetColor(255, 215, 0));
+            SetFontSize(19);
+            DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 操作説明 (ヘルプ / ガイド)", GetColor(220, 235, 250));
+            DrawString(boxX1 + 58, infoY1 + 78, "※ 移動・射撃・スキル・暗闇索敵などの全操作ガイドおよびルールを表示します", GetColor(140, 185, 225));
         }
-        else
+        else if (cursor == 2)
         {
-            noteText = "※ メインメニューに戻ります";
+            SetFontSize(24);
+            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: メインメニューへ戻る 】", GetColor(255, 215, 0));
+            SetFontSize(19);
+            DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 戻る (タイトルメニューへ)", GetColor(220, 235, 250));
+            DrawString(boxX1 + 58, infoY1 + 78, "※ 現在の設定内容を保持したまま、タイトルメイン画面に戻ります", GetColor(140, 185, 225));
         }
-        DrawString(boxX1 + 40, boxY2 - 38, noteText, GetColor(140, 180, 220));
+
+        SetFontSize(16);
+        DrawString(boxX1 + 58, infoY1 + 118, "[ W / S / ↑ / ↓ / マウス ] 選択    [ ENTER / クリック ] 決定・切替    [ ESC ] 戻る", GetColor(120, 160, 200));
         SetFontSize(32);
     }
 }

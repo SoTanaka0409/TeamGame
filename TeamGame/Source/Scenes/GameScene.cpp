@@ -892,8 +892,10 @@ void GameScene::Draw()
         const int itemStartX = panelX + (panelW - itemW) / 2;
         const int itemStartY = panelY + 120;
 
-        std::string modeText = std::string("エイム固定 (Eキー): ") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し (Hold)" : "切り替え (Toggle)");
-        std::string modeDesc = GameSettings::GetInstance().isAimLockHoldMode ? "Eキーを押している間だけエイムを固定します" : "Eキーを押すごとにエイム固定のON/OFFを切り替えます";
+        std::string modeText = std::string("AIM LOCK (E-KEY) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "HOLD" : "TOGGLE");
+        std::string modeDesc = GameSettings::GetInstance().isAimLockHoldMode ?
+            "エイム固定 (Eキー): Eキーを押している間だけエイムを固定します" :
+            "エイム固定 (Eキー): Eキーを押すごとにエイム固定のON/OFFを切り替えます";
 
         struct SettingsItemInfo {
             std::string title;
@@ -904,8 +906,8 @@ void GameScene::Draw()
 
         SettingsItemInfo sItems[3] = {
             { modeText, modeDesc, "⚙", false },
-            { "操作説明 (CONTROLS GUIDE)", "キーボード・マウス操作＆ルールのヘルプを表示", "？", true },
-            { "戻る (BACK)", "ポーズメニューへ戻ります", "←", false }
+            { "CONTROLS GUIDE", "操作説明: キーボード・マウス操作＆ルールのヘルプを表示", "？", true },
+            { "BACK TO PAUSE MENU", "戻る: 一時停止メニューへ戻ります", "←", false }
         };
 
         for (int i = 0; i < 3; i++)
