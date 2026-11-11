@@ -215,11 +215,7 @@ void Animation::Update(float deltaTime)
     {
         if (m_animTime >= m_totalAnimTime)
         {
-            if ()
-            {
-
-            }
-            if else (m_isLoop)
+            if (m_isLoop)
             {
                 m_animTime = std::fmod(m_animTime, m_totalAnimTime);
             }
