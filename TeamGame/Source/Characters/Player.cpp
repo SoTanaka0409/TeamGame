@@ -965,7 +965,7 @@ void Player::TakeDamage(int amount, const std::string& attackerName, int attacke
         if (!m_isDying)
         {
             m_isDying = true;
-            m_deathStayTimer = 100; // 約1.7秒間、死んだ場所で停止し倒れるアニメーションを表示
+            m_deathStayTimer = 110; // 約1.8秒間、死んだ場所で停止し倒れるアニメーションを表示
             knockbackVelocity = Vector2(0.0f, 0.0f);
             m_isMoving = false;
             if (m_model) m_model->PlayDie(1.2f);

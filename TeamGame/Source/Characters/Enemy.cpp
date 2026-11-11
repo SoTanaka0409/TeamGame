@@ -1488,7 +1488,7 @@ void Enemy::Damage(int amount, const std::string& attackerName, int attackerTeam
         if (!m_isDying)
         {
             m_isDying = true;
-            m_deathStayTimer = 60; // 約1秒間倒れるアニメーションを再生
+            m_deathStayTimer = 90; // 約1.5秒間倒れるアニメーションを再生し、倒れた状態で留まる
             if (m_model) m_model->PlayDie(1.5f);
         }
     }
@@ -1505,7 +1505,7 @@ void Enemy::StealthKill(const std::string& attackerName, int attackerTeamId)
     if (!m_isDying)
     {
         m_isDying = true;
-        m_deathStayTimer = 60;
+        m_deathStayTimer = 90; // 約1.5秒間倒れるアニメーションを再生し、倒れた状態で留まる
         if (m_model) m_model->PlayDie(1.5f);
     }
 

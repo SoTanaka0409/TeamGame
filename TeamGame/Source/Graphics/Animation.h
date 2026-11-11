@@ -87,4 +87,9 @@ public:
      * @brief 現在のアニメーション番号の取得
      */
     int GetCurrentAnimIndex() const { return m_currentAnimIndex; }
+
+    /**
+     * @brief モーション状態を初期化（リスポーン時など）
+     */
+    void Reset();
 };

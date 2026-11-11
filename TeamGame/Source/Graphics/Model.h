@@ -145,6 +145,11 @@ public:
      */
     bool IsMotionFinished() const;
 
+    /**
+     * @brief モーション状態を初期化（リスポーン時など）
+     */
+    void ResetMotion();
+
     // --- フレーム更新および描画 ---
 
     /**

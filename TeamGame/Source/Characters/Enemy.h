@@ -283,5 +283,6 @@ public:
     void ResetDying() {
         m_isDying = false;
         m_deathStayTimer = 0;
+        if (m_model) m_model->ResetMotion();
     }
 };

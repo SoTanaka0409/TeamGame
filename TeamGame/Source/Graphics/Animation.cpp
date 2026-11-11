@@ -141,12 +141,38 @@ void Animation::SetMotionIndex(MotionType motion, int animIndex)
     m_motionMap[motion] = animIndex;
 }
 
+void Animation::Reset()
+{
+    if (m_modelHandle != -1 && m_attachIndex != -1)
+    {
+        MV1DetachAnim(m_modelHandle, m_attachIndex);
+        m_attachIndex = -1;
+    }
+    m_currentMotion = MotionType::Idle;
+    m_currentAnimIndex = -1;
+    m_animTime = 0.0f;
+    m_totalAnimTime = 0.0f;
+    m_playSpeed = 1.0f;
+    m_isLoop = true;
+    m_isFinished = false;
+}
+
 void Animation::Play(MotionType motion, bool loop, float speed)
 {
-    // 死亡モーション再生中は、他のいかなるモーションでも上書きしない
-    if (m_currentMotion == MotionType::Die && !m_isFinished && motion != MotionType::Die)
+    // 死亡モーションについて:
+    // 既に死亡モーション再生中（または完了して倒れたままの状態）の場合、
+    // 再びDieが呼ばれても絶対に最初から繰り返さない（最終フレームで倒れたまま静止を維持）
+    if (m_currentMotion == MotionType::Die)
     {
-        return;
+        if (motion == MotionType::Die)
+        {
+            return; // 既に再生中または倒れ込み完了しているので絶対にリスタートしない！
+        }
+        // 死亡状態中は、リスポーン（Reset() / PlayIdle()）以外による他のモーション上書きを遮断
+        if (motion != MotionType::Idle)
+        {
+            return;
+        }
     }
 
     // 射撃・攻撃モーション再生中（単発）は、毎フレームのIdle/Walk呼び出しで即座に打ち消されないよう保護
@@ -157,11 +183,15 @@ void Animation::Play(MotionType motion, bool loop, float speed)
         return;
     }
 
-    // 既に同じモーションが再生中であれば、再生速度の更新のみ行って継続
-    if (m_currentMotion == motion && m_attachIndex != -1 && !m_isFinished && m_isLoop == loop)
+    // 既に同じモーションが再生中または完了している場合
+    if (m_currentMotion == motion && m_attachIndex != -1)
     {
-        m_playSpeed = speed;
-        return;
+        // ループモーションまたは未終了モーションの場合はリスタートせず継続
+        if (!m_isFinished && m_isLoop == loop)
+        {
+            m_playSpeed = speed;
+            return;
+        }
     }
 
     m_currentMotion = motion;
@@ -204,7 +234,15 @@ void Animation::PlayByIndex(int animIndex, bool loop, float speed)
 void Animation::Update(float deltaTime)
 {
     if (m_modelHandle == -1 || m_attachIndex == -1) return;
-    if (m_isFinished) return;
+    if (m_isFinished)
+    {
+        // 死亡モーションなど非ループモーションが終了した場合、最終フレームで確実に静止状態を維持
+        if (!m_isLoop && m_totalAnimTime > 0.0f)
+        {
+            MV1SetAttachAnimTime(m_modelHandle, m_attachIndex, m_totalAnimTime);
+        }
+        return;
+    }
 
     // DxLibのMV1アニメーション総時間(totalAnimTime)はフレーム単位(約60FPS)で管理されるため、
     // 秒単位のdeltaTime(例: 1/60s = 0.0166s)が渡された場合は60倍してフレーム単位に進める
