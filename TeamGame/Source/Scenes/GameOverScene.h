@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include "../UI/UITextWindow.h"
 
@@ -23,6 +23,9 @@ class GameOverScene : public Scene
     // ========================================================
     int gameOverBgIndex = -1;        ///< ゲームオーバー画面背景画像の配列番号
     int windowFrameIndex = -1;       ///< UITextWindow枠画像の配列番号
+    int gameOverLogoIndex = -1;      ///< ゲームオーバーロゴ画像の配列番号
+
+    bool prevClick = false;          ///< 前フレームでのマウスクリック状態
 
     // UITextWindow による敗北メッセージ枠描画
     UI::UITextWindow* defeatWindow = nullptr; ///< 敗北パネル用テキストウィンドウ
