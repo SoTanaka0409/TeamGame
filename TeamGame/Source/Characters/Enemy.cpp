@@ -684,6 +684,23 @@ void Enemy::MoveSmart(const Vector2 &desiredDir, float speedScale)
 
 void Enemy::Update()
 {
+    // 死亡演出中: その場で倒れるモーションを再生
+    if (m_isDying)
+    {
+        if (m_model)
+        {
+            m_model->PlayDie(1.5f);
+            m_model->Update(1.0f / 60.0f);
+        }
+        m_deathStayTimer--;
+        if (m_deathStayTimer <= 0)
+        {
+            m_isDying = false;
+            SetActive(false); // 倒れ込み演出完了後に非アクティブ化
+        }
+        return;
+    }
+
     float startPosX = position.x;
     float startPosY = position.y;
 
@@ -1452,7 +1469,7 @@ void Enemy::Draw()
 
 void Enemy::Damage(int amount, const std::string& attackerName, int attackerTeamId)
 {
-    if (invincibleTimer > 0) return;
+    if (invincibleTimer > 0 || m_isDying) return;
     if (!attackerName.empty() || attackerTeamId != -1)
     {
         SetLastAttacker(attackerName, attackerTeamId);
@@ -1468,8 +1485,12 @@ void Enemy::Damage(int amount, const std::string& attackerName, int attackerTeam
     if (status.IsDead())
     {
         StopHomingSuicide();
-        SetActive(false);
-        if (m_model) m_model->PlayDie();
+        if (!m_isDying)
+        {
+            m_isDying = true;
+            m_deathStayTimer = 90; // 約1.5秒間倒れるアニメーションを再生し、倒れた状態で留まる
+            if (m_model) m_model->PlayDie(1.5f);
+        }
     }
 }
 
@@ -1481,8 +1502,12 @@ void Enemy::StealthKill(const std::string& attackerName, int attackerTeamId)
     }
     StopHomingSuicide();
     status.TakeDamage(status.GetCurrentHp());
-    SetActive(false);
-    if (m_model) m_model->PlayDie();
+    if (!m_isDying)
+    {
+        m_isDying = true;
+        m_deathStayTimer = 90; // 約1.5秒間倒れるアニメーションを再生し、倒れた状態で留まる
+        if (m_model) m_model->PlayDie(1.5f);
+    }
 
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetEffectManager())

@@ -36,6 +36,14 @@ GameScene::GameScene(PlayMode mode) : player(nullptr), currentPlayMode(mode)
 
 GameScene::~GameScene()
 {
+    for (int i = 0; i < 6; i++)
+    {
+        if (pauseIconHandles[i] != -1)
+        {
+            DeleteGraph(pauseIconHandles[i]);
+            pauseIconHandles[i] = -1;
+        }
+    }
 }
 
 int GameScene::GetActiveEnemyCount() const
@@ -159,6 +167,26 @@ void GameScene::Init()
 
     // 戦闘BGMの再生（音量をほんの少し下げて戦闘.mp3をループ再生: 0.60f）
     SoundManager::GetInstance().PlayBGM("battle_bgm", 0.60f);
+
+    // ポーズメニュー用アイコン画像の読み込み
+    const char* pauseIconNames[6] = {
+        "btn_resume.png",
+        "btn_restart.png",
+        "btn_settings.png",
+        "btn_controls.png",
+        "btn_title.png",
+        "btn_exit.png"
+    };
+    for (int i = 0; i < 6; i++)
+    {
+        std::string p1 = std::string("Images/UI/Pause/") + pauseIconNames[i];
+        std::string p2 = std::string("UI/Pause/") + pauseIconNames[i];
+        std::string p3 = std::string("Resource/Images/UI/Pause/") + pauseIconNames[i];
+        pauseIconHandles[i] = LoadGraphWithSearch(p1);
+        if (pauseIconHandles[i] == -1) pauseIconHandles[i] = LoadGraphWithSearch(p2);
+        if (pauseIconHandles[i] == -1) pauseIconHandles[i] = LoadGraphWithSearch(p3);
+        if (pauseIconHandles[i] == -1) pauseIconHandles[i] = LoadGraphWithSearch(pauseIconNames[i]);
+    }
 }
 
 void GameScene::Update()
@@ -355,31 +383,56 @@ void GameScene::Update()
     else if (state == GameState::PAUSED)
     {
         if (currEsc && !prevEsc) state = GameState::PLAYING;
-        if (currUp && !prevUp) pauseMenuCursor--;
-        if (currDown && !prevDown) pauseMenuCursor++;
-        if (pauseMenuCursor < 0) pauseMenuCursor = 3;
-        if (pauseMenuCursor > 3) pauseMenuCursor = 0;
+
+        if (currUp && !prevUp)
+        {
+            pauseMenuCursor = (pauseMenuCursor + 4) % 6;
+            SoundManager::GetInstance().PlayTapSE(0.4f);
+        }
+        else if (currDown && !prevDown)
+        {
+            pauseMenuCursor = (pauseMenuCursor + 2) % 6;
+            SoundManager::GetInstance().PlayTapSE(0.4f);
+        }
+        else if (currLeft && !prevLeft)
+        {
+            pauseMenuCursor = (pauseMenuCursor % 2 == 1) ? (pauseMenuCursor - 1) : (pauseMenuCursor + 1);
+            SoundManager::GetInstance().PlayTapSE(0.4f);
+        }
+        else if (currRight && !prevRight)
+        {
+            pauseMenuCursor = (pauseMenuCursor % 2 == 0) ? (pauseMenuCursor + 1) : (pauseMenuCursor - 1);
+            SoundManager::GetInstance().PlayTapSE(0.4f);
+        }
 
         int mouseX = 0, mouseY = 0;
         GetMousePoint(&mouseX, &mouseY);
-        const int panelW = 680;
-        const int panelH = 580;
+        const int panelW = 1060;
+        const int panelH = 660;
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
-        const int itemW = 580;
-        const int itemH = 76;
-        const int itemSpacing = 88;
-        const int itemStartX = panelX + (panelW - itemW) / 2;
-        const int itemStartY = panelY + 115;
+        const int colW = 460;
+        const int rowH = 120;
+        const int spacingX = 40;
+        const int spacingY = 25;
+        const int startX = panelX + (panelW - (colW * 2 + spacingX)) / 2;
+        const int startY = panelY + 125;
 
         bool mouseClickedItem = false;
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 6; i++)
         {
-            int iy = itemStartY + i * itemSpacing;
-            if (mouseX >= itemStartX && mouseX <= itemStartX + itemW &&
-                mouseY >= iy && mouseY <= iy + itemH)
+            int r = i / 2;
+            int c = i % 2;
+            int bx = startX + c * (colW + spacingX);
+            int by = startY + r * (rowH + spacingY);
+
+            if (mouseX >= bx && mouseX <= bx + colW &&
+                mouseY >= by && mouseY <= by + rowH)
             {
-                pauseMenuCursor = i;
+                if (pauseMenuCursor != i)
+                {
+                    pauseMenuCursor = i;
+                }
                 if (currClick && !prevClick)
                 {
                     mouseClickedItem = true;
@@ -389,19 +442,32 @@ void GameScene::Update()
 
         if ((currEnter && !prevEnter) || mouseClickedItem)
         {
-            if (pauseMenuCursor == 0) state = GameState::PLAYING;
-            else if (pauseMenuCursor == 1)
+            SoundManager::GetInstance().PlayTapSE();
+            if (pauseMenuCursor == 0) // ゲーム再開
+            {
+                state = GameState::PLAYING;
+            }
+            else if (pauseMenuCursor == 1) // やり直し
             {
                 SceneManager::GetInstance().ChangeScene(std::make_shared<GameScene>());
             }
-            else if (pauseMenuCursor == 2)
+            else if (pauseMenuCursor == 2) // 各種設定
             {
                 state = GameState::SETTINGS;
                 settingsMenuCursor = 0;
             }
-            else if (pauseMenuCursor == 3)
+            else if (pauseMenuCursor == 3) // 操作説明
+            {
+                previousStateBeforeControls = GameState::PAUSED;
+                state = GameState::CONTROLS;
+            }
+            else if (pauseMenuCursor == 4) // タイトルへ戻る
             {
                 SceneManager::GetInstance().ChangeScene(std::make_shared<TitleScene>());
+            }
+            else if (pauseMenuCursor == 5) // ゲーム終了
+            {
+                PostQuitMessage(0);
             }
         }
     }
@@ -448,6 +514,7 @@ void GameScene::Update()
             }
             else if (settingsMenuCursor == 1)
             {
+                previousStateBeforeControls = GameState::SETTINGS;
                 state = GameState::CONTROLS;
             }
             else if (settingsMenuCursor == 2)
@@ -460,7 +527,7 @@ void GameScene::Update()
     {
         if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || (currClick && !prevClick))
         {
-            state = GameState::SETTINGS;
+            state = previousStateBeforeControls;
         }
     }
 
@@ -750,8 +817,8 @@ void GameScene::Draw()
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
         // 2. メインパネル枠
-        const int panelW = 680;
-        const int panelH = 580;
+        const int panelW = 1060;
+        const int panelH = 660;
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
 
@@ -768,97 +835,104 @@ void GameScene::Draw()
         // ヘッダータイトル
         int headerY = panelY + 22;
         FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY, "PAUSE MENU", GetColor(255, 220, 0), 30);
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY + 36, "- 一時停止 / メニュー選択 -", GetColor(160, 200, 240), 16);
-        DrawLine(panelX + 40, headerY + 64, panelX + panelW - 40, headerY + 64, GetColor(0, 140, 200));
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY + 36, "- ポーズ / メニュー選択 -", GetColor(160, 200, 240), 16);
+        DrawLine(panelX + 60, headerY + 66, panelX + panelW - 60, headerY + 66, GetColor(0, 140, 200));
 
-        // 3. 各項目の枠（カード・ボタン）
-        const int itemW = 580;
-        const int itemH = 76;
-        const int itemSpacing = 88;
-        const int itemStartX = panelX + (panelW - itemW) / 2;
-        const int itemStartY = panelY + 115;
+        // 3. 各項目のカード (2列×3行グリッド)
+        const int colW = 460;
+        const int rowH = 120;
+        const int spacingX = 40;
+        const int spacingY = 25;
+        const int startX = panelX + (panelW - (colW * 2 + spacingX)) / 2;
+        const int startY = panelY + 125;
 
         struct MenuItemInfo {
             const char* titleJa;
             const char* titleEn;
             const char* desc;
-            const char* badge;
-            bool isSpecial;
+            bool isAlert;
         };
 
-        const MenuItemInfo items[4] = {
-            { "ゲーム再開", "RESUME GAME", "戦闘画面に戻ってプレイを続行します", "▶", false },
-            { "やり直し", "RESTART", "現在のステージを最初からリスタートします", "↺", false },
-            { "各種設定", "SETTINGS", "エイム固定モード等の設定を変更します", "⚙", false },
-            { "タイトルへ", "EXIT TO TITLE", "タイトル画面へ戻ります", "✕", false }
+        const MenuItemInfo items[6] = {
+            { "ゲーム再開", "RESUME", "戦闘に戻ってプレイを続行します", false },
+            { "やり直し", "RESTART", "ステージを最初からやり直します", false },
+            { "各種設定", "SETTINGS", "エイム固定や各種環境の設定", false },
+            { "操作説明", "CONTROLS", "キーボード・マウスの操作ヘルプ", false },
+            { "タイトルへ", "TITLE", "タイトル画面へ戻ります", true },
+            { "ゲーム終了", "EXIT GAME", "ゲームを終了して終了します", true }
         };
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 6; i++)
         {
-            int iy = itemStartY + i * itemSpacing;
+            int r = i / 2;
+            int c = i % 2;
+            int bx = startX + c * (colW + spacingX);
+            int by = startY + r * (rowH + spacingY);
             bool isSelected = (i == pauseMenuCursor);
 
-            // 枠の背景
+            // カード背景
             if (isSelected)
             {
                 SetDrawBlendMode(DX_BLENDMODE_ALPHA, 235);
-                unsigned int bgCol = items[i].isSpecial ? GetColor(45, 48, 25) : GetColor(25, 45, 75);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, bgCol, TRUE);
+                unsigned int bgCol = items[i].isAlert ? GetColor(50, 30, 35) : GetColor(32, 54, 88);
+                DrawBox(bx, by, bx + colW, by + rowH, bgCol, TRUE);
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-                // 発光枠線
-                unsigned int borderCol = items[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
-                DrawBox(itemStartX + 1, iy + 1, itemStartX + itemW - 1, iy + itemH - 1, borderCol, FALSE);
+                unsigned int borderCol = items[i].isAlert ? GetColor(255, 100, 100) : GetColor(0, 220, 255);
+                DrawBox(bx, by, bx + colW, by + rowH, borderCol, FALSE);
+                DrawBox(bx + 1, by + 1, bx + colW - 1, by + rowH - 1, borderCol, FALSE);
 
-                // 左端のアクティブバー
-                DrawBox(itemStartX, iy, itemStartX + 8, iy + itemH, borderCol, TRUE);
+                // 左端アクティブバー
+                DrawBox(bx, by, bx + 6, by + rowH, borderCol, TRUE);
             }
             else
             {
                 SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, GetColor(12, 18, 28), TRUE);
+                DrawBox(bx, by, bx + colW, by + rowH, GetColor(18, 25, 38), TRUE);
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-                // 通常枠線（操作説明枠は非選択時でもゴールド系の視認しやすい枠線）
-                unsigned int borderCol = items[i].isSpecial ? GetColor(160, 130, 40) : GetColor(45, 65, 95);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
+                unsigned int borderCol = items[i].isAlert ? GetColor(100, 45, 55) : GetColor(45, 65, 95);
+                DrawBox(bx, by, bx + colW, by + rowH, borderCol, FALSE);
             }
 
-            // バッジ枠（左側アイコン）
-            int badgeX = itemStartX + 18;
-            int badgeY = iy + 14;
-            int badgeSize = 48;
-            unsigned int badgeBorder = isSelected ? (items[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255)) : GetColor(50, 70, 95);
-            unsigned int badgeBg = isSelected ? GetColor(35, 55, 85) : GetColor(20, 28, 42);
-            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBg, TRUE);
-            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBorder, FALSE);
-            unsigned int badgeTextCol = isSelected ? GetColor(255, 255, 255) : GetColor(160, 180, 200);
-            FontManager::GetInstance().DrawStringCenter(badgeX + badgeSize / 2, badgeY + 10, items[i].badge, badgeTextCol, 22);
+            // アイコン背景枠
+            const int iconBoxSize = 88;
+            int ibx = bx + 16;
+            int iby = by + (rowH - iconBoxSize) / 2;
+            unsigned int iconBorder = isSelected ? (items[i].isAlert ? GetColor(255, 120, 120) : GetColor(0, 220, 255)) : GetColor(40, 55, 75);
+            unsigned int iconBg = isSelected ? (items[i].isAlert ? GetColor(40, 22, 28) : GetColor(24, 38, 60)) : GetColor(14, 20, 30);
+            DrawBox(ibx, iby, ibx + iconBoxSize, iby + iconBoxSize, iconBg, TRUE);
+            DrawBox(ibx, iby, ibx + iconBoxSize, iby + iconBoxSize, iconBorder, FALSE);
 
-            // テキスト描画
-            int textX = badgeX + badgeSize + 18;
-            unsigned int titleCol = isSelected ? (items[i].isSpecial ? GetColor(255, 235, 80) : GetColor(255, 240, 100)) : GetColor(220, 225, 235);
-            FontManager::GetInstance().DrawString(textX, iy + 12, items[i].titleJa, titleCol, 22);
+            // アイコン画像の描画
+            if (pauseIconHandles[i] != -1)
+            {
+                int pad = 8;
+                DrawExtendGraph(ibx + pad, iby + pad, ibx + iconBoxSize - pad, iby + iconBoxSize - pad, pauseIconHandles[i], TRUE);
+            }
 
-            // 英語サブタイトル
-            unsigned int enCol = isSelected ? GetColor(140, 200, 255) : GetColor(120, 135, 150);
-            FontManager::GetInstance().DrawString(textX + 130, iy + 16, items[i].titleEn, enCol, 15);
+            // テキスト情報
+            int textX = ibx + iconBoxSize + 18;
+            unsigned int titleCol = isSelected ? (items[i].isAlert ? GetColor(255, 180, 180) : GetColor(255, 235, 80)) : GetColor(220, 225, 235);
+            FontManager::GetInstance().DrawString(textX, by + 22, items[i].titleJa, titleCol, 22);
 
-            // 説明文
+            unsigned int enCol = isSelected ? (items[i].isAlert ? GetColor(240, 140, 140) : GetColor(140, 200, 255)) : GetColor(120, 135, 150);
+            FontManager::GetInstance().DrawString(textX + 115, by + 26, items[i].titleEn, enCol, 15);
+
             unsigned int descCol = isSelected ? GetColor(200, 220, 240) : GetColor(130, 145, 160);
-            FontManager::GetInstance().DrawString(textX, iy + 44, items[i].desc, descCol, 15);
+            FontManager::GetInstance().DrawString(textX, by + 58, items[i].desc, descCol, 14);
 
             // 選択中のカーソル矢印
             if (isSelected)
             {
-                FontManager::GetInstance().DrawString(itemStartX + itemW - 35, iy + 24, "▶", items[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255), 22);
+                unsigned int arrowCol = items[i].isAlert ? GetColor(255, 100, 100) : GetColor(0, 220, 255);
+                FontManager::GetInstance().DrawString(bx + colW - 30, by + (rowH - 24) / 2, "▶", arrowCol, 22);
             }
         }
 
         // フッター案内
-        int footerY = panelY + panelH - 42;
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, footerY, "[ ↑ / ↓ / マウス ] 選択    [ Enter / クリック ] 決定    [ ESC ] 再開", GetColor(160, 190, 220), 16);
+        int footerY = panelY + panelH - 45;
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, footerY, "[ ↑ / ↓ / ← / → / マウス ] 選択    [ Enter / クリック ] 決定    [ ESC ] 再開", GetColor(160, 190, 220), 16);
     }
     else if (state == GameState::SETTINGS)
     {

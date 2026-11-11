@@ -38,8 +38,10 @@ class GameScene : public Scene
 
     PlayMode currentPlayMode = PlayMode::SOLO; ///< プレイモード
     GameState state = GameState::PLAYING;      ///< 現在のゲーム状態
+    GameState previousStateBeforeControls = GameState::PAUSED; ///< 操作説明画面へ遷移する前の状態
     int pauseMenuCursor = 0;             ///< ポーズメニューのカーソル位置
     int settingsMenuCursor = 0;          ///< 設定メニューのカーソル位置
+    int pauseIconHandles[6] = { -1, -1, -1, -1, -1, -1 }; ///< ポーズメニュー用アイコン画像ハンドル
 
     bool prevEsc = false;                ///< 前フレームでのESC入力状態
     bool prevUp = false;                 ///< 前フレームでの上入力状態

@@ -247,7 +247,11 @@ public:
      */
     bool IsDying() const { return m_isDying; }
     int GetDeathStayTimer() const { return m_deathStayTimer; }
-    void ResetDying() { m_isDying = false; m_deathStayTimer = 0; }
+    void ResetDying() {
+        m_isDying = false;
+        m_deathStayTimer = 0;
+        if (m_model) m_model->ResetMotion();
+    }
 
 private:
     bool m_isDying = false;           ///< 死亡演出中フラグ（死んだ場所で停止中）

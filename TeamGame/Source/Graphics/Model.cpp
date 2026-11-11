@@ -273,6 +273,14 @@ bool Model::IsMotionFinished() const
     return m_animation ? m_animation->IsFinished() : true;
 }
 
+void Model::ResetMotion()
+{
+    if (m_animation)
+    {
+        m_animation->Reset();
+    }
+}
+
 void Model::Update(float deltaTime)
 {
     if (m_animation)

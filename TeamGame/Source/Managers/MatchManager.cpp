@@ -93,6 +93,8 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
                 if (e) {
                     e->StopHomingSuicide();
                     e->ResetMoveToCenter();
+                    e->ResetDying();
+                    if (e->GetModel()) e->GetModel()->PlayIdle();
                 }
             }
         }

@@ -123,12 +123,12 @@ public:
     /**
      * @brief 射撃モーション (Shoot) を再生
      */
-    void PlayShoot(float speed = 1.0f);
+    void PlayShoot(float speed = 2.5f);
 
     /**
      * @brief 死亡・やられモーション (Die) を再生
      */
-    void PlayDie(float speed = 1.0f);
+    void PlayDie(float speed = 1.2f);
 
     /**
      * @brief 任意のモーションを指定して再生
@@ -144,6 +144,11 @@ public:
      * @brief 現在のモーションが終了したか確認
      */
     bool IsMotionFinished() const;
+
+    /**
+     * @brief モーション状態を初期化（リスポーン時など）
+     */
+    void ResetMotion();
 
     // --- フレーム更新および描画 ---
 
