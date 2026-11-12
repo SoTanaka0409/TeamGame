@@ -113,7 +113,7 @@ void CharacterSelectScene::Update() {
             }
         }
 
-        // --- キャラクターカードのタップ（マウスクリック＆ホバー）判定 ---
+        // --- キャラクターカードのクリック＆ホバー判定 ---
         int cardW = 282;
         int cardH = 430;
         int gap = 22;
@@ -273,7 +273,7 @@ void CharacterSelectScene::Draw() {
     FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 12, "← タイトルへ戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 18);
 
     FontManager::GetInstance().DrawStringCenter(960, 60, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
-    FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] または クリック/タップ で選択、[Enter] で決定 )", GetColor(200, 210, 225), 20);
+    FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] または クリック で選択、[Enter] で決定 )", GetColor(200, 210, 225), 20);
 
     int count = static_cast<int>(m_characters.size());
     int cardW = 282;
@@ -353,7 +353,7 @@ void CharacterSelectScene::Draw() {
         // 選択案内
         if (isSelected) {
             DrawBox(cardX + 15, startY + cardH - 45, cardX + cardW - 15, startY + cardH - 12, chara.themeColor, TRUE);
-            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 37, "[ タップ / ENTER ] 決定", GetColor(0, 0, 0), 16);
+            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 37, "[ クリック / ENTER ] 決定", GetColor(0, 0, 0), 16);
         }
     }
 

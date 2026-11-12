@@ -1,4 +1,4 @@
-#include "ClearScene.h"
+﻿#include "ClearScene.h"
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
@@ -20,6 +20,15 @@ ClearScene::ClearScene(const ClearStats& inStats)
         clearBgIndex = Load2DImage("result_clear_bg.png");
     }
     windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+
+    // ゲームクリアロゴ画像の読み込み
+    clearLogoIndex = Load2DImage("logo_gameclear.png");
+    if (clearLogoIndex == -1) {
+        clearLogoIndex = Load2DImage("UI/Clear/logo_gameclear.png");
+    }
+    if (clearLogoIndex == -1) {
+        clearLogoIndex = Load2DImage("Images/UI/Clear/logo_gameclear.png");
+    }
 
     // UITextWindow によるリザルト枠の初期化
     statsWindow = new UI::UITextWindow();
@@ -123,35 +132,63 @@ void ClearScene::Draw()
 
     const int centerX = 1920 / 2;
 
-    // タイトルアニメーション (拡大＆波打つエフェクト)
+    // タイトルアニメーション (優雅な浮遊＆脈動エフェクト)
     float pulse = sinf(animTimer * 4.0f) * 4.0f;
-    int titleY = static_cast<int>(150 + pulse);
+    int logoW = 720;
+    int logoH = 162; // 960x216 のアスペクト比維持 (0.75倍)
+    int logoX = centerX - logoW / 2;
+    int logoY = static_cast<int>(50 + pulse);
 
-    SetFontSize(48);
-    std::string headerText = "STAGE CLEAR!";
-    unsigned int headerColor = GetColor(255, 215, 0);
-    if (stats.rankName == "1P WIN")
+    int logoHandle = Get2DImage(clearLogoIndex);
+    if (logoHandle != -1)
     {
-        headerText = "1P (青) VICTORY!";
-        headerColor = GetColor(80, 200, 255);
-    }
-    else if (stats.rankName == "2P WIN")
-    {
-        headerText = "2P (赤) VICTORY!";
-        headerColor = GetColor(255, 80, 80);
-    }
+        // 背後の上品なゴールドグロー光彩演出
+        float glowPulse = std::abs(sinf(animTimer * 3.5f));
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(35 + glowPulse * 30));
+        DrawBox(logoX - 25, logoY - 12, logoX + logoW + 25, logoY + logoH + 12, GetColor(230, 190, 40), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-    int titleWidth = GetDrawStringWidth(headerText.c_str(), -1);
-    // タイトル文字シャドウ
-    DrawString(centerX - titleWidth / 2 + 4, titleY + 4, headerText.c_str(), GetColor(0, 0, 0));
-    // メインタイトル文字
-    DrawString(centerX - titleWidth / 2, titleY, headerText.c_str(), headerColor);
+        // GAME CLEAR ロゴ画像の描画
+        DrawExtendGraph(logoX, logoY, logoX + logoW, logoY + logoH, logoHandle, TRUE);
+
+        // 1P/2P 対戦勝利時のサブタイトルバナー表示（該当する場合のみ）
+        if (stats.rankName == "1P WIN" || stats.rankName == "2P WIN")
+        {
+            SetFontSize(24);
+            const char* subText = (stats.rankName == "1P WIN") ? "★ 1P (青) VICTORY ★" : "★ 2P (赤) VICTORY ★";
+            unsigned int subCol = (stats.rankName == "1P WIN") ? GetColor(100, 220, 255) : GetColor(255, 110, 110);
+            int subW = GetDrawStringWidth(subText, -1);
+            DrawString(centerX - subW / 2 + 2, logoY + logoH + 4, subText, GetColor(0, 0, 0));
+            DrawString(centerX - subW / 2, logoY + logoH + 2, subText, subCol);
+        }
+    }
+    else
+    {
+        // 画像未読み込み時のフォールバックテキスト
+        SetFontSize(48);
+        std::string headerText = "STAGE CLEAR!";
+        unsigned int headerColor = GetColor(255, 215, 0);
+        if (stats.rankName == "1P WIN")
+        {
+            headerText = "1P (青) VICTORY!";
+            headerColor = GetColor(80, 200, 255);
+        }
+        else if (stats.rankName == "2P WIN")
+        {
+            headerText = "2P (赤) VICTORY!";
+            headerColor = GetColor(255, 80, 80);
+        }
+
+        int titleWidth = GetDrawStringWidth(headerText.c_str(), -1);
+        DrawString(centerX - titleWidth / 2 + 4, logoY + 4, headerText.c_str(), GetColor(0, 0, 0));
+        DrawString(centerX - titleWidth / 2, logoY, headerText.c_str(), headerColor);
+    }
 
     // リザルト枠（UITextWindow による描画）
     int panelW = 740;
-    int panelH = 380;
+    int panelH = 370;
     int panelX = centerX - panelW / 2;
-    int panelY = 230;
+    int panelY = 240;
 
     if (statsWindow)
     {

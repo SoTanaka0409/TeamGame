@@ -83,7 +83,7 @@ void WeaponSelectScene::Update() {
             }
         }
 
-        // --- 武器カードのタップ（マウスクリック＆ホバー）判定 ---
+        // --- 武器カードのクリック＆ホバー判定 ---
         int cardW = 520;
         int cardH = 340;
         int gap = 40;
@@ -242,7 +242,7 @@ void WeaponSelectScene::Draw() {
     FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 12, "← キャラ選択に戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 18);
 
     FontManager::GetInstance().DrawStringCenter(960, 60, "WEAPON SELECT", GetColor(255, 220, 0), 48);
-    FontManager::GetInstance().DrawStringCenter(960, 100, "( [←][→] または クリック/タップ でサブ武器を選択、[Enter] で出撃確認 )", GetColor(190, 205, 220), 18);
+    FontManager::GetInstance().DrawStringCenter(960, 100, "( [←][→] または クリック でサブ武器を選択、[Enter] で出撃確認 )", GetColor(190, 205, 220), 18);
     
     // 選択済キャラ情報
     const auto& selChar = PlayerSelectionManager::GetInstance().GetSelection().selectedCharacter;
@@ -270,7 +270,7 @@ void WeaponSelectScene::Draw() {
     // ----------------------------------------------------
     // SLOT 2 (自由選択武器)
     // ----------------------------------------------------
-    FontManager::GetInstance().DrawString(120, 345, "SLOT 2 : サブ武器を選択してください ( [←][→] または クリック/タップ で選択、[Enter] で決定 )", GetColor(255, 220, 0), 22);
+    FontManager::GetInstance().DrawString(120, 345, "SLOT 2 : サブ武器を選択してください ( [←][→] または クリック で選択、[Enter] で決定 )", GetColor(255, 220, 0), 22);
 
     int count = static_cast<int>(m_slot2Options.size());
     int cardW = 520;
@@ -313,7 +313,7 @@ void WeaponSelectScene::Draw() {
 
         if (isSelected) {
             DrawBox(cardX + 30, startY + cardH - 50, cardX + cardW - 30, startY + cardH - 15, GetColor(255, 200, 0), TRUE);
-            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 41, "【 タップ / ENTER で出撃確認 】", GetColor(0, 0, 0), 18);
+            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 41, "【 クリック / ENTER で出撃確認 】", GetColor(0, 0, 0), 18);
         }
     }
 

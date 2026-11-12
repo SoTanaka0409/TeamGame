@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Scene.h"
 #include "../UI/UITextWindow.h"
 #include <string>
@@ -38,6 +38,7 @@ class ClearScene : public Scene
     // ========================================================
     int clearBgIndex = -1;           ///< クリアリザルト背景画像の配列番号
     int windowFrameIndex = -1;       ///< UITextWindow枠画像の配列番号
+    int clearLogoIndex = -1;         ///< ゲームクリアロゴ画像の配列番号
 
     // UITextWindow によるクリアリザルト情報枠描画
     UI::UITextWindow* statsWindow = nullptr; ///< リザルト統計用テキストウィンドウ
