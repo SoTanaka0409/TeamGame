@@ -62,6 +62,12 @@ Player::~Player()
     for (auto w : weapons)
         delete w;
     weapons.clear();
+
+    if (m_hudPlateHandle != -1)
+    {
+        DeleteGraph(m_hudPlateHandle);
+        m_hudPlateHandle = -1;
+    }
 }
 
 void Player::SetWeapons(const std::vector<Weapon*>& newWeapons)
@@ -1280,91 +1286,113 @@ void Player::DrawUI(int screenX, int screenY)
     Weapon* currentWeapon = weapons[currentWeaponIndex];
     if (!currentWeapon) return;
 
-    // ソリッドでコンパクトなUIパネルパラメータ (横幅260px, 高さ154px)
-    const int panelW = 260;
-    const int panelH = (m_inputType != PlayerInputType::KEYBOARD_MOUSE) ? 176 : 154;
-    const int marginX = 16;
-    const int contentW = panelW - marginX * 2;
-
-    // 画面下端からはみ出さないよう座標補正
-    if (screenY + panelH > 1060) {
-        screenY = 1060 - panelH;
+    // 1. キャラクター別HUDプレート画像のロード（未ロード時）
+    if (m_hudPlateHandle == -1)
+    {
+        static const std::string hudFiles[5] = {
+            "Resource/Images/UI/HUD/hud_conductor.png",
+            "Resource/Images/UI/HUD/hud_rebel.png",
+            "Resource/Images/UI/HUD/hud_baka.png",
+            "Resource/Images/UI/HUD/hud_housewife.png",
+            "Resource/Images/UI/HUD/hud_devil.png"
+        };
+        int idx = m_characterId - 1;
+        if (idx >= 0 && idx < 5)
+        {
+            m_hudPlateHandle = Scene::LoadGraphWithSearch(hudFiles[idx]);
+        }
     }
 
-    // 1. スレート背景パネル（1px枠 + コーナーティック）
-    HudStyle::DrawPanel(screenX, screenY, panelW, panelH, true);
+    // 2. HUDプレートの配置・スケール設定 (1024x480 -> スケール0.42: 430x201)
+    const float scale = 0.42f;
+    const int plateW = static_cast<int>(1024 * scale); // 430
+    const int plateH = static_cast<int>(480 * scale);  // 201
+    
+    int plateX = screenX;
+    int plateY = screenY;
+    if (plateY + plateH > 1060) {
+        plateY = 1060 - plateH;
+    }
+    if (plateX < 20) plateX = 20;
 
-    int curY = screenY + 14;
+    // 3. 上部: コンパクトな武器・弾薬 (AMMO) バナー
+    const int bannerH = 26;
+    const int bannerY = plateY - bannerH - 6;
+    HudStyle::DrawPanel(plateX, bannerY, plateW, bannerH, false);
 
-    // 2. 武器スロット表示
-    const WeaponData* data = currentWeapon->GetData();
-    if (data && data->uiImageHandle != -1)
+    // 武器名
+    std::string wName = currentWeapon->GetName();
+    if (isAimLocked) wName += " [LOCK]";
+    char weaponTitle[64];
+    snprintf(weaponTitle, sizeof(weaponTitle), "[%d] %s", currentWeaponIndex + 1, wName.c_str());
+    FontManager::GetInstance().DrawString(plateX + 12, bannerY + 5, weaponTitle, isAimLocked ? HudStyle::ColAmber() : HudStyle::ColText(), 14);
+
+    // 弾薬数
+    int currentAmmo = currentWeapon->GetCurrentAmmo();
+    int maxAmmo = currentWeapon->GetMaxAmmo();
+    if (currentWeapon->IsReloading())
     {
-        DrawGraph(screenX + marginX, curY, data->uiImageHandle, TRUE);
-        curY += 40;
+        FontManager::GetInstance().DrawStringRight(plateX + plateW - 12, bannerY + 5, "RELOADING...", HudStyle::ColAmber(), 14);
     }
     else
     {
-        std::string wName = currentWeapon->GetName();
-        if (isAimLocked) wName += " [LOCK]";
-        char weaponTitle[64];
-        snprintf(weaponTitle, sizeof(weaponTitle), "[%d] %s", currentWeaponIndex + 1, wName.c_str());
-
-        FontManager::GetInstance().DrawString(screenX + marginX, curY, weaponTitle, isAimLocked ? HudStyle::ColAmber() : HudStyle::ColText(), 15);
-        curY += 25;
-    }
-
-    // 3. 弾薬 (AMMO) 表示
-    int currentAmmo = currentWeapon->GetCurrentAmmo();
-    int maxAmmo = currentWeapon->GetMaxAmmo();
-
-    FontManager::GetInstance().DrawString(screenX + marginX, curY + 4, "AMMO", HudStyle::ColSubText(), 13);
-
-    if (currentWeapon->IsReloading()) {
-        FontManager::GetInstance().DrawString(screenX + marginX + 60, curY + 2, "RELOADING...", HudStyle::ColAmber(), 15);
-    } else {
-        char ammoText[16];
-        snprintf(ammoText, sizeof(ammoText), "%d", currentAmmo);
-        char maxAmmoText[16];
-        snprintf(maxAmmoText, sizeof(maxAmmoText), " / %d", maxAmmo);
-
+        char ammoText[32];
+        snprintf(ammoText, sizeof(ammoText), "AMMO  %d / %d", currentAmmo, maxAmmo);
         unsigned int ammoColor = HudStyle::GetAmmoColor(currentAmmo, maxAmmo);
-
-        int font22 = FontManager::GetInstance().GetFont(22);
-        int font13 = FontManager::GetInstance().GetFont(13);
-        DrawStringToHandle(screenX + marginX + 60, curY - 3, ammoText, ammoColor, font22);
-        int numW = GetDrawStringWidthToHandle(ammoText, static_cast<int>(strlen(ammoText)), font22);
-        DrawStringToHandle(screenX + marginX + 60 + numW, curY + 4, maxAmmoText, HudStyle::ColSubText(), font13);
+        FontManager::GetInstance().DrawStringRight(plateX + plateW - 12, bannerY + 5, ammoText, ammoColor, 14);
     }
-    curY += 31;
 
-    // 4. 体力 (HP) 表示 & 細身ゲージバー
-    int curHp = status.GetCurrentHp();
-    int maxHp = status.GetMaxHp();
-    float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / maxHp : 0.0f;
-    if (hpRatio < 0.0f) hpRatio = 0.0f; else if (hpRatio > 1.0f) hpRatio = 1.0f;
+    // 4. キャラクター別HUDプレート画像の描画
+    if (m_hudPlateHandle != -1)
+    {
+        DrawExtendGraph(plateX, plateY, plateX + plateW, plateY + plateH, m_hudPlateHandle, TRUE);
+    }
+    else
+    {
+        // フォールバック描画
+        HudStyle::DrawPanel(plateX, plateY, plateW, plateH, true);
+    }
 
-    FontManager::GetInstance().DrawString(screenX + marginX, curY, "HP", HudStyle::ColSubText(), 13);
+    // 5. 各キャラクター固有のバー座標（1024x480画像内の矩形座標）
+    struct BarRect {
+        int x0, y0, x1, y1;
+    };
+    static const BarRect mpSlots[5] = {
+        { 200, 102, 880, 155 }, // 1: 指揮者（ト音記号の右から終止線まで）
+        { 136, 104, 990, 168 }, // 2: 反逆者（有刺鉄線フレーム内）
+        { 140, 105, 880, 165 }, // 3: バカ（黄色キャンバス）
+        { 140, 105, 880, 165 }, // 4: 主婦（桜吹雪の軌道上）
+        { 140, 105, 750, 165 }  // 5: 悪魔（月手前の境界まで）
+    };
+    static const BarRect hpSlots[5] = {
+        { 200, 324, 880, 377 }, // 1: 指揮者（ヘ音記号の右から終止線まで）
+        { 136, 326, 990, 390 }, // 2: 反逆者（有刺鉄線フレーム内）
+        { 140, 320, 880, 380 }, // 3: バカ（黄色キャンバス）
+        { 140, 320, 880, 380 }, // 4: 主婦（桜吹雪の軌道上）
+        { 140, 320, 750, 380 }  // 5: 悪魔
+    };
 
-    char hpStr[32];
-    snprintf(hpStr, sizeof(hpStr), "%d / %d", curHp, maxHp);
-    FontManager::GetInstance().DrawStringRight(screenX + marginX + contentW, curY, hpStr, HudStyle::ColText(), 13);
+    int charIdx = m_characterId - 1;
+    if (charIdx < 0 || charIdx >= 5) charIdx = 0;
 
-    curY += 18;
-    HudStyle::DrawGauge(screenX + marginX, curY, contentW, 5, hpRatio, HudStyle::GetHpColor(hpRatio));
-    curY += 15;
+    int mpX = plateX + static_cast<int>(mpSlots[charIdx].x0 * scale);
+    int mpY = plateY + static_cast<int>(mpSlots[charIdx].y0 * scale);
+    int mpW = static_cast<int>((mpSlots[charIdx].x1 - mpSlots[charIdx].x0) * scale);
+    int mpH = static_cast<int>((mpSlots[charIdx].y1 - mpSlots[charIdx].y0) * scale);
 
-    // 5. スキル (SKILL) 表示
+    int hpX = plateX + static_cast<int>(hpSlots[charIdx].x0 * scale);
+    int hpY = plateY + static_cast<int>(hpSlots[charIdx].y0 * scale);
+    int hpW = static_cast<int>((hpSlots[charIdx].x1 - hpSlots[charIdx].x0) * scale);
+    int hpH = static_cast<int>((hpSlots[charIdx].y1 - hpSlots[charIdx].y0) * scale);
+
+    // 6. MPバー（スキルクールタイム：MAXで使用可能）の描画
     Skill* skill = GetEquippedSkill();
     if (skill)
     {
-        FontManager::GetInstance().DrawString(screenX + marginX, curY, "SKILL", HudStyle::ColSubText(), 13);
-
         int ct = skill->GetCoolTimeTimer();
+        int maxCt = (skill->GetData() && skill->GetData()->coolTime > 0) ? skill->GetData()->coolTime : 300;
         int activeFrames = 0;
-        int maxDuration = 300;
-        if (skill->GetData()) maxDuration = skill->GetData()->duration;
-        if (maxDuration <= 0) maxDuration = 300;
+        int maxDuration = (skill->GetData() && skill->GetData()->duration > 0) ? skill->GetData()->duration : 300;
 
         if (IsTransparent()) {
             activeFrames = GetEffectRemainingFrames(SkillMinorTag::Transparency);
@@ -1372,33 +1400,95 @@ void Player::DrawUI(int screenX, int screenY)
             activeFrames = GetEffectRemainingFrames(SkillMinorTag::HighRisk);
         }
 
-        if (activeFrames > 0) {
-            char activeText[32];
-            snprintf(activeText, sizeof(activeText), "ACTIVE %.1fs", activeFrames / 60.0f);
-            FontManager::GetInstance().DrawString(screenX + marginX + 60, curY, activeText, HudStyle::ColAmber(), 13);
+        // 下地トラック（半透明ブラック）
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+        DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(10, 15, 20), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-            curY += 16;
+        if (activeFrames > 0)
+        {
+            // スキル効果発動中（アンバー色で効果持続時間を表示）
             float actRatio = static_cast<float>(activeFrames) / static_cast<float>(maxDuration);
-            HudStyle::DrawGauge(screenX + marginX + 60, curY, contentW - 60, 4, actRatio, HudStyle::ColAmber());
-        } else if (ct > 0) {
+            if (actRatio > 1.0f) actRatio = 1.0f; else if (actRatio < 0.0f) actRatio = 0.0f;
+            int fillW = static_cast<int>(mpW * actRatio);
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
+            DrawBox(mpX, mpY, mpX + fillW, mpY + mpH, GetColor(255, 180, 20), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(255, 220, 80), FALSE);
+
+            char actText[32];
+            snprintf(actText, sizeof(actText), "ACTIVE %.1fs", activeFrames / 60.0f);
+            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, actText, GetColor(255, 255, 255), 13);
+        }
+        else if (ct > 0)
+        {
+            // クールタイム中: MPが0%から徐々に100%(MAX)に向かってチャージされる
+            float mpRatio = 1.0f - static_cast<float>(ct) / static_cast<float>(maxCt);
+            if (mpRatio < 0.0f) mpRatio = 0.0f; else if (mpRatio > 1.0f) mpRatio = 1.0f;
+            int fillW = static_cast<int>(mpW * mpRatio);
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 175);
+            DrawBox(mpX, mpY, mpX + fillW, mpY + mpH, GetColor(0, 160, 240), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(30, 70, 110), FALSE);
+
             char ctText[32];
-            snprintf(ctText, sizeof(ctText), "COOLDOWN %.1fs", ct / 60.0f);
-            FontManager::GetInstance().DrawString(screenX + marginX + 60, curY, ctText, HudStyle::ColSubText(), 13);
-        } else {
-            FontManager::GetInstance().DrawString(screenX + marginX + 60, curY, "READY [F]", HudStyle::ColAmber(), 13);
+            snprintf(ctText, sizeof(ctText), "MP CHARGING %.1fs", ct / 60.0f);
+            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, ctText, GetColor(210, 235, 255), 13);
+        }
+        else
+        {
+            // MPがMAXに到達！ スキル発動可能（Readyパルス発光）
+            static int readyTimer = 0;
+            readyTimer++;
+            int pulseAlpha = 180 + static_cast<int>(55.0f * std::sin(readyTimer * 0.08f));
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, pulseAlpha);
+            DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(0, 205, 255), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+            // 発光枠
+            DrawBox(mpX - 1, mpY - 1, mpX + mpW + 1, mpY + mpH + 1, GetColor(220, 250, 255), FALSE);
+
+            const char* readyKey = (m_inputType == PlayerInputType::KEYBOARD_MOUSE) ? "READY [F]" : "READY [RT]";
+            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 15) / 2, readyKey, GetColor(255, 255, 255), 14);
         }
     }
 
-    // 2P等のオートエイム状態インジケーター表示
+    // 7. HPバー（プレイヤー体力）の描画
+    int curHp = status.GetCurrentHp();
+    int maxHp = status.GetMaxHp();
+    float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / static_cast<float>(maxHp) : 0.0f;
+    if (hpRatio < 0.0f) hpRatio = 0.0f; else if (hpRatio > 1.0f) hpRatio = 1.0f;
+
+    // 下地トラック（半透明ブラック）
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+    DrawBox(hpX, hpY, hpX + hpW, hpY + hpH, GetColor(10, 15, 20), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // HPゲージ充填 (緑 -> 黄 -> 赤)
+    int hpFillW = static_cast<int>(hpW * hpRatio);
+    unsigned int hpCol = GetColor(40, 220, 100);
+    if (hpRatio <= 0.25f) hpCol = GetColor(230, 50, 50);
+    else if (hpRatio <= 0.50f) hpCol = GetColor(240, 180, 40);
+
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 195);
+    DrawBox(hpX, hpY, hpX + hpFillW, hpY + hpH, hpCol, TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    DrawBox(hpX, hpY, hpX + hpW, hpY + hpH, GetColor(50, 60, 70), FALSE);
+
+    // HP数値表示
+    char hpStr[32];
+    snprintf(hpStr, sizeof(hpStr), "%d / %d", curHp, maxHp);
+    FontManager::GetInstance().DrawStringCenter(hpX + hpW / 2, hpY + (hpH - 14) / 2, hpStr, GetColor(255, 255, 255), 14);
+
+    // 8. 2P等のオートエイム状態インジケーター表示（必要時）
     if (m_inputType != PlayerInputType::KEYBOARD_MOUSE)
     {
         if (m_autoAimTarget)
         {
-            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 18, "[ AUTO-AIM: LOCKED ]", HudStyle::ColEnemy(), 12);
-        }
-        else
-        {
-            FontManager::GetInstance().DrawString(screenX + marginX, screenY + panelH - 18, "[ AUTO-AIM: SEARCHING ]", HudStyle::ColSubText(), 12);
+            FontManager::GetInstance().DrawString(plateX + 10, bannerY - 18, "[ AUTO-AIM: LOCKED ]", HudStyle::ColEnemy(), 11);
         }
     }
 }

@@ -275,4 +275,5 @@ private:
     std::string m_cutinImagePath;             ///< カットイン専用画像パス
     Character* m_autoAimTarget = nullptr;     ///< オートエイムでロックオン中の敵
     bool m_isAutoAimActive = false;           ///< オートエイム発動中フラグ
+    int m_hudPlateHandle = -1;                ///< 画面左下のキャラクター別HUDプレート画像ハンドル
 };

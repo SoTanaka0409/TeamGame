@@ -118,6 +118,9 @@ void GameScene::Init()
     Scene::Init();
     gameTimer = 0.0f;
     isCleared = false;
+    state = GameState::PLAYING;
+    pauseMenuCursor = 0;
+    prevEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
     MatchManager::GetInstance().Reset();
     SoundVisualizer::GetInstance().Clear();
 
@@ -192,6 +195,7 @@ void GameScene::Init()
 void GameScene::Update()
 {
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
+    bool isEscTriggered = (currEsc && !prevEsc) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_ESCAPE);
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
     bool currLeft = (CheckHitKey(KEY_INPUT_LEFT) != 0 || CheckHitKey(KEY_INPUT_A) != 0);
@@ -201,7 +205,7 @@ void GameScene::Update()
 
     if (state == GameState::PLAYING)
     {
-        if (currEsc && !prevEsc)
+        if (isEscTriggered)
         {
             state = GameState::PAUSED;
             pauseMenuCursor = 0;
@@ -316,27 +320,26 @@ void GameScene::Update()
             {
                 isCleared = true;
                 if (result == MatchResult::TEAM0_WIN)
-                    {
-                        ClearStats stats;
-                        stats.clearTimeSec = gameTimer;
-                        stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
-                        stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
+                {
+                    ClearStats stats;
+                    stats.clearTimeSec = gameTimer;
+                    stats.defeatedEnemies = MatchManager::GetInstance().GetTeam0Kills();
+                    stats.totalEnemies = MatchManager::GetInstance().GetTargetKillCount();
 
-                        int baseScore = 5000;
-                        int timePenalty = static_cast<int>(gameTimer * 10.0f);
-                        stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
+                    int baseScore = 5000;
+                    int timePenalty = static_cast<int>(gameTimer * 10.0f);
+                    stats.rankScore = (baseScore > timePenalty) ? (baseScore - timePenalty) : 1000;
 
-                        if (stats.rankScore >= 4500) stats.rankName = "S";
-                        else if (stats.rankScore >= 3500) stats.rankName = "A";
-                        else if (stats.rankScore >= 2500) stats.rankName = "B";
-                        else stats.rankName = "C";
+                    if (stats.rankScore >= 4500) stats.rankName = "S";
+                    else if (stats.rankScore >= 3500) stats.rankName = "A";
+                    else if (stats.rankScore >= 2500) stats.rankName = "B";
+                    else stats.rankName = "C";
 
-                        SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
-                    }
-                    else
-                    {
-                        SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
-                    }
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<ClearScene>(stats));
+                }
+                else
+                {
+                    SceneManager::GetInstance().ChangeScene(std::make_shared<GameOverScene>());
                 }
                 return;
             }
@@ -374,15 +377,13 @@ void GameScene::Update()
                         player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
                         SpawnEnemiesRandomly(5);
                     }
-                }
-
-
-            
+            }
         }
+    }
     }
     else if (state == GameState::PAUSED)
     {
-        if (currEsc && !prevEsc) state = GameState::PLAYING;
+        if (isEscTriggered) state = GameState::PLAYING;
 
         if (currUp && !prevUp)
         {
@@ -473,7 +474,7 @@ void GameScene::Update()
     }
     else if (state == GameState::SETTINGS)
     {
-        if (currEsc && !prevEsc) state = GameState::PAUSED;
+        if (isEscTriggered) state = GameState::PAUSED;
         if (currUp && !prevUp) settingsMenuCursor--;
         if (currDown && !prevDown) settingsMenuCursor++;
         if (settingsMenuCursor < 0) settingsMenuCursor = 2;
@@ -525,7 +526,7 @@ void GameScene::Update()
     }
     else if (state == GameState::CONTROLS)
     {
-        if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || (currClick && !prevClick))
+        if ((currEnter && !prevEnter) || isEscTriggered || (currClick && !prevClick))
         {
             state = previousStateBeforeControls;
         }
@@ -779,9 +780,9 @@ void GameScene::Draw()
         bannerStackY += 26 + 6;
     }
 
-    // 画面左下にプレイヤーのHP・武器UIを表示
+    // 画面左下にプレイヤーのキャラクターHUD（HP・MP・武器）UIを表示
     if (player && player->IsActive()) {
-        player->DrawUI(24, 904);
+        player->DrawUI(24, 855);
     }
     
 
