@@ -779,9 +779,9 @@ void GameScene::Draw()
         bannerStackY += 26 + 6;
     }
 
-    // 画面左下にプレイヤーのHP・武器UIを表示
+    // 画面左下にプレイヤーのキャラクターHUD（HP・MP・武器）UIを表示
     if (player && player->IsActive()) {
-        player->DrawUI(24, 904);
+        player->DrawUI(24, 855);
     }
     
 
