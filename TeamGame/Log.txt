@@ -1,468 +1,546 @@
 ﻿0:ChangeWindowMode実行 
-2:ウインドウモードフラグが立てられました
-4:ＤＸライブラリの初期化処理開始
-5:	システムの情報を出力します
-5:		ＤＸライブラリ Ver3.24b
-5:		論理プロセッサの数 : 20
-5:		ＯＳ  Windows11 ( Build 26300  )
-107:		現時点のＣＰＵ動作速度：大体2.12GHz
-107:		ＭＭＸ命令を使用します
-107:		ＳＳＥ命令が使用可能です
+0:ウインドウモードフラグが立てられました
+0:ＤＸライブラリの初期化処理開始
+0:	システムの情報を出力します
+0:		ＤＸライブラリ Ver3.24b
+0:		論理プロセッサの数 : 20
+0:		ＯＳ  Windows11 ( Build 26300  )
+106:		現時点のＣＰＵ動作速度：大体2.11GHz
+106:		ＭＭＸ命令を使用します
+106:		ＳＳＥ命令が使用可能です
 107:		ＳＳＥ２命令が使用可能です
-108:		ＣＰＵベンダ：GenuineIntel
+107:		ＣＰＵベンダ：GenuineIntel
 109:		ＣＰＵ名：12th Gen Intel(R) Core(TM) i7-12700
 109:	ＣＯＭの初期化... 成功
 113:	非同期読み込み処理の初期化...成功
 114:	ファイルアクセス処理の初期化...成功
-115:	メモリ総量:32456.73MB  空きメモリ領域:13028.91MB 
-115:	タイマーの精度を検査します
-115:	精度結果 更新回数 マルチメディアタイマー：0  パフォーマンスカウンター：60
-115:	 パフォーマンスカウンターを使用します タイマー精度 : 10000.000000 KHz 
-116:	 
-116:	ソフトの二重起動検査... 二重起動はされていませんでした
-117:	ウインドウクラスを登録します... 登録に成功しました
-117:	ウインドウモード起動用のウインドウを作成します
+116:	メモリ総量:32456.73MB  空きメモリ領域:14530.24MB 
+116:	タイマーの精度を検査します
+116:	精度結果 更新回数 マルチメディアタイマー：0  パフォーマンスカウンター：60
+116:	 パフォーマンスカウンターを使用します タイマー精度 : 10000.000000 KHz 
+117:	 
+117:	ソフトの二重起動検査... 二重起動はされていませんでした
+118:	ウインドウクラスを登録します... 登録に成功しました
+118:	ウインドウモード起動用のウインドウを作成します
 118:	ディスプレイ情報のセットアップ開始
-118:		モニターの数：1  ディスプレイデバイスの数：8
+119:		モニターの数：1  ディスプレイデバイスの数：8
 119:		No.0  モニター名：\\.\DISPLAY1　1920x1080　32bit　59Hz  96x96dpi
-124:	ディスプレイ情報のセットアップ完了
-124:	ウインドウ矩形 ( 304, 129 )-( 1600, 888 )
-128:	ウインドウの作成に成功しました
-128:	ウインドウを表示します
-150:	ＩＭＥを無効にしました
-155:	ウインドウスタイルをウインドウモード用に変更します... 完了
-183:	XInput DLL の読み込み中... 成功
-186:	DirectInput関係初期化処理
-187:		DirectInput8 の取得を試みます...成功
-199:			引き続き初期化処理... 初期化成功
-202:		ジョイパッドの初期化... 
-202:			XInput 対応コントローラーのチェックを開始します
-202:				XInput 対応コントローラー No.0 をチェック
-203:				XInput 対応コントローラー No.0 の接続は確認できませんでした
-203:				XInput 対応コントローラー No.1 をチェック
-203:				XInput 対応コントローラー No.1 の接続は確認できませんでした
+129:	ディスプレイ情報のセットアップ完了
+129:	ウインドウ矩形 ( 304, 129 )-( 1600, 888 )
+133:	ウインドウの作成に成功しました
+134:	ウインドウを表示します
+160:	ＩＭＥを無効にしました
+161:	ウインドウスタイルをウインドウモード用に変更します... 完了
+186:	XInput DLL の読み込み中... 成功
+189:	DirectInput関係初期化処理
+190:		DirectInput8 の取得を試みます...成功
+201:			引き続き初期化処理... 初期化成功
+203:		ジョイパッドの初期化... 
+203:			XInput 対応コントローラーのチェックを開始します
+203:				XInput 対応コントローラー No.0 をチェック
+204:				XInput 対応コントローラー No.0 の接続は確認できませんでした
+204:				XInput 対応コントローラー No.1 をチェック
+204:				XInput 対応コントローラー No.1 の接続は確認できませんでした
 204:				XInput 対応コントローラー No.2 をチェック
-204:				XInput 対応コントローラー No.2 の接続は確認できませんでした
-204:				XInput 対応コントローラー No.3 をチェック
-204:				XInput 対応コントローラー No.3 の接続は確認できませんでした
-204:			XInput 対応コントローラーのチェック完了
-205:			DirectInput 対応ジョイパッドの列挙を開始します
-228:			DirectInput 対応ジョイパッドの列挙終了
-229:		ジョイパッドの初期化は正常に終了しました
-229:		マウスデバイスの初期化... 初期化成功
-229:		キーボードデバイスの初期化... 初期化成功
-233:	DirectInput 関連の初期化は正常に終了しました
-235:	WASAPI の初期化を行います
-239:		デバイス名 : KH240V (NVIDIA High Definition Audio)
-317:		デフォルト遅延時間 : 10.000 ms
-318:		最小遅延時間       : 3.000 ms
-318:		遅延時間           : 10.000 ms
-318:		チャンネル数  　   : 2 ch
-319:		量子化ビット深度   : 32 bit
-319:		有効ビット深度　   : 32 bit
-319:		サンプリングレート : 48000 Hz
-319:		データ形式         : 浮動小数点型
-358:		動作モード         : 共有モード
-358:	WASAPI の初期化は正常に終了しました
-362:	d3d11.dll の読み込み.... 成功
-364:	dxgi.dll の読み込み.... 成功
-365:	API CreateDXGIFactory2 のアドレスを取得します.... 成功
-365:	IDXGIFactory2 を作成します.... 成功
-374:	API CreateDXGIFactory6 のアドレスを取得します.... 成功
-375:	IDXGIAdapter を列挙
-376:		Adapter No.0 Desc:NVIDIA GeForce RTX 3070  VRAM:8018MB
-376:			Output Device No.0 Name:\\.\DISPLAY1 ( 0, 0 )-( 1920, 1080 )
-376:		Adapter No.1 Desc:Intel(R) UHD Graphics 770  VRAM:128MB
-376:		Adapter No.2 Desc:Microsoft Basic Render Driver  VRAM:0MB
-377:	API D3D11CreateDevice のアドレスを取得します.... 成功
-377:	IDXGIAdapter を取得します.... 成功
-378:	IDXGIAdapter1 を取得します.... 成功
-378:	IDXGIAdapter2 を取得します.... 成功
-378:	IDXGIAdapter3 を取得します.... 成功
-379:	IDXGIAdapter4 を取得します.... 成功
-379:	Direct3D 11 FeatureLevel 11_0 以上を対象とします
-379:	ID3D11Device オブジェクトを取得します.... 成功
-538:	IDXGIDevice1 を取得します.... 成功
-538:	IDXGIDevice1->SetMaximunFrameLatency( 1 ); を実行しました
-539:	[ウインドウモード 1920x1080 ( 320, 167 )-( 1600, 887 )]
-539:	IDXGISwapChain2 を作成します.... 成功
-540:	IDXGIFactory2->CreateSwapChainForHwnd の戻り値：0x00000000
-540:	IDXGIOutput を取得します.... 成功
-541:	Graphics Device:NVIDIA GeForce RTX 3070
-541:	画面のフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
-541:	16bit Zバッファフォーマットは DXGI_FORMAT_D16_UNORM です
-541:	24bit Zバッファフォーマットは DXGI_FORMAT_D24_UNORM_S8_UINT です
-542:	32bit Zバッファフォーマットは DXGI_FORMAT_D32_FLOAT です
-542:	16bit カラーフォーマットは DXGI_FORMAT_B5G6R5_UNORM です
-542:	32bit カラーフォーマットは DXGI_FORMAT_B8G8R8X8_UNORM です
-542:	アルファ付き 16bit カラーフォーマットは DXGI_FORMAT_B4G4R4A4_UNORM です
-542:	アルファ付き 32bit カラーフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
-543:	アルファテスト用 16bit カラーフォーマットは DXGI_FORMAT_B5G5R5A1_UNORM です
-543:	アルファテスト用 32bit カラーフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
-543:	ＤＸＴ１テクスチャフォーマットは DXGI_FORMAT_BC1_UNORM です
-543:	ＤＸＴ２テクスチャフォーマットは使えません
-543:	ＤＸＴ３テクスチャフォーマットは DXGI_FORMAT_BC2_UNORM です
-543:	ＤＸＴ４テクスチャフォーマットは使えません
-543:	ＤＸＴ５テクスチャフォーマットは DXGI_FORMAT_BC3_UNORM です
-543:	BC7_UNORM テクスチャフォーマットは DXGI_FORMAT_BC7_UNORM です
-543:	BC7_UNORM_SRGB テクスチャフォーマットは DXGI_FORMAT_BC7_UNORM_SRGB です
-544:	ABGR 整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_UNORM です
-544:	ABGR 浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_FLOAT です
-544:	ABGR 浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32B32A32_FLOAT です
-544:	１チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8_UNORM です
-544:	１チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_UNORM です
-544:	１チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_FLOAT です
-544:	１チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32_FLOAT です
-544:	２チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8G8_UNORM です
-544:	２チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_UNORM です
-546:	２チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_FLOAT です
-546:	２チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32_FLOAT です
-546:	描画用 16bit カラーフォーマットは DXGI_FORMAT_B5G6R5_UNORM です
-546:	描画用 32bit カラーフォーマットは DXGI_FORMAT_B8G8R8X8_UNORM です
-546:	描画用アルファ付き 32bit カラーフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
-547:	描画用 ABGR 整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_UNORM です
-547:	描画用 ABGR 浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_FLOAT です
-547:	描画用 ABGR 浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32B32A32_FLOAT です
-547:	描画用１チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8_UNORM です
-547:	描画用１チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_UNORM です
-547:	描画用１チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_FLOAT です
-548:	描画用１チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32_FLOAT です
-548:	描画用２チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8G8_UNORM です
-548:	描画用２チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_UNORM です
-548:	描画用２チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_FLOAT です
-548:	描画用２チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32_FLOAT です
-549:	使用する機能レベル:D3D_FEATURE_LEVEL_11_1
-549:	同時にレンダリングできるバッファの数:8
-549:	最大テクスチャサイズ　幅:16384 高さ:16384
-549:	標準描画用の頂点バッファの作成.... 成功
-550:	シェーダーコード関係の初期化.... 成功
-560:	各種シェーダー用定数バッファの作成.... 成功
-561:	各種 ID3D11InputLayout の作成.... 成功
-572:	画像の単純転送処理の初期化... 成功
-573:	深度バッファを作成します.... 成功
-574:	フォントの初期化を行います
-576:	フォントの初期化は正常に終了しました
-653:	文字コードバッファの初期化を行います... 完了しました
-672:ＤＸライブラリの初期化処理終了
-687:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Titleu.jpg がありません
-707:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title02.png がありません
-714:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title2.png がありません
-717:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\settings_bg.png がありません
-718:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
-718:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
-718:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
-719:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\settings_bg.png がありません
-719:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\settings_bg.png がありません
-720:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
-720:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\settings_bg.png がありません
-721:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
-721:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
-722:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
-722:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
-723:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\settings_bg.png がありません
-723:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\mode_select_bg.png がありません
-723:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-723:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-724:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-724:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-724:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\mode_select_bg.png がありません
-726:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-726:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-726:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
-727:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
-727:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
-728:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
-728:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\mode_select_bg.png がありません
-728:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
-729:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-729:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-730:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-730:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
-731:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
-731:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-731:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
-732:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-732:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-733:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-733:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-734:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
-734:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_GameStart.png がありません
-736:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_Settings.png がありません
-739:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_Exit.png がありません
-742:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_BloodBanner.png がありません
-746:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_title.mp3
-746:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_title.mp3
-1976:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_tap.mp3
-1976:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_tap.mp3
-2009:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\character_select_bg.png がありません
-2009:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2010:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2010:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2011:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2011:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\character_select_bg.png がありません
-2012:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2012:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2013:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
-2013:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\character_select_bg.png がありません
-2014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\character_select_bg.png がありません
-2014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\character_select_bg.png がありません
-2014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\character_select_bg.png がありません
-2015:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
-2015:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-2016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-2016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-2016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
-2017:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\select_bg.png がありません
-2017:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-2018:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
-2018:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-2018:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
-2019:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
-2020:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
-2020:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
-2020:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
-2021:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-2021:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-2022:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-2022:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
-2023:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
-2023:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-2023:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
-2024:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-2024:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-2025:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-2025:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-2026:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
-3550:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\weapon_select_bg.png がありません
-3551:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3551:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3552:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3552:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3553:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\weapon_select_bg.png がありません
-3553:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3554:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3554:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
-3554:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\weapon_select_bg.png がありません
-3556:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\weapon_select_bg.png がありません
-3556:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\weapon_select_bg.png がありません
-3556:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\weapon_select_bg.png がありません
-3557:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
-3557:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-3558:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-3558:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-3559:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
-3559:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\select_bg.png がありません
-3559:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-3560:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
-3560:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
-3561:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
-3561:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
-3562:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
-3562:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
-3563:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
-3563:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-3564:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-3564:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-3565:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
-3565:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
-3565:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-3566:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
-3566:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
-3567:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-3567:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-3568:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
-3568:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
-4590:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall.png がありません
-4590:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall.png がありません
-4591:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall.png がありません
-4592:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall.png がありません
-4592:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall.png がありません
-4593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\OuterWall.png がありません
-4593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\OuterWall.png がありません
-4593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall.png がありません
-4594:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall.png がありません
-4594:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall.png がありません
-4594:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall.png がありません
-4596:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall.png がありません
-4596:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\OuterWall.png がありません
-4597:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\OuterWall.png がありません
-4597:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\OuterWall.png がありません
-4598:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\OuterWall.png がありません
-4598:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\OuterWall.png がありません
-4599:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall.png がありません
-4599:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall.png がありません
-4600:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall.png がありません
-4600:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall.png がありません
-4600:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\OuterWall.png がありません
-4601:画像ファイル c:\Users\student\Desktop\team\Resource\OuterWall.png がありません
-4601:画像ファイル c:\Users\student\Desktop\team\Resouce\OuterWall.png がありません
-4602:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall1.png がありません
-4602:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall1.png がありません
-4603:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall1.png がありません
-4603:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall1.png がありません
-4603:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall1.png がありません
-4604:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\OuterWall1.png がありません
-4604:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\OuterWall1.png がありません
-4605:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall1.png がありません
-4605:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall1.png がありません
-4606:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall1.png がありません
-4606:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall1.png がありません
-4606:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall1.png がありません
-4607:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
-4607:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\OuterWall1.png がありません
-4608:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\OuterWall1.png がありません
-4608:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
-4608:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\OuterWall1.png がありません
-4609:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall1.png がありません
-4610:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall1.png がありません
-4610:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall1.png がありません
-4610:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall1.png がありません
-4611:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
-4611:画像ファイル c:\Users\student\Desktop\team\Resource\OuterWall1.png がありません
-4612:画像ファイル c:\Users\student\Desktop\team\Resouce\OuterWall1.png がありません
-4612:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\outerwall.png がありません
-4613:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\outerwall.png がありません
-4613:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\outerwall.png がありません
-4613:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\outerwall.png がありません
-4614:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\outerwall.png がありません
-4614:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\outerwall.png がありません
-4614:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\outerwall.png がありません
-4616:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\outerwall.png がありません
-4616:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\outerwall.png がありません
-4617:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\outerwall.png がありません
-4617:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\outerwall.png がありません
-4618:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\outerwall.png がありません
-4618:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\outerwall.png がありません
-4618:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\outerwall.png がありません
-4619:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\outerwall.png がありません
-4620:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\outerwall.png がありません
-4620:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\outerwall.png がありません
-4621:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\outerwall.png がありません
-4621:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\outerwall.png がありません
-4622:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\outerwall.png がありません
-4622:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\outerwall.png がありません
-4623:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\outerwall.png がありません
-4623:画像ファイル c:\Users\student\Desktop\team\Resource\outerwall.png がありません
-4624:画像ファイル c:\Users\student\Desktop\team\Resouce\outerwall.png がありません
-4724:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\Star.png がありません
-4724:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star.png がありません
-4726:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star.png がありません
-4726:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star.png がありません
-4727:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star.png がありません
-4728:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\Star.png がありません
-4728:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Star.png がありません
-4729:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\Star.png がありません
-4729:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star.png がありません
-4729:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star.png がありません
-4730:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star.png がありません
-4730:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star.png がありません
-4731:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\Star.png がありません
-4731:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Star.png がありません
-4732:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Star.png がありません
-4732:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\Star.png がありません
-4732:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Star.png がありません
-4733:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\Star.png がありません
-4733:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\Star.png がありません
-4734:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\Star.png がありません
-4734:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\Star.png がありません
-4734:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\Star.png がありません
-4736:画像ファイル c:\Users\student\Desktop\team\Resource\Star.png がありません
-4736:画像ファイル c:\Users\student\Desktop\team\Resouce\Star.png がありません
-4736:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\Star1.png がありません
-4737:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star1.png がありません
-4737:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star1.png がありません
-4738:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star1.png がありません
-4738:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star1.png がありません
-4739:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\Star1.png がありません
-4739:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Star1.png がありません
-4740:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\Star1.png がありません
-4740:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star1.png がありません
-4741:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star1.png がありません
-4741:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star1.png がありません
-4742:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star1.png がありません
-4742:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\Star1.png がありません
-4742:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Star1.png がありません
-4743:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Star1.png がありません
-4743:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\Star1.png がありません
-4744:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Star1.png がありません
-4744:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\Star1.png がありません
-4744:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\Star1.png がありません
-4745:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\Star1.png がありません
-4745:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\Star1.png がありません
-4746:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\Star1.png がありません
-4746:画像ファイル c:\Users\student\Desktop\team\Resource\Star1.png がありません
-4746:画像ファイル c:\Users\student\Desktop\team\Resouce\Star1.png がありません
-4747:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\star.png がありません
-4747:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\star.png がありません
-4748:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\star.png がありません
-4748:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\star.png がありません
-4749:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\star.png がありません
-4749:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\star.png がありません
-4749:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\star.png がありません
-4750:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\star.png がありません
-4750:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\star.png がありません
-4751:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\star.png がありません
-4751:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\star.png がありません
-4751:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\star.png がありません
-4752:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\star.png がありません
-4752:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\star.png がありません
-4753:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\star.png がありません
-4753:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\star.png がありません
-4753:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\star.png がありません
-4754:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\star.png がありません
-4754:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\star.png がありません
-4755:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\star.png がありません
-4755:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\star.png がありません
-4755:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\star.png がありません
-4756:画像ファイル c:\Users\student\Desktop\team\Resource\star.png がありません
-4756:画像ファイル c:\Users\student\Desktop\team\Resouce\star.png がありません
-4779:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_01_diffuse.png がありません
-4799:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_02_diffuse.png がありません
-4821:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_03_diffuse.png がありません
-4844:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_04_diffuse.png がありません
-4908:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\grass_walk.mp3
-4908:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\grass_walk.mp3
-4939:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\dirt_walk.mp3
-4941:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\dirt_walk.mp3
-4969:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_handgun.mp3
-4969:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_handgun.mp3
-5014:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_smg.mp3
-5014:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_smg.mp3
-5063:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_shotgun.mp3
-5063:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_shotgun.mp3
-5109:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_sniper.mp3
-5109:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_sniper.mp3
-5157:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_assault.mp3
-5157:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_assault.mp3
-5201:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_reload.mp3
-5201:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_reload.mp3
-5249:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_clear.mp3
-5249:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_clear.mp3
-5315:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_defeat.mp3
-5315:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_defeat.mp3
-5368:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_skill.mp3
-5369:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_skill.mp3
-5409:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_battle.mp3
-5409:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_battle.mp3
-5832:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_resume.png がありません
-5855:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_restart.png がありません
-5861:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_settings.png がありません
-5869:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_controls.png がありません
-5874:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_title.png がありません
-5879:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_exit.png がありません
-19062:フォントの初期化を行います
-19069:フォントの初期化は正常に終了しました
-19622:d3d11.dll の解放 1
-19623:dxgi.dll の解放 1
-19623:Direct3D11 のオブジェクト数を出力
-19623:Direct3D11 のオブジェクト合計数 : 0
-19625:DirectInput 関連の終了処理... 完了
-19625:サウンド関連の終了処理... 完了
-19633:ウィンドウ関連の終了処理... 完了
-19697:ＣＯＭを終了... 完了
-19702:ウインドウが破棄されようとしています
-19702:ソフトを終了する準備が整いました
-19810:
-19810:Alloc memory dump
-19810:	Total size:0(0.000kb)  Alloc num:0
-19811:
+205:				XInput 対応コントローラー No.2 の接続は確認できませんでした
+205:				XInput 対応コントローラー No.3 をチェック
+205:				XInput 対応コントローラー No.3 の接続は確認できませんでした
+206:			XInput 対応コントローラーのチェック完了
+206:			DirectInput 対応ジョイパッドの列挙を開始します
+232:			DirectInput 対応ジョイパッドの列挙終了
+232:		ジョイパッドの初期化は正常に終了しました
+232:		マウスデバイスの初期化... 初期化成功
+233:		キーボードデバイスの初期化... 初期化成功
+236:	DirectInput 関連の初期化は正常に終了しました
+240:	WASAPI の初期化を行います
+248:		デバイス名 : KH240V (NVIDIA High Definition Audio)
+341:		デフォルト遅延時間 : 10.000 ms
+341:		最小遅延時間       : 3.000 ms
+342:		遅延時間           : 10.000 ms
+342:		チャンネル数  　   : 2 ch
+342:		量子化ビット深度   : 32 bit
+343:		有効ビット深度　   : 32 bit
+343:		サンプリングレート : 48000 Hz
+343:		データ形式         : 浮動小数点型
+370:		動作モード         : 共有モード
+370:	WASAPI の初期化は正常に終了しました
+374:	d3d11.dll の読み込み.... 成功
+377:	dxgi.dll の読み込み.... 成功
+377:	API CreateDXGIFactory2 のアドレスを取得します.... 成功
+377:	IDXGIFactory2 を作成します.... 成功
+391:	API CreateDXGIFactory6 のアドレスを取得します.... 成功
+393:	IDXGIAdapter を列挙
+395:		Adapter No.0 Desc:NVIDIA GeForce RTX 3070  VRAM:8018MB
+395:			Output Device No.0 Name:\\.\DISPLAY1 ( 0, 0 )-( 1920, 1080 )
+396:		Adapter No.1 Desc:Intel(R) UHD Graphics 770  VRAM:128MB
+396:		Adapter No.2 Desc:Microsoft Basic Render Driver  VRAM:0MB
+396:	API D3D11CreateDevice のアドレスを取得します.... 成功
+398:	IDXGIAdapter を取得します.... 成功
+399:	IDXGIAdapter1 を取得します.... 成功
+399:	IDXGIAdapter2 を取得します.... 成功
+400:	IDXGIAdapter3 を取得します.... 成功
+400:	IDXGIAdapter4 を取得します.... 成功
+401:	Direct3D 11 FeatureLevel 11_0 以上を対象とします
+401:	ID3D11Device オブジェクトを取得します.... 成功
+566:	IDXGIDevice1 を取得します.... 成功
+567:	IDXGIDevice1->SetMaximunFrameLatency( 1 ); を実行しました
+567:	[ウインドウモード 1920x1080 ( 320, 167 )-( 1600, 887 )]
+567:	IDXGISwapChain2 を作成します.... 成功
+580:	IDXGIFactory2->CreateSwapChainForHwnd の戻り値：0x00000000
+580:	IDXGIOutput を取得します.... 成功
+582:	Graphics Device:NVIDIA GeForce RTX 3070
+582:	画面のフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
+583:	16bit Zバッファフォーマットは DXGI_FORMAT_D16_UNORM です
+583:	24bit Zバッファフォーマットは DXGI_FORMAT_D24_UNORM_S8_UINT です
+583:	32bit Zバッファフォーマットは DXGI_FORMAT_D32_FLOAT です
+583:	16bit カラーフォーマットは DXGI_FORMAT_B5G6R5_UNORM です
+584:	32bit カラーフォーマットは DXGI_FORMAT_B8G8R8X8_UNORM です
+584:	アルファ付き 16bit カラーフォーマットは DXGI_FORMAT_B4G4R4A4_UNORM です
+584:	アルファ付き 32bit カラーフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
+584:	アルファテスト用 16bit カラーフォーマットは DXGI_FORMAT_B5G5R5A1_UNORM です
+584:	アルファテスト用 32bit カラーフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
+584:	ＤＸＴ１テクスチャフォーマットは DXGI_FORMAT_BC1_UNORM です
+586:	ＤＸＴ２テクスチャフォーマットは使えません
+586:	ＤＸＴ３テクスチャフォーマットは DXGI_FORMAT_BC2_UNORM です
+587:	ＤＸＴ４テクスチャフォーマットは使えません
+587:	ＤＸＴ５テクスチャフォーマットは DXGI_FORMAT_BC3_UNORM です
+587:	BC7_UNORM テクスチャフォーマットは DXGI_FORMAT_BC7_UNORM です
+587:	BC7_UNORM_SRGB テクスチャフォーマットは DXGI_FORMAT_BC7_UNORM_SRGB です
+588:	ABGR 整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_UNORM です
+588:	ABGR 浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_FLOAT です
+588:	ABGR 浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32B32A32_FLOAT です
+588:	１チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8_UNORM です
+588:	１チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_UNORM です
+589:	１チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_FLOAT です
+589:	１チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32_FLOAT です
+589:	２チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8G8_UNORM です
+589:	２チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_UNORM です
+589:	２チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_FLOAT です
+589:	２チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32_FLOAT です
+590:	描画用 16bit カラーフォーマットは DXGI_FORMAT_B5G6R5_UNORM です
+590:	描画用 32bit カラーフォーマットは DXGI_FORMAT_B8G8R8X8_UNORM です
+590:	描画用アルファ付き 32bit カラーフォーマットは DXGI_FORMAT_R8G8B8A8_UNORM です
+590:	描画用 ABGR 整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_UNORM です
+590:	描画用 ABGR 浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16B16A16_FLOAT です
+591:	描画用 ABGR 浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32B32A32_FLOAT です
+591:	描画用１チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8_UNORM です
+591:	描画用１チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_UNORM です
+591:	描画用１チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16_FLOAT です
+592:	描画用１チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32_FLOAT です
+592:	描画用２チャンネル整数 8 ビット型カラーフォーマットは DXGI_FORMAT_R8G8_UNORM です
+592:	描画用２チャンネル整数 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_UNORM です
+593:	描画用２チャンネル浮動小数点 16 ビット型カラーフォーマットは DXGI_FORMAT_R16G16_FLOAT です
+593:	描画用２チャンネル浮動小数点 32 ビット型カラーフォーマットは DXGI_FORMAT_R32G32_FLOAT です
+593:	使用する機能レベル:D3D_FEATURE_LEVEL_11_1
+593:	同時にレンダリングできるバッファの数:8
+594:	最大テクスチャサイズ　幅:16384 高さ:16384
+594:	標準描画用の頂点バッファの作成.... 成功
+594:	シェーダーコード関係の初期化.... 成功
+605:	各種シェーダー用定数バッファの作成.... 成功
+606:	各種 ID3D11InputLayout の作成.... 成功
+617:	画像の単純転送処理の初期化... 成功
+618:	深度バッファを作成します.... 成功
+619:	フォントの初期化を行います
+622:	フォントの初期化は正常に終了しました
+711:	文字コードバッファの初期化を行います... 完了しました
+729:ＤＸライブラリの初期化処理終了
+745:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Titleu.jpg がありません
+763:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title02.png がありません
+769:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title2.png がありません
+772:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\settings_bg.png がありません
+772:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+773:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+773:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+774:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\settings_bg.png がありません
+774:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\settings_bg.png がありません
+775:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+775:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\settings_bg.png がありません
+776:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+776:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
+777:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
+778:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
+778:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\settings_bg.png がありません
+778:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\mode_select_bg.png がありません
+779:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+779:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+780:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+780:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+781:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\mode_select_bg.png がありません
+781:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+781:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+782:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+782:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
+783:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
+783:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
+784:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\mode_select_bg.png がありません
+784:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+784:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+785:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+785:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+786:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+786:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
+787:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+788:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+788:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+789:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+789:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+790:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+790:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+791:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_GameStart.png がありません
+793:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_Settings.png がありません
+796:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_Exit.png がありません
+798:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Title_BloodBanner.png がありません
+801:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_title.mp3
+802:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_title.mp3
+8547:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_tap.mp3
+8548:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_tap.mp3
+8580:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\character_select_bg.png がありません
+8581:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8582:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8582:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8583:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8583:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\character_select_bg.png がありません
+8584:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8584:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8585:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\character_select_bg.png がありません
+8585:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\character_select_bg.png がありません
+8585:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\character_select_bg.png がありません
+8586:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\character_select_bg.png がありません
+8586:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\character_select_bg.png がありません
+8586:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
+8586:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+8588:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+8588:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+8589:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
+8589:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\select_bg.png がありません
+8589:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+8590:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
+8590:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+8591:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
+8591:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
+8592:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
+8592:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
+8593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+8593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+8593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+8593:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+8594:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+8594:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
+8595:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+8595:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+8595:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+8596:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+8596:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+8596:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+8596:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+10274:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\weapon_select_bg.png がありません
+10274:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10275:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10275:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10276:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10276:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\weapon_select_bg.png がありません
+10277:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10277:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10278:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\weapon_select_bg.png がありません
+10279:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\weapon_select_bg.png がありません
+10279:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\weapon_select_bg.png がありません
+10279:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\weapon_select_bg.png がありません
+10280:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\weapon_select_bg.png がありません
+10280:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
+10281:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+10281:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+10281:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+10282:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
+10282:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\select_bg.png がありません
+10283:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+10283:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\select_bg.png がありません
+10283:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\select_bg.png がありません
+10284:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
+10284:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
+10285:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\select_bg.png がありません
+10285:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\select_bg.png がありません
+10286:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+10286:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+10286:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+10287:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+10287:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+10287:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
+10287:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+10288:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+10288:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+10289:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+10289:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+10290:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+10290:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+11871:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall.png がありません
+11872:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall.png がありません
+11873:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall.png がありません
+11873:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall.png がありません
+11874:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall.png がありません
+11874:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\OuterWall.png がありません
+11875:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\OuterWall.png がありません
+11875:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall.png がありません
+11876:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall.png がありません
+11876:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall.png がありません
+11876:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall.png がありません
+11878:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall.png がありません
+11878:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\OuterWall.png がありません
+11878:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\OuterWall.png がありません
+11879:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\OuterWall.png がありません
+11879:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\OuterWall.png がありません
+11880:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\OuterWall.png がありません
+11880:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall.png がありません
+11881:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall.png がありません
+11881:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall.png がありません
+11881:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall.png がありません
+11882:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\OuterWall.png がありません
+11882:画像ファイル c:\Users\student\Desktop\team\Resource\OuterWall.png がありません
+11883:画像ファイル c:\Users\student\Desktop\team\Resouce\OuterWall.png がありません
+11883:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall1.png がありません
+11883:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall1.png がありません
+11884:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall1.png がありません
+11884:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall1.png がありません
+11885:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall1.png がありません
+11885:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\OuterWall1.png がありません
+11886:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\OuterWall1.png がありません
+11886:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\OuterWall1.png がありません
+11887:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall1.png がありません
+11887:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall1.png がありません
+11888:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall1.png がありません
+11888:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall1.png がありません
+11888:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
+11889:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\OuterWall1.png がありません
+11889:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\OuterWall1.png がありません
+11890:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
+11890:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\OuterWall1.png がありません
+11891:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\OuterWall1.png がありません
+11891:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\OuterWall1.png がありません
+11891:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\OuterWall1.png がありません
+11892:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\OuterWall1.png がありません
+11892:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\OuterWall1.png がありません
+11893:画像ファイル c:\Users\student\Desktop\team\Resource\OuterWall1.png がありません
+11893:画像ファイル c:\Users\student\Desktop\team\Resouce\OuterWall1.png がありません
+11894:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\outerwall.png がありません
+11894:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\outerwall.png がありません
+11894:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\outerwall.png がありません
+11895:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\outerwall.png がありません
+11895:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\outerwall.png がありません
+11896:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\outerwall.png がありません
+11896:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\outerwall.png がありません
+11897:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\outerwall.png がありません
+11897:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\outerwall.png がありません
+11898:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\outerwall.png がありません
+11898:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\outerwall.png がありません
+11898:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\outerwall.png がありません
+11899:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\outerwall.png がありません
+11899:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\outerwall.png がありません
+11899:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\outerwall.png がありません
+11901:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\outerwall.png がありません
+11901:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\outerwall.png がありません
+11902:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\outerwall.png がありません
+11902:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\outerwall.png がありません
+11902:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\outerwall.png がありません
+11903:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\outerwall.png がありません
+11903:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\outerwall.png がありません
+11904:画像ファイル c:\Users\student\Desktop\team\Resource\outerwall.png がありません
+11904:画像ファイル c:\Users\student\Desktop\team\Resouce\outerwall.png がありません
+11984:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\Star.png がありません
+11986:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star.png がありません
+11987:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star.png がありません
+11987:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star.png がありません
+11987:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star.png がありません
+11988:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\Star.png がありません
+11988:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Star.png がありません
+11988:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\Star.png がありません
+11989:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star.png がありません
+11990:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star.png がありません
+11990:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star.png がありません
+11991:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star.png がありません
+11991:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\Star.png がありません
+11991:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Star.png がありません
+11992:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Star.png がありません
+11992:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\Star.png がありません
+11993:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Star.png がありません
+11993:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\Star.png がありません
+11994:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\Star.png がありません
+11994:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\Star.png がありません
+11995:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\Star.png がありません
+11995:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\Star.png がありません
+11995:画像ファイル c:\Users\student\Desktop\team\Resource\Star.png がありません
+11996:画像ファイル c:\Users\student\Desktop\team\Resouce\Star.png がありません
+11996:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\Star1.png がありません
+11997:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star1.png がありません
+11997:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star1.png がありません
+11997:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star1.png がありません
+11998:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star1.png がありません
+11999:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\Star1.png がありません
+11999:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Star1.png がありません
+12000:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\Star1.png がありません
+12000:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\Star1.png がありません
+12001:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\Star1.png がありません
+12001:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\Star1.png がありません
+12002:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\Star1.png がありません
+12002:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\Star1.png がありません
+12002:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Star1.png がありません
+12003:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Star1.png がありません
+12003:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\Star1.png がありません
+12004:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Star1.png がありません
+12004:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\Star1.png がありません
+12005:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\Star1.png がありません
+12005:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\Star1.png がありません
+12006:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\Star1.png がありません
+12006:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\Star1.png がありません
+12006:画像ファイル c:\Users\student\Desktop\team\Resource\Star1.png がありません
+12007:画像ファイル c:\Users\student\Desktop\team\Resouce\Star1.png がありません
+12007:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\star.png がありません
+12007:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\star.png がありません
+12008:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\star.png がありません
+12008:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\star.png がありません
+12008:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\star.png がありません
+12009:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\star.png がありません
+12009:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\star.png がありません
+12009:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Textures\star.png がありません
+12010:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Rock\star.png がありません
+12010:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\Grass\star.png がありません
+12011:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\02_岩\star.png がありません
+12011:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Nature\01_草\star.png がありません
+12011:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resouce\star.png がありません
+12012:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\star.png がありません
+12012:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\star.png がありません
+12014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resouce\star.png がありません
+12014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\star.png がありません
+12014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Rock\star.png がありません
+12014:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\Grass\star.png がありません
+12015:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\02_岩\star.png がありません
+12015:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Nature\01_草\star.png がありません
+12016:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resouce\star.png がありません
+12016:画像ファイル c:\Users\student\Desktop\team\Resource\star.png がありません
+12016:画像ファイル c:\Users\student\Desktop\team\Resouce\star.png がありません
+12036:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_01_diffuse.png がありません
+12055:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_02_diffuse.png がありません
+12075:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_03_diffuse.png がありません
+12094:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Textures\rock_04_diffuse.png がありません
+12155:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\grass_walk.mp3
+12155:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\grass_walk.mp3
+12191:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\dirt_walk.mp3
+12192:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\足音\dirt_walk.mp3
+12218:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_handgun.mp3
+12218:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_handgun.mp3
+12253:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_smg.mp3
+12253:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_smg.mp3
+12283:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_shotgun.mp3
+12283:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_shotgun.mp3
+12319:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_sniper.mp3
+12319:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_sniper.mp3
+12348:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_assault.mp3
+12348:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_assault.mp3
+12375:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_reload.mp3
+12375:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\銃\gun_reload.mp3
+12410:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_clear.mp3
+12410:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_clear.mp3
+12463:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_defeat.mp3
+12463:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_defeat.mp3
+12514:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_skill.mp3
+12514:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\SE\システム\se_skill.mp3
+12564:File Open Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_battle.mp3
+12564:Sound File Load Error : C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\BGM\bgm_battle.mp3
+12964:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_resume.png がありません
+12970:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_restart.png がありません
+12977:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_settings.png がありません
+12983:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_controls.png がありません
+12989:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_title.png がありません
+12994:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Images\UI\Pause\btn_exit.png がありません
+98845:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\clear_bg.png がありません
+98846:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98846:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98846:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98847:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98847:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\clear_bg.png がありません
+98848:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98848:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98849:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\clear_bg.png がありません
+98849:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\clear_bg.png がありません
+98849:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\clear_bg.png がありません
+98850:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\clear_bg.png がありません
+98850:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\clear_bg.png がありません
+98850:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\result_clear_bg.png がありません
+98851:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98851:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98852:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98852:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98853:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\result_clear_bg.png がありません
+98853:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98854:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98854:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\result_clear_bg.png がありません
+98854:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\result_clear_bg.png がありません
+98855:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\result_clear_bg.png がありません
+98855:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\result_clear_bg.png がありません
+98855:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\result_clear_bg.png がありません
+98856:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+98856:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+98856:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+98858:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+98858:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+98859:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
+98859:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+98859:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+98860:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+98860:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+98860:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+98861:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+98861:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+255621:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\settings_bg.png がありません
+255622:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255622:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255623:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255623:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255624:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\settings_bg.png がありません
+255624:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255625:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255625:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\settings_bg.png がありません
+255625:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
+255625:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
+255626:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\settings_bg.png がありません
+255626:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\settings_bg.png がありません
+255627:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\mode_select_bg.png がありません
+255627:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255628:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255628:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255629:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255629:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\mode_select_bg.png がありません
+255630:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255631:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255633:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\mode_select_bg.png がありません
+255633:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
+255633:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
+255634:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\mode_select_bg.png がありません
+255634:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\mode_select_bg.png がありません
+255635:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+255635:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+255636:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+255636:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+255637:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+255637:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\Resource\ui_window.png がありません
+255637:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+255638:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\ui_window.png がありません
+255638:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\ui_window.png がありません
+255638:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+255639:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+255639:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\Resource\Images\ui_window.png がありません
+255639:画像ファイル C:\Users\student\Desktop\仮\programs_二学期\TeamGame\TeamGame\TeamGame\ui_window.png がありません
+256506:フォントの初期化を行います
+256515:フォントの初期化は正常に終了しました
+256559:d3d11.dll の解放 1
+256560:dxgi.dll の解放 1
+256561:Direct3D11 のオブジェクト数を出力
+256561:Direct3D11 のオブジェクト合計数 : 0
+256563:DirectInput 関連の終了処理... 完了
+256563:サウンド関連の終了処理... 完了
+256566:ウィンドウ関連の終了処理... 完了
+256614:ＣＯＭを終了... 完了
+256621:ウインドウが破棄されようとしています
+256622:ソフトを終了する準備が整いました
+256732:
+256732:Alloc memory dump
+256733:	Total size:0(0.000kb)  Alloc num:0
+256733:
