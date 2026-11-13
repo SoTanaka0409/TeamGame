@@ -1,4 +1,5 @@
-#include "ResultScene.h"
+﻿#include "ResultScene.h"
+#include "../Managers/FontManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
 #include "SceneManager.h"
@@ -16,6 +17,7 @@ ResultScene::ResultScene()
 
     // UITextWindow によるリザルトパネルの初期化
     resultPanelWindow = new UI::UITextWindow();
+    resultPanelWindow->SetFontHandle(FontManager::GetInstance().GetFont(24));
     resultPanelWindow->SetFixedSize(800, 320);
     resultPanelWindow->SetMaxTextWidth(740);
     resultPanelWindow->SetPadding(UI::Margin(40, 25, 40, 25));
@@ -99,7 +101,7 @@ void ResultScene::Draw()
     {
         DrawBox(1920 / 2 - 250, 120, 1920 / 2 + 250, 180, GetColor(20, 35, 55), TRUE);
         DrawBox(1920 / 2 - 250, 120, 1920 / 2 + 250, 180, GetColor(0, 200, 255), FALSE);
-        DrawString(1920 / 2 - 80, 140, "=== RESULT ===", GetColor(255, 220, 0));
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, 134, "=== RESULT ===", GetColor(255, 220, 0), 32);
     }
 
     // 3. リザルト中央パネル（UITextWindow による描画）
@@ -113,8 +115,8 @@ void ResultScene::Draw()
     }
 
     // ボタン案内
-    int btnW = 400;
-    int btnH = 50;
+    int btnW = 480;
+    int btnH = 56;
     int btnX = (1920 - btnW) / 2;
     int btnY = panelY + 340;
 
@@ -122,5 +124,5 @@ void ResultScene::Draw()
     DrawBox(btnX, btnY, btnX + btnW, btnY + btnH, GetColor(25, 40, 65), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     DrawBox(btnX, btnY, btnX + btnW, btnY + btnH, GetColor(0, 180, 255), FALSE);
-    DrawString(btnX + 45, btnY + 16, "[ ENTER / SPACE ] タイトルへ戻る", GetColor(255, 255, 255));
+    FontManager::GetInstance().DrawStringCenter(1920 / 2, btnY + 17, "[ ENTER / SPACE ] タイトルへ戻る", GetColor(255, 255, 255), 22);
 }

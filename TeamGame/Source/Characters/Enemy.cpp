@@ -684,6 +684,23 @@ void Enemy::MoveSmart(const Vector2 &desiredDir, float speedScale)
 
 void Enemy::Update()
 {
+    // 死亡演出中: その場で倒れるモーションを再生
+    if (m_isDying)
+    {
+        if (m_model)
+        {
+            m_model->PlayDie(1.5f);
+            m_model->Update(1.0f / 60.0f);
+        }
+        m_deathStayTimer--;
+        if (m_deathStayTimer <= 0)
+        {
+            m_isDying = false;
+            SetActive(false); // 倒れ込み演出完了後に非アクティブ化
+        }
+        return;
+    }
+
     float startPosX = position.x;
     float startPosY = position.y;
 
@@ -1196,23 +1213,21 @@ void Enemy::Draw()
     }
 
     // チーム別カラー（味方：鮮明な青シアン、敵：赤、バトルロワイヤル錯乱中：マゼンタ）
+    // 被弾時も基本は赤・青（スキル等での一時的敵対・錯乱時のみ例外）を維持する
     unsigned int bodyColor;
     unsigned int accentColor;
     if (IsPanic()) {
         bodyColor = GetColor(220, 30, 160);
         accentColor = GetColor(255, 80, 220);
-        if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
     } else if (teamId == 0) {
         bodyColor = GetColor(20, 130, 240); // 鮮やかな味方ブルー
         accentColor = GetColor(100, 210, 255);
-        if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
-        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(0, 170, 255);
+        if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(0, 170, 255);
         else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(30, 190, 225);
     } else {
         bodyColor = GetColor(210, 35, 35); // 鮮やかな敵レッド
         accentColor = GetColor(255, 90, 90);
-        if (damageColorTimer > 0) bodyColor = GetColor(255, 255, 0);
-        else if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(245, 45, 45);
+        if (aiState == EnemyAIState::ALERT) bodyColor = GetColor(245, 45, 45);
         else if (aiState == EnemyAIState::INVESTIGATE) bodyColor = GetColor(230, 130, 30);
     }
 
@@ -1227,13 +1242,14 @@ void Enemy::Draw()
     // 3Dモデルが存在する場合はモデル描画と足元ガイド円を描画
     if (m_model && m_model->IsLoaded())
     {
-        // 足元にチームカラーのガイド円を描画（半透明）
+        // 足元にチームカラーのガイド円を描画（敵味方識別用：1.5倍に拡大）
+        float footCircleRadius = renderRadius * 1.5f;
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 130);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), bodyColor, TRUE);
+                   static_cast<int>(footCircleRadius), bodyColor, TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), accentColor, FALSE);
+                   static_cast<int>(footCircleRadius), accentColor, FALSE);
 
         // 3Dモデルを描画 (2Dスクリーン座標に合わせて配置・回転)
         m_model->SetScreenPosition(screenX, screenY);
@@ -1243,10 +1259,11 @@ void Enemy::Draw()
     }
     else
     {
+        float footCircleRadius = renderRadius * 1.5f;
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), bodyColor, TRUE);
+                   static_cast<int>(footCircleRadius), bodyColor, TRUE);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius), accentColor, FALSE);
+                   static_cast<int>(footCircleRadius), accentColor, FALSE);
     }
 
     // 頭上の敵味方ネームタグ＆小型HPバーの描画
@@ -1335,7 +1352,7 @@ void Enemy::Draw()
     {
         unsigned int alertCol = (teamId == 0) ? GetColor(60, 190, 255) : GetColor(255, 80, 80);
         DrawCircle(static_cast<int>(screenX), static_cast<int>(screenY),
-                   static_cast<int>(renderRadius + 4.0f), alertCol, FALSE);
+                   static_cast<int>(renderRadius * 1.5f + 4.0f), alertCol, FALSE);
 
         // 有効射程を示す円（ガイドライン）描画
         float rangeScreenRadius = GetEffectiveRange() * Camera::ZoomScale;
@@ -1452,7 +1469,7 @@ void Enemy::Draw()
 
 void Enemy::Damage(int amount, const std::string& attackerName, int attackerTeamId)
 {
-    if (invincibleTimer > 0) return;
+    if (invincibleTimer > 0 || m_isDying) return;
     if (!attackerName.empty() || attackerTeamId != -1)
     {
         SetLastAttacker(attackerName, attackerTeamId);
@@ -1468,8 +1485,12 @@ void Enemy::Damage(int amount, const std::string& attackerName, int attackerTeam
     if (status.IsDead())
     {
         StopHomingSuicide();
-        SetActive(false);
-        if (m_model) m_model->PlayDie();
+        if (!m_isDying)
+        {
+            m_isDying = true;
+            m_deathStayTimer = 90; // 約1.5秒間倒れるアニメーションを再生し、倒れた状態で留まる
+            if (m_model) m_model->PlayDie(1.5f);
+        }
     }
 }
 
@@ -1481,8 +1502,12 @@ void Enemy::StealthKill(const std::string& attackerName, int attackerTeamId)
     }
     StopHomingSuicide();
     status.TakeDamage(status.GetCurrentHp());
-    SetActive(false);
-    if (m_model) m_model->PlayDie();
+    if (!m_isDying)
+    {
+        m_isDying = true;
+        m_deathStayTimer = 90; // 約1.5秒間倒れるアニメーションを再生し、倒れた状態で留まる
+        if (m_model) m_model->PlayDie(1.5f);
+    }
 
     auto scene = SceneManager::GetInstance().GetCurrentScene();
     if (scene && scene->GetEffectManager())

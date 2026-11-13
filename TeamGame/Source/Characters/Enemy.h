@@ -275,4 +275,14 @@ public:
 private:
     bool isHomingSuicide = false;
     int suicideTimer = 0;
+    bool m_isDying = false;           ///< 死亡演出中フラグ
+    int m_deathStayTimer = 0;         ///< 死亡停止タイマー
+
+public:
+    bool IsDying() const { return m_isDying; }
+    void ResetDying() {
+        m_isDying = false;
+        m_deathStayTimer = 0;
+        if (m_model) m_model->ResetMotion();
+    }
 };

@@ -4,6 +4,7 @@
 #include "Vector2.h"
 
 class ColliderManager;
+class Player;
 
 /**
  * @brief 敵の弾クラス
@@ -18,6 +19,8 @@ class EnemyBullet : public Object2D
     float radius;
     float maxRange;
     Vector2 startPos;
+
+    void ApplyHit(Player* player, const Vector2& hitPos);
 
   public:
     /**

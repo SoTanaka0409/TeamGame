@@ -32,6 +32,11 @@ private:
 
     std::unordered_map<MotionType, int> m_motionMap; ///< モーション種別とモデル内番号の対応表
 
+    /**
+     * @brief モデルからアニメーション番号を自動検出して対応表を初期化
+     */
+    void DetectAnimationsFromModel(int modelHandle);
+
 public:
     Animation(int modelHandle = -1);
     ~Animation();
@@ -82,4 +87,9 @@ public:
      * @brief 現在のアニメーション番号の取得
      */
     int GetCurrentAnimIndex() const { return m_currentAnimIndex; }
+
+    /**
+     * @brief モーション状態を初期化（リスポーン時など）
+     */
+    void Reset();
 };

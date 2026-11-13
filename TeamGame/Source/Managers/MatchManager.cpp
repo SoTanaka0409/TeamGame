@@ -32,19 +32,22 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
         {
             if (!ch->isDeadProcessed)
             {
+                // キルスコア加算（倒されたチームの相手側のキル数が増加：指揮者スキル自爆含む）
+                if (ch->teamId == 0) team1Kills++;
+                else if (ch->teamId == 1) team0Kills++;
+
+                std::string victimName = ch->GetCharacterName();
+
                 if (ch->isSuicideDeath)
                 {
-                    // 指揮者の自爆特攻スキルによる死亡: 敵チームのキルスコアには加算しない
-                    std::string victimName = ch->GetCharacterName();
-                    AddKillLog("自爆 (指揮者スキル)", ch->teamId, victimName, ch->teamId, false, false);
+                    // 指揮者の自爆特攻スキルによる死亡: 相手チームのキルとして記録
+                    int enemyTeamId = (ch->teamId == 0) ? 1 : 0;
+                    std::string killerTitle = (ch->teamId == 0) ? "指揮者スキル (敵得点)" : "指揮者スキル (味方得点)";
+                    AddKillLog(killerTitle, enemyTeamId, victimName, ch->teamId, (enemyTeamId == 0), false);
                 }
                 else
                 {
-                    if (ch->teamId == 0) team1Kills++;
-                    else if (ch->teamId == 1) team0Kills++;
-
-                    // キルログの生成
-                    std::string victimName = ch->GetCharacterName();
+                    // 通常のキルログ生成
                     std::string killerName = ch->GetLastAttackerName();
                     int killerTeam = ch->GetLastAttackerTeamId();
                     if (killerName.empty()) {
@@ -93,6 +96,8 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
                 if (e) {
                     e->StopHomingSuicide();
                     e->ResetMoveToCenter();
+                    e->ResetDying();
+                    if (e->GetModel()) e->GetModel()->PlayIdle();
                 }
             }
         }
@@ -154,8 +159,8 @@ void MatchManager::DrawKillNotifications()
 
     int rightMargin = 24;
     int baseTopY = 18;
-    int logW = 340;
-    int logH = 30;
+    int logW = 410;
+    int logH = 38;
     int spacing = 6;
 
     for (size_t i = 0; i < killLogs.size(); ++i)
@@ -180,7 +185,8 @@ void MatchManager::DrawKillNotifications()
         }
 
         // 2. テキスト描画 (Killer > Victim)
-        int textY = y + 7;
+        int fontSz = 17;
+        int textY = y + (logH - fontSz) / 2;
 
         std::string killerText = log.isPlayerKill ? "YOU" : log.attackerName;
         unsigned int killerCol = HudStyle::ColEnemy();
@@ -198,22 +204,28 @@ void MatchManager::DrawKillNotifications()
             victimCol = HudStyle::ColAlly();
         }
 
+        int badgeAreaW = (log.isPlayerKill || log.isPlayerDeath) ? 62 : 16;
+        int maxTextW = logW - 16 - badgeAreaW;
+        std::string fullLine = killerText + " > " + victimText;
+        int fitSz = FontManager::GetInstance().GetFittingFontSize(fullLine.c_str(), maxTextW, fontSz, 14);
+        int drawY = y + (logH - fitSz) / 2;
+
         // Killer
-        FontManager::GetInstance().DrawString(x + 14, textY, killerText.c_str(), killerCol, 14);
-        int killerW = FontManager::GetInstance().GetStringWidth(killerText.c_str(), 14);
+        FontManager::GetInstance().DrawString(x + 14, drawY, killerText.c_str(), killerCol, fitSz);
+        int killerW = FontManager::GetInstance().GetStringWidth(killerText.c_str(), fitSz);
 
         // Separator (>)
-        FontManager::GetInstance().DrawString(x + 14 + killerW + 6, textY, ">", HudStyle::ColSubText(), 14);
-        int sepW = FontManager::GetInstance().GetStringWidth(">", 14);
+        FontManager::GetInstance().DrawString(x + 14 + killerW + 6, drawY, ">", HudStyle::ColSubText(), fitSz);
+        int sepW = FontManager::GetInstance().GetStringWidth(">", fitSz);
 
         // Victim
-        FontManager::GetInstance().DrawString(x + 14 + killerW + 6 + sepW + 6, textY, victimText.c_str(), victimCol, 14);
+        FontManager::GetInstance().DrawString(x + 14 + killerW + 6 + sepW + 6, drawY, victimText.c_str(), victimCol, fitSz);
 
         // 右端バッジ (自分のキル: KILL / 自分のデス: DEAD)
         if (log.isPlayerKill) {
-            FontManager::GetInstance().DrawStringRight(x + logW - 14, textY, "KILL", HudStyle::ColAmber(), 13);
+            FontManager::GetInstance().DrawStringRight(x + logW - 14, y + (logH - 16) / 2, "KILL", HudStyle::ColAmber(), 16);
         } else if (log.isPlayerDeath) {
-            FontManager::GetInstance().DrawStringRight(x + logW - 14, textY, "DEAD", HudStyle::ColEnemy(), 13);
+            FontManager::GetInstance().DrawStringRight(x + logW - 14, y + (logH - 16) / 2, "DEAD", HudStyle::ColEnemy(), 16);
         }
     }
 }

@@ -96,8 +96,8 @@ void CharacterSelectScene::Update() {
         // --- 画面左上: タイトルに戻るボタン ---
         const int backBtnX = 50;
         const int backBtnY = 40;
-        const int backBtnW = 220;
-        const int backBtnH = 48;
+        const int backBtnW = 240;
+        const int backBtnH = 50;
         if (mouseX >= backBtnX && mouseX <= backBtnX + backBtnW &&
             mouseY >= backBtnY && mouseY <= backBtnY + backBtnH) {
             if (mouseClicked && m_hasReleasedConfirm) {
@@ -114,9 +114,9 @@ void CharacterSelectScene::Update() {
         }
 
         // --- キャラクターカードのタップ（マウスクリック＆ホバー）判定 ---
-        int cardW = 282;
-        int cardH = 430;
-        int gap = 22;
+        int cardW = 310;
+        int cardH = 450;
+        int gap = 20;
         int totalW = count * cardW + (count - 1) * gap;
         int startX = (1920 - totalW) / 2;
         int startY = 175;
@@ -170,16 +170,16 @@ void CharacterSelectScene::Update() {
     }
     else if (m_state == SelectState::CONFIRMING) {
         // --- 確認ダイアログ内のボタン当たり判定 ---
-        const int modalW = 860;
-        const int modalH = 500;
+        const int modalW = 980;
+        const int modalH = 540;
         const int modalX = (1920 - modalW) / 2;
         const int modalY = (1080 - modalH) / 2;
 
-        const int btnW = 340;
-        const int btnH = 58;
-        const int btnY = modalY + modalH - 85;
-        const int btn0X = modalX + 60;
-        const int btn1X = modalX + modalW - 60 - btnW;
+        const int btnW = 380;
+        const int btnH = 62;
+        const int btnY = modalY + modalH - 92;
+        const int btn0X = modalX + 70;
+        const int btn1X = modalX + modalW - 70 - btnW;
 
         // ボタン0: 決定して武器選択へ (YES)
         if (mouseX >= btn0X && mouseX <= btn0X + btnW && mouseY >= btnY && mouseY <= btnY + btnH) {
@@ -262,23 +262,23 @@ void CharacterSelectScene::Draw() {
     }
     const int backBtnX = 50;
     const int backBtnY = 40;
-    const int backBtnW = 220;
-    const int backBtnH = 48;
+    const int backBtnW = 240;
+    const int backBtnH = 50;
     bool isBackHovered = (mouseX >= backBtnX && mouseX <= backBtnX + backBtnW && mouseY >= backBtnY && mouseY <= backBtnY + backBtnH);
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, isBackHovered ? 240 : 180);
     DrawBox(backBtnX, backBtnY, backBtnX + backBtnW, backBtnY + backBtnH, isBackHovered ? GetColor(35, 50, 75) : GetColor(18, 25, 38), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     DrawBox(backBtnX, backBtnY, backBtnX + backBtnW, backBtnY + backBtnH, isBackHovered ? GetColor(0, 220, 255) : GetColor(60, 85, 115), FALSE);
-    FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 12, "← タイトルへ戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 18);
+    FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 14, "← タイトルへ戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 20);
 
-    FontManager::GetInstance().DrawStringCenter(960, 60, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
-    FontManager::GetInstance().DrawStringCenter(960, 125, "使用するキャラクターを選択してください ( [←][→] または クリック/タップ で選択、[Enter] で決定 )", GetColor(200, 210, 225), 20);
+    FontManager::GetInstance().DrawStringCenter(960, 56, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
+    FontManager::GetInstance().DrawStringCenter(960, 120, "使用するキャラクターを選択してください ( [←][→] または クリック/タップ で選択、[Enter] で決定 )", GetColor(200, 210, 225), 22);
 
     int count = static_cast<int>(m_characters.size());
-    int cardW = 282;
-    int cardH = 430;
-    int gap = 22;
+    int cardW = 310;
+    int cardH = 450;
+    int gap = 20;
     int totalW = count * cardW + (count - 1) * gap;
     int startX = (1920 - totalW) / 2;
     int startY = 175;
@@ -333,37 +333,43 @@ void CharacterSelectScene::Draw() {
         }
         DrawBox(avX1, avY1, avX2, avY2, chara.themeColor, FALSE);
 
-        // キャラ情報テキスト
-        int textY = avY2 + 15;
-        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.name.c_str(), isSelected ? GetColor(255, 240, 100) : GetColor(230, 230, 230), 22);
-        textY += 30;
-
-        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.typeName.c_str(), GetColor(150, 180, 210), 16);
+        // キャラ情報テキスト (読める文字サイズを保ち、はみ出しを厳密に防止)
+        int textY = avY2 + 16;
+        int nameSize = FontManager::GetInstance().GetFittingFontSize(chara.name.c_str(), cardW - 24, 24, 18);
+        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.name.c_str(), isSelected ? GetColor(255, 240, 100) : GetColor(235, 235, 235), nameSize);
         textY += 32;
 
-        FontManager::GetInstance().DrawFormatString(cardX + 18, textY, GetColor(100, 255, 100), 16, "HP      : %d", chara.maxHp);
-        textY += 24;
-        FontManager::GetInstance().DrawFormatString(cardX + 18, textY, GetColor(100, 200, 255), 16, "SPEED   : %.1f", chara.moveSpeed);
-        textY += 24;
+        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.typeName.c_str(), GetColor(160, 190, 220), 18);
+        textY += 32;
 
-        int skillFontSize = (chara.skillName.length() > 16) ? 14 : 16;
-        FontManager::GetInstance().DrawFormatString(cardX + 18, textY, GetColor(255, 215, 0), skillFontSize, "SKILL   : %s", chara.skillName.c_str());
-        textY += 28;
+        FontManager::GetInstance().DrawFormatString(cardX + 20, textY, GetColor(110, 255, 120), 18, "HP      : %d", chara.maxHp);
+        textY += 26;
+        FontManager::GetInstance().DrawFormatString(cardX + 20, textY, GetColor(110, 210, 255), 18, "SPEED   : %.1f", chara.moveSpeed);
+        textY += 26;
+
+        std::string skillLine = std::string("SKILL   : ") + chara.skillName;
+        int skillMaxW = cardW - 36;
+        int skillFitSize = FontManager::GetInstance().GetFittingFontSize(skillLine.c_str(), skillMaxW, 18, 16);
+        if (FontManager::GetInstance().GetStringWidth(skillLine.c_str(), skillFitSize) <= skillMaxW) {
+            FontManager::GetInstance().DrawString(cardX + 20, textY, skillLine.c_str(), GetColor(255, 220, 60), skillFitSize);
+        } else {
+            FontManager::GetInstance().DrawStringWrapped(cardX + 20, textY, skillMaxW, skillLine.c_str(), GetColor(255, 220, 60), 17, 4);
+        }
 
         // 選択案内
         if (isSelected) {
-            DrawBox(cardX + 15, startY + cardH - 45, cardX + cardW - 15, startY + cardH - 12, chara.themeColor, TRUE);
-            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 37, "[ タップ / ENTER ] 決定", GetColor(0, 0, 0), 16);
+            DrawBox(cardX + 16, startY + cardH - 48, cardX + cardW - 16, startY + cardH - 12, chara.themeColor, TRUE);
+            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 40, "[ タップ / ENTER ] 決定", GetColor(10, 10, 15), 18);
         }
     }
 
-    // 画面下部の詳細説明枠
+    // 画面下部の詳細説明枠 (枠内に収まるよう自動折り返し・大きめ文字)
     if (m_selectedIndex >= 0 && m_selectedIndex < count) {
         const auto& curChara = m_characters[m_selectedIndex];
         int infoX = startX;
-        int infoY = startY + cardH + 28;
+        int infoY = startY + cardH + 22;
         int infoW = totalW;
-        int infoH = 135;
+        int infoH = 148;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
         DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, GetColor(20, 28, 44), TRUE);
@@ -371,9 +377,9 @@ void CharacterSelectScene::Draw() {
         DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, curChara.themeColor, FALSE);
         DrawBox(infoX + 1, infoY + 1, infoX + infoW - 1, infoY + infoH - 1, curChara.themeColor, FALSE);
 
-        FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 22, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());
+        FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 24, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());
         DrawLine(infoX + 35, infoY + 48, infoX + infoW - 35, infoY + 48, GetColor(60, 90, 130));
-        FontManager::GetInstance().DrawString(infoX + 35, infoY + 62, curChara.description.c_str(), GetColor(225, 235, 245), 20);
+        FontManager::GetInstance().DrawStringWrapped(infoX + 35, infoY + 58, infoW - 70, curChara.description.c_str(), GetColor(225, 235, 245), 22, 6);
     }
 
     // ========================================================
@@ -387,9 +393,9 @@ void CharacterSelectScene::Draw() {
         DrawBox(0, 0, 1920, 1080, GetColor(6, 10, 16), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 2. メインモーダル枠
-        const int modalW = 860;
-        const int modalH = 500;
+        // 2. メインモーダル枠 (980 x 540 でゆったり見やすく)
+        const int modalW = 980;
+        const int modalH = 540;
         const int modalX = (1920 - modalW) / 2;
         const int modalY = (1080 - modalH) / 2;
 
@@ -403,17 +409,17 @@ void CharacterSelectScene::Draw() {
 
         // ヘッダータイトル
         int headerY = modalY + 24;
-        FontManager::GetInstance().DrawStringCenter(960, headerY, "CONFIRM CHARACTER (キャラクター決定確認)", GetColor(255, 220, 0), 26);
-        DrawLine(modalX + 45, headerY + 38, modalX + modalW - 45, headerY + 38, GetColor(0, 140, 200));
+        FontManager::GetInstance().DrawStringCenter(960, headerY, "CONFIRM CHARACTER (キャラクター決定確認)", GetColor(255, 220, 0), 28);
+        DrawLine(modalX + 45, headerY + 40, modalX + modalW - 45, headerY + 40, GetColor(0, 140, 200));
 
         // メッセージ
-        FontManager::GetInstance().DrawStringCenter(960, headerY + 52, "このキャラクターで出撃します。よろしいですか？", GetColor(255, 255, 255), 22);
+        FontManager::GetInstance().DrawStringCenter(960, headerY + 54, "このキャラクターで出撃します。よろしいですか？", GetColor(255, 255, 255), 22);
 
         // キャラクター情報カード
         int infoCardX = modalX + 45;
-        int infoCardY = headerY + 90;
+        int infoCardY = headerY + 94;
         int infoCardW = modalW - 90;
-        int infoCardH = 205;
+        int infoCardH = 236;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
         DrawBox(infoCardX, infoCardY, infoCardX + infoCardW, infoCardY + infoCardH, GetColor(10, 15, 24), TRUE);
@@ -421,10 +427,10 @@ void CharacterSelectScene::Draw() {
         DrawBox(infoCardX, infoCardY, infoCardX + infoCardW, infoCardY + infoCardH, curChara.themeColor, FALSE);
 
         // アバター画像
-        int avW = 160;
-        int avH = infoCardH - 24;
-        int avX = infoCardX + 16;
-        int avY = infoCardY + 12;
+        int avW = 176;
+        int avH = infoCardH - 28;
+        int avX = infoCardX + 18;
+        int avY = infoCardY + 14;
         DrawBox(avX, avY, avX + avW, avY + avH, GetColor(18, 24, 34), TRUE);
         if (m_selectedIndex < static_cast<int>(m_previewHandles.size()) && m_previewHandles[m_selectedIndex] != -1) {
             int imgW = 0, imgH = 0;
@@ -449,27 +455,34 @@ void CharacterSelectScene::Draw() {
         }
         DrawBox(avX, avY, avX + avW, avY + avH, curChara.themeColor, FALSE);
 
-        // キャラステータス & スキル
-        int statX = avX + avW + 24;
+        // キャラステータス & スキル (テキストは右枠を絶対に超えないよう折り返し＆フィットサイズ保護)
+        int statX = avX + avW + 26;
+        int textMaxW = (infoCardX + infoCardW - 24) - statX;
         int statY = infoCardY + 16;
-        FontManager::GetInstance().DrawFormatString(statX, statY, GetColor(255, 235, 80), 24, "%s  [%s]", curChara.name.c_str(), curChara.typeName.c_str());
-        statY += 34;
 
-        FontManager::GetInstance().DrawFormatString(statX, statY, GetColor(100, 255, 100), 18, "最大HP     : %d", curChara.maxHp);
-        FontManager::GetInstance().DrawFormatString(statX + 220, statY, GetColor(100, 200, 255), 18, "移動速度   : %.1f", curChara.moveSpeed);
+        std::string titleText = curChara.name + "  [" + curChara.typeName + "]";
+        int titleSize = FontManager::GetInstance().GetFittingFontSize(titleText.c_str(), textMaxW, 26, 20);
+        FontManager::GetInstance().DrawString(statX, statY, titleText.c_str(), GetColor(255, 235, 80), titleSize);
+        statY += 36;
+
+        FontManager::GetInstance().DrawFormatString(statX, statY, GetColor(100, 255, 100), 20, "最大HP     : %d", curChara.maxHp);
+        FontManager::GetInstance().DrawFormatString(statX + 240, statY, GetColor(100, 200, 255), 20, "移動速度   : %.1f", curChara.moveSpeed);
         statY += 30;
 
-        FontManager::GetInstance().DrawFormatString(statX, statY, GetColor(255, 215, 0), 18, "スキル     : %s", curChara.skillName.c_str());
-        statY += 28;
+        std::string skillStr = std::string("スキル     : ") + curChara.skillName;
+        int skillSize = FontManager::GetInstance().GetFittingFontSize(skillStr.c_str(), textMaxW, 20, 17);
+        FontManager::GetInstance().DrawString(statX, statY, skillStr.c_str(), GetColor(255, 215, 0), skillSize);
+        statY += 34;
 
-        FontManager::GetInstance().DrawString(statX, statY, curChara.description.c_str(), GetColor(210, 225, 240), 16);
+        // 説明文を20ptで自動折り返し描画（絶対に枠をはみ出さず文字化けもしない）
+        FontManager::GetInstance().DrawStringWrapped(statX, statY, textMaxW, curChara.description.c_str(), GetColor(220, 232, 248), 20, 6);
 
         // 3. 2つのボタン (YES / CANCEL)
-        const int btnW = 340;
-        const int btnH = 58;
-        const int btnY = modalY + modalH - 85;
-        const int btn0X = modalX + 60;
-        const int btn1X = modalX + modalW - 60 - btnW;
+        const int btnW = 380;
+        const int btnH = 62;
+        const int btnY = modalY + modalH - 92;
+        const int btn0X = modalX + 70;
+        const int btn1X = modalX + modalW - 70 - btnW;
 
         // ボタン0: 決定して武器選択へ (YES)
         bool isSel0 = (m_confirmCursor == 0);
@@ -481,7 +494,7 @@ void CharacterSelectScene::Draw() {
             DrawBox(btn0X + 1, btnY + 1, btn0X + btnW - 1, btnY + btnH - 1, GetColor(0, 255, 180), FALSE);
             DrawBox(btn0X, btnY, btn0X + 8, btnY + btnH, GetColor(0, 255, 180), TRUE);
         }
-        FontManager::GetInstance().DrawStringCenter(btn0X + btnW / 2, btnY + 16, "✔  決定して武器選択へ (YES)", isSel0 ? GetColor(255, 255, 255) : GetColor(180, 220, 200), 20);
+        FontManager::GetInstance().DrawStringCenter(btn0X + btnW / 2, btnY + 18, "○  決定して武器選択へ (YES)", isSel0 ? GetColor(255, 255, 255) : GetColor(180, 220, 200), 21);
 
         // ボタン1: 選び直す (CANCEL)
         bool isSel1 = (m_confirmCursor == 1);
@@ -493,7 +506,7 @@ void CharacterSelectScene::Draw() {
             DrawBox(btn1X + 1, btnY + 1, btn1X + btnW - 1, btnY + btnH - 1, GetColor(255, 100, 100), FALSE);
             DrawBox(btn1X, btnY, btn1X + 8, btnY + btnH, GetColor(255, 100, 100), TRUE);
         }
-        FontManager::GetInstance().DrawStringCenter(btn1X + btnW / 2, btnY + 16, "✕  選び直す (CANCEL)", isSel1 ? GetColor(255, 255, 255) : GetColor(220, 180, 180), 20);
+        FontManager::GetInstance().DrawStringCenter(btn1X + btnW / 2, btnY + 18, "×  選び直す (CANCEL)", isSel1 ? GetColor(255, 255, 255) : GetColor(220, 180, 180), 21);
     }
 }
 

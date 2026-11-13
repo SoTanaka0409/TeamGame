@@ -7,6 +7,7 @@
 #include "SoundManager.h"
 #include "GameSettings.h"
 #include "../UI/ControlsGuide.h"
+#include "../Managers/FontManager.h"
 #include <string>
 #include <random>
 
@@ -339,8 +340,7 @@ void TitleScene::Draw()
         DrawBox(hX1, 160, hX2, 230, GetColor(0, 180, 255), FALSE);
         DrawBox(hX1 + 2, 162, hX2 - 2, 228, GetColor(30, 70, 110), FALSE);
 
-        int textW = GetDrawStringWidth("=== SETTINGS ===", -1);
-        DrawString((1920 - textW) / 2, 180, "=== SETTINGS ===", GetColor(255, 255, 255));
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, 180, "=== SETTINGS ===", GetColor(255, 255, 255), 28);
     }
     else
     {
@@ -368,7 +368,7 @@ void TitleScene::Draw()
         else if (logoHandle == -1)
         {
             // 画像が両方ない場合のテキストタイトルフォールバック
-            DrawString(1920 / 2 - 150, 200, "=== BLIND ZONE ===", GetColor(255, 255, 255));
+            FontManager::GetInstance().DrawStringCenter(1920 / 2, 200, "=== BLIND ZONE ===", GetColor(255, 255, 255), 42);
         }
     }
 
@@ -439,35 +439,30 @@ void TitleScene::Draw()
             }
 
             // 画面下部に選択中項目の日本語表記を表示
-            SetFontSize(22);
             const char* mainJpTexts[3] = {
                 "【 ゲーム開始 】 ソロプレイ戦闘を開始します",
                 "【 各種設定 】 エイム固定モードや操作説明を設定・確認します",
                 "【 ゲーム終了 】 アプリケーションを終了します"
             };
-            int jpW = GetDrawStringWidth(mainJpTexts[cursor], -1);
-            DrawString((1920 - jpW) / 2, 835, mainJpTexts[cursor], GetColor(255, 215, 0));
+            FontManager::GetInstance().DrawStringCenter(1920 / 2, 835, mainJpTexts[cursor], GetColor(255, 215, 0), 24);
 
             // 下部に控えめな操作ガイドを表示
-            SetFontSize(18);
-            int guideW = GetDrawStringWidth("[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", -1);
-            DrawString((1920 - guideW) / 2, 875, "[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200));
-            SetFontSize(32);
+            FontManager::GetInstance().DrawStringCenter(1920 / 2, 878, "[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200), 20);
         }
         else
         {
             // メニュー用半透明プレート (画像がない場合のフォールバック)
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-            DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 250, menuStartY + 3 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
+            DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 270, menuStartY + 3 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 250, menuStartY + 3 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+            DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 270, menuStartY + 3 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
 
             const char* items[] = { "GAME START", "SETTINGS", "EXIT" };
             for (int i = 0; i < 3; i++)
             {
                 unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-                if (i == cursor) DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color);
-                DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color);
+                if (i == cursor) FontManager::GetInstance().DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color, 26);
+                FontManager::GetInstance().DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color, 26);
             }
         }
     }
@@ -477,8 +472,8 @@ void TitleScene::Draw()
         const int boxW = 920;
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
-        const int boxY1 = 280;
-        const int boxY2 = 780;
+        const int boxY1 = 270;
+        const int boxY2 = 815;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
         DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(15, 22, 36), TRUE);
@@ -509,7 +504,7 @@ void TitleScene::Draw()
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
                 DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(0, 200, 255), FALSE);
                 DrawBox(boxX1 + 35, iy - 6, boxX1 + 43, iy + 42, GetColor(255, 215, 0), TRUE);
-                DrawString(boxX1 + 55, iy, "▶", GetColor(255, 215, 0));
+                FontManager::GetInstance().DrawString(boxX1 + 55, iy + 5, "▶", GetColor(255, 215, 0), 26);
             }
             else
             {
@@ -520,53 +515,47 @@ void TitleScene::Draw()
             }
 
             unsigned int color = isSelected ? GetColor(255, 255, 0) : GetColor(210, 225, 240);
-            DrawString(boxX1 + 85, iy, items[i].c_str(), color);
+            FontManager::GetInstance().DrawString(boxX1 + 92, iy + 5, items[i].c_str(), color, 26);
         }
 
         // 区切り線
-        int divY = 555;
+        int divY = 550;
         DrawLine(boxX1 + 40, divY, boxX2 - 40, divY, GetColor(0, 140, 200));
 
-        // 画面下部: 選択項目の日本語表記＆解説パネル
-        int infoY1 = 575;
-        int infoY2 = 745;
+        // 画面下部: 選択項目の日本語表記＆解説パネル (自動折り返し対応で枠はみ出しゼロ)
+        int infoY1 = 568;
+        int infoY2 = 790;
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
         DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(10, 15, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(45, 70, 100), FALSE);
         DrawBox(boxX1 + 35, infoY1, boxX1 + 43, infoY2, GetColor(232, 170, 60), TRUE); // 琥珀アクセント
 
+        int infoTextMaxW = (boxX2 - 35 - 24) - (boxX1 + 58);
+
         if (cursor == 0)
         {
-            SetFontSize(24);
-            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: エイム固定モード 】", GetColor(255, 215, 0));
-            SetFontSize(19);
+            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: エイム固定モード 】", GetColor(255, 215, 0), 24);
             std::string modeJa = GameSettings::GetInstance().isAimLockHoldMode ? "長押し (HOLD)" : "切り替え (TOGGLE)";
-            DrawString(boxX1 + 58, infoY1 + 48, (std::string("日本語表記: エイム固定 (Eキー) [") + modeJa + "]").c_str(), GetColor(220, 235, 250));
+            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 48, (std::string("日本語表記: エイム固定 (Eキー) [") + modeJa + "]").c_str(), GetColor(220, 235, 250), 20);
             const char* descText = GameSettings::GetInstance().isAimLockHoldMode ?
                 "※ Eキーを押している間だけ照準を固定します (Enterまたはクリックで「切り替え」に変更)" :
                 "※ Eキーを押すごとに固定のON/OFFを切り替えます (Enterまたはクリックで「長押し」に変更)";
-            DrawString(boxX1 + 58, infoY1 + 78, descText, GetColor(140, 185, 225));
+            FontManager::GetInstance().DrawStringWrapped(boxX1 + 58, infoY1 + 82, infoTextMaxW, descText, GetColor(145, 190, 230), 20, 6);
         }
         else if (cursor == 1)
         {
-            SetFontSize(24);
-            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: 操作説明画面 】", GetColor(255, 215, 0));
-            SetFontSize(19);
-            DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 操作説明 (ヘルプ / ガイド)", GetColor(220, 235, 250));
-            DrawString(boxX1 + 58, infoY1 + 78, "※ 移動・射撃・スキル・暗闇索敵などの全操作ガイドおよびルールを表示します", GetColor(140, 185, 225));
+            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: 操作説明画面 】", GetColor(255, 215, 0), 24);
+            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 操作説明 (ヘルプ / ガイド)", GetColor(220, 235, 250), 20);
+            FontManager::GetInstance().DrawStringWrapped(boxX1 + 58, infoY1 + 82, infoTextMaxW, "※ 移動・射撃・スキル・暗闇索敵などの全操作ガイドおよびルールを表示します", GetColor(145, 190, 230), 20, 6);
         }
         else if (cursor == 2)
         {
-            SetFontSize(24);
-            DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: メインメニューへ戻る 】", GetColor(255, 215, 0));
-            SetFontSize(19);
-            DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 戻る (タイトルメニューへ)", GetColor(220, 235, 250));
-            DrawString(boxX1 + 58, infoY1 + 78, "※ 現在の設定内容を保持したまま、タイトルメイン画面に戻ります", GetColor(140, 185, 225));
+            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: メインメニューへ戻る 】", GetColor(255, 215, 0), 24);
+            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 戻る (タイトルメニューへ)", GetColor(220, 235, 250), 20);
+            FontManager::GetInstance().DrawStringWrapped(boxX1 + 58, infoY1 + 82, infoTextMaxW, "※ 現在の設定内容を保持したまま、タイトルメイン画面に戻ります", GetColor(145, 190, 230), 20, 6);
         }
 
-        SetFontSize(16);
-        DrawString(boxX1 + 58, infoY1 + 118, "[ W / S / ↑ / ↓ / マウス ] 選択    [ ENTER / クリック ] 決定・切替    [ ESC ] 戻る", GetColor(120, 160, 200));
-        SetFontSize(32);
+        FontManager::GetInstance().DrawString(boxX1 + 58, infoY2 - 36, "[ W / S / ↑ / ↓ / マウス ] 選択    [ ENTER / クリック ] 決定・切替    [ ESC ] 戻る", GetColor(140, 180, 215), 18);
     }
 }
