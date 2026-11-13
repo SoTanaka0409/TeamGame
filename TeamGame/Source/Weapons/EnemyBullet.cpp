@@ -99,13 +99,13 @@ void EnemyBullet::Update()
             return;
         }
 
-        // ③ 壁・障害物判定 (厚み40pxの壁を絶対に飛び越えない)
+        // ③ 壁・障害物判定 (厚み40pxの壁を絶対に飛び越えない。水は貫通)
         bool hitWall = false;
         if (stage)
         {
             int gX = static_cast<int>(p1.x / cellSize);
             int gY = static_cast<int>(p1.y / cellSize);
-            if (stage->IsSolidWall(gX, gY))
+            if (stage->IsBulletBlockingWall(gX, gY))
             {
                 hitWall = true;
             }
@@ -113,7 +113,7 @@ void EnemyBullet::Update()
             {
                 int tipGX = static_cast<int>((p1.x + dir.x * radius) / cellSize);
                 int tipGY = static_cast<int>((p1.y + dir.y * radius) / cellSize);
-                if (stage->IsSolidWall(tipGX, tipGY))
+                if (stage->IsBulletBlockingWall(tipGX, tipGY))
                 {
                     hitWall = true;
                 }
@@ -154,7 +154,7 @@ void EnemyBullet::Update()
                 if (distSq <= totalR * totalR)
                 {
                     // 壁の向こう側にいるプレイヤーには当たらない
-                    if (stage && stage->IsSolidWall(static_cast<int>(closest.x / cellSize), static_cast<int>(closest.y / cellSize)))
+                    if (stage && stage->IsBulletBlockingWall(static_cast<int>(closest.x / cellSize), static_cast<int>(closest.y / cellSize)))
                     {
                         continue;
                     }

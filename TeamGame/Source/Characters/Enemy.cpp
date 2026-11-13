@@ -250,7 +250,7 @@ Vector2 Enemy::FindCoverPosition(const Vector2& threatPos)
             {
                 int cgx = static_cast<int>((threatPos.x + stepX * s) / cellSize);
                 int cgy = static_cast<int>((threatPos.y + stepY * s) / cellSize);
-                if (currentStage->IsOutOfBounds(cgx, cgy) || currentStage->IsSolidWall(cgx, cgy))
+                if (currentStage->IsOutOfBounds(cgx, cgy) || currentStage->IsBulletBlockingWall(cgx, cgy))
                 {
                     hitWall = true;
                     break;
@@ -485,7 +485,7 @@ bool Enemy::CheckLineOfSightToTarget(Character* target) const
             int gX = static_cast<int>(checkX / cellSize);
             int gY = static_cast<int>(checkY / cellSize);
 
-            if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsSolidWall(gX, gY))
+            if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsBulletBlockingWall(gX, gY))
             {
                 return false;
             }
@@ -1376,7 +1376,7 @@ void Enemy::Draw()
                 int gX = static_cast<int>(testX / cellSize);
                 int gY = static_cast<int>(testY / cellSize);
 
-                if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsSolidWall(gX, gY))
+                if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsBulletBlockingWall(gX, gY))
                 {
                     hitPos = Vector2(testX, testY);
                     break;
