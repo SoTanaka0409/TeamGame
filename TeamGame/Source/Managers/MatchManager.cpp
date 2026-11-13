@@ -32,19 +32,22 @@ void MatchManager::UpdateRespawns(ObjectManager* objectManager, const Stage& sta
         {
             if (!ch->isDeadProcessed)
             {
+                // キルスコア加算（倒されたチームの相手側のキル数が増加：指揮者スキル自爆含む）
+                if (ch->teamId == 0) team1Kills++;
+                else if (ch->teamId == 1) team0Kills++;
+
+                std::string victimName = ch->GetCharacterName();
+
                 if (ch->isSuicideDeath)
                 {
-                    // 指揮者の自爆特攻スキルによる死亡: 敵チームのキルスコアには加算しない
-                    std::string victimName = ch->GetCharacterName();
-                    AddKillLog("自爆 (指揮者スキル)", ch->teamId, victimName, ch->teamId, false, false);
+                    // 指揮者の自爆特攻スキルによる死亡: 相手チームのキルとして記録
+                    int enemyTeamId = (ch->teamId == 0) ? 1 : 0;
+                    std::string killerTitle = (ch->teamId == 0) ? "指揮者スキル (敵得点)" : "指揮者スキル (味方得点)";
+                    AddKillLog(killerTitle, enemyTeamId, victimName, ch->teamId, (enemyTeamId == 0), false);
                 }
                 else
                 {
-                    if (ch->teamId == 0) team1Kills++;
-                    else if (ch->teamId == 1) team0Kills++;
-
-                    // キルログの生成
-                    std::string victimName = ch->GetCharacterName();
+                    // 通常のキルログ生成
                     std::string killerName = ch->GetLastAttackerName();
                     int killerTeam = ch->GetLastAttackerTeamId();
                     if (killerName.empty()) {

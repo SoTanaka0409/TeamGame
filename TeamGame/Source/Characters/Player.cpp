@@ -598,13 +598,8 @@ void Player::Draw()
     float screenX = Camera::WorldToScreenX(position.x);
     float screenY = Camera::WorldToScreenY(position.y);
 
-    if (m_isInBush)
-    {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-    }
 
-    unsigned int color = m_isDying ? GetColor(220, 50, 50) :
-        ((damageColorTimer > 0) ? GetColor(255, 255, 0) : m_themeColor);
+    unsigned int color = m_isDying ? GetColor(220, 50, 50) : m_themeColor;
 
     float renderRadius = radius * Camera::ZoomScale;
 
@@ -812,10 +807,7 @@ void Player::Draw()
         // 悪魔のHighRisk敵位置探知インジケータ（暗闇より優先して最前面に描画するため、RenderHighRiskEnemyIndicatorsで描画）
     }
 
-    if (m_isInBush)
-    {
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
+
 }
 
 void Player::RenderHighRiskEnemyIndicators() const

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 #include "CircleCollider.h"
@@ -28,6 +28,8 @@ class Bullet : public Object2D
     BulletVisualConfig visualConfig; ///< 弾丸の描画アセット・演出設定
     int pierceCount = 0;             ///< 貫通残数 (0=通常消滅, 1以上=貫通継続)
     std::vector<void*> hitTargets;   ///< 多重ヒット防止用リスト
+
+    void ApplyHit(class Character* target, const Vector2& hitPos);
 
   public:
     /**
