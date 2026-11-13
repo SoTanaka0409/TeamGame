@@ -719,7 +719,7 @@ void Player::Draw()
                 int gX = static_cast<int>(testX / cellSize);
                 int gY = static_cast<int>(testY / cellSize);
 
-                if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsSolidWall(gX, gY))
+                if (currentStage->IsOutOfBounds(gX, gY) || currentStage->IsBulletSolid(gX, gY))
                 {
                     hitPos = Vector2(testX, testY);
                     break;
@@ -1534,7 +1534,7 @@ void Player::UpdateAutoAim(const Vector2& moveDir)
             {
                 int gx = static_cast<int>((position.x + stepX * i) / cellSize);
                 int gy = static_cast<int>((position.y + stepY * i) / cellSize);
-                if (currentStage->IsOutOfBounds(gx, gy) || currentStage->IsSolidWall(gx, gy))
+                if (currentStage->IsOutOfBounds(gx, gy) || currentStage->IsBulletSolid(gx, gy))
                 {
                     hitWall = true;
                     break;

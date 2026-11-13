@@ -109,14 +109,14 @@ void Bullet::Update()
             return;
         }
 
-        // ③ 壁・障害物判定 (微小ステップにより厚み40pxの壁を絶対に飛び越えない)
+        // ③ 壁・障害物判定 (微小ステップにより厚み40pxの壁を絶対に飛び越えない。水場は弾丸が通過可能)
         bool hitWall = false;
         if (stage)
         {
             // 中心点
             int gX = static_cast<int>(p1.x / cellSize);
             int gY = static_cast<int>(p1.y / cellSize);
-            if (stage->IsSolidWall(gX, gY))
+            if (stage->IsBulletSolid(gX, gY))
             {
                 hitWall = true;
             }
@@ -125,7 +125,7 @@ void Bullet::Update()
                 // 弾の進行方向の先端（半径分先）も判定して角のすり抜けを防止
                 int tipGX = static_cast<int>((p1.x + dir.x * radius) / cellSize);
                 int tipGY = static_cast<int>((p1.y + dir.y * radius) / cellSize);
-                if (stage->IsSolidWall(tipGX, tipGY))
+                if (stage->IsBulletSolid(tipGX, tipGY))
                 {
                     hitWall = true;
                 }
@@ -189,8 +189,8 @@ void Bullet::Update()
 
                 if (distSq <= totalR * totalR)
                 {
-                    // 壁の向こう側にいるキャラクターには当たらないよう判定
-                    if (stage && stage->IsSolidWall(static_cast<int>(closest.x / cellSize), static_cast<int>(closest.y / cellSize)))
+                    // 壁の向こう側にいるキャラクターには当たらないよう判定 (水場を挟んだ射撃はヒット可能)
+                    if (stage && stage->IsBulletSolid(static_cast<int>(closest.x / cellSize), static_cast<int>(closest.y / cellSize)))
                     {
                         continue;
                     }

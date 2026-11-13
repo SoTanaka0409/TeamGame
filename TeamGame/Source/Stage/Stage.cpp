@@ -244,6 +244,13 @@ bool Stage::IsSolidWall(int gridX, int gridY) const
            type == CellType::WATER || type == CellType::CACTUS;
 }
 
+// 【銃弾・射線を遮断する障害物の判定】 (水場 WATER や草むら BUSH は弾丸が通過可能)
+bool Stage::IsBulletSolid(int gridX, int gridY) const
+{
+    CellType type = GetCell(gridX, gridY);
+    return type == CellType::OUTER_WALL || type == CellType::WALL_BLOCK || type == CellType::CACTUS;
+}
+
 // 【光を遮断して影を作る壁障害物】 (水 WATER と 草 BUSH は光が奥まで届く)
 bool Stage::IsLightBlockingWall(int gridX, int gridY) const
 {

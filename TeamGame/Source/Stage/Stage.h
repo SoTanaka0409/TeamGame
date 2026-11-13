@@ -56,6 +56,9 @@ public:
     // 移動不可の壁・障害物判定 (草むらBUSHは進入可能)
     bool IsSolidWall(int gridX, int gridY) const;
 
+    // 銃弾・射線を遮断する壁・障害物判定 (水WATERや草むらBUSHは銃弾が通り抜ける)
+    bool IsBulletSolid(int gridX, int gridY) const;
+
     // 光を遮断して影を作る壁障害物判定 (水WATERと草BUSHは光が奥まで届く)
     bool IsLightBlockingWall(int gridX, int gridY) const;
 
