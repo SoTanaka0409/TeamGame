@@ -1,12 +1,16 @@
-#include <algorithm>
+﻿#include <algorithm>
+#include <cmath>
 #include "Camera.h"
 #include "Bullet.h"
 #include "Character.h"
 #include "ColliderManager.h"
 #include "DxLib.h"
 #include "Enemy.h"
+#include "Player.h"
 #include "Scene.h"
 #include "SceneManager.h"
+#include "Stage.h"
+#include "ObjectManager.h"
 
 /**
  * @brief Bulletのコンストラクタ
@@ -56,51 +60,173 @@ Bullet::~Bullet()
     delete collider;
 }
 
-#include "Stage.h"
-
 /**
- * @brief 毎フレームの弾の更新処理
- * @details 弾を移動させ、最大射程距離の超過、画面外への退出、およびステージ上の障害物との衝突判定を行い、該当すれば自身を非アクティブにする
+ * @brief 毎フレームの弾の更新処理 (連続衝突判定 CCD & サブステップ分割によるすり抜け完全防止)
+ * @details 高速弾の壁・キャラクター飛び越えを微小ステップと線分判定で防ぎ、確実な着弾・壁ヒットを実現
  */
 void Bullet::Update()
 {
-    position.x += velocity.x;
-    position.y += velocity.y;
-
-    float dx = position.x - startPos.x;
-    float dy = position.y - startPos.y;
-    if (dx * dx + dy * dy > maxRange * maxRange)
-    {
-        SetActive(false);
-        return;
-    }
-
-    // 画面外に出たら消去
-    if (position.x < -200 || position.x > 2100 || position.y < -200 ||
-        position.y > 1300)
-    {
-        SetActive(false);
-        return;
-    }
-
-    // ステージ壁・障害物との衝突判定 (障害物を貫通しない)
     auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (scene && scene->GetStage())
+    const Stage *stage = (scene) ? scene->GetStage() : nullptr;
+    const float cellSize = 40.0f;
+
+    // 1フレームの総移動ベクトルと移動距離
+    float totalMoveDist = std::sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    if (totalMoveDist < 0.0001f)
     {
-        const Stage *stage = scene->GetStage();
-        float cellSize = 40.0f;
-        int gX = static_cast<int>(position.x / cellSize);
-        int gY = static_cast<int>(position.y / cellSize);
-        if (stage->IsSolidWall(gX, gY))
+        return;
+    }
+
+    // トンネリング（すり抜け）を完全に防止するためのサブステップ分割
+    // サブステップ幅は弾の半径（3.5〜7.0px）と同等以下の安全なサイズ（4.0px）
+    const float stepSize = 4.0f;
+    int numSteps = static_cast<int>(std::ceil(totalMoveDist / stepSize));
+    if (numSteps < 1) numSteps = 1;
+    Vector2 stepVelocity = Vector2(velocity.x / static_cast<float>(numSteps), velocity.y / static_cast<float>(numSteps));
+
+    Vector2 dir(velocity.x / totalMoveDist, velocity.y / totalMoveDist);
+
+    for (int s = 0; s < numSteps; ++s)
+    {
+        Vector2 p0 = position;
+        Vector2 p1 = Vector2(p0.x + stepVelocity.x, p0.y + stepVelocity.y);
+
+        // ① 射程距離判定
+        float dx = p1.x - startPos.x;
+        float dy = p1.y - startPos.y;
+        if (dx * dx + dy * dy > maxRange * maxRange)
         {
-            SetActive(false); // 壁・障害物にヒットして消滅
+            position = p1;
+            SetActive(false);
             return;
         }
+
+        // ② 画面外判定
+        if (p1.x < -200 || p1.x > 2100 || p1.y < -200 || p1.y > 1300)
+        {
+            position = p1;
+            SetActive(false);
+            return;
+        }
+
+        // ③ 壁・障害物判定 (微小ステップにより厚み40pxの壁を絶対に飛び越えない)
+        bool hitWall = false;
+        if (stage)
+        {
+            // 中心点
+            int gX = static_cast<int>(p1.x / cellSize);
+            int gY = static_cast<int>(p1.y / cellSize);
+            if (stage->IsSolidWall(gX, gY))
+            {
+                hitWall = true;
+            }
+            else
+            {
+                // 弾の進行方向の先端（半径分先）も判定して角のすり抜けを防止
+                int tipGX = static_cast<int>((p1.x + dir.x * radius) / cellSize);
+                int tipGY = static_cast<int>((p1.y + dir.y * radius) / cellSize);
+                if (stage->IsSolidWall(tipGX, tipGY))
+                {
+                    hitWall = true;
+                }
+            }
+        }
+
+        // ④ キャラクターとの連続衝突判定（CCD: Continuous Collision Detection）
+        // p0 から p1 への線分と、全アクティブキャラクターとの最近接距離判定
+        Character* hitChar = nullptr;
+        Vector2 bestHitPos = p1;
+        float minT = 2.0f;
+
+        if (scene && scene->GetObjectManager())
+        {
+            Vector2 seg = Vector2(p1.x - p0.x, p1.y - p0.y);
+            float segLenSq = seg.x * seg.x + seg.y * seg.y;
+
+            for (auto obj : scene->GetObjectManager()->GetObjects())
+            {
+                if (!obj || !obj->IsActive()) continue;
+                Character* ch = dynamic_cast<Character*>(obj);
+                if (!ch || ch->status.IsDead()) continue;
+
+                // チーム判定 (別チーム、または錯乱・パニック時のみ被弾)
+                bool canHit = false;
+                if (ch->teamId != -1)
+                {
+                    if (ch->teamId != this->teamId)
+                    {
+                        canHit = true;
+                    }
+                    else if (ch->IsPanic() || this->isPanicBullet)
+                    {
+                        canHit = true;
+                    }
+                }
+                if (!canHit) continue;
+
+                // 既にヒット済みの貫通対象はスキップ
+                if (std::find(hitTargets.begin(), hitTargets.end(), static_cast<void*>(ch)) != hitTargets.end())
+                {
+                    continue;
+                }
+
+                // キャラクターの判定位置と半径
+                Vector2 cPos = ch->GetPosition();
+                float cRadius = ch->GetRadius();
+                float totalR = radius + cRadius;
+
+                // 線分 p0 -> p1 と 点 cPos の最近接点パラメータ t
+                float t = 0.0f;
+                if (segLenSq > 0.0001f)
+                {
+                    t = ((cPos.x - p0.x) * seg.x + (cPos.y - p0.y) * seg.y) / segLenSq;
+                    if (t < 0.0f) t = 0.0f;
+                    else if (t > 1.0f) t = 1.0f;
+                }
+
+                Vector2 closest(p0.x + t * seg.x, p0.y + t * seg.y);
+                float distSq = (cPos.x - closest.x) * (cPos.x - closest.x) + (cPos.y - closest.y) * (cPos.y - closest.y);
+
+                if (distSq <= totalR * totalR)
+                {
+                    // 壁の向こう側にいるキャラクターには当たらないよう判定
+                    if (stage && stage->IsSolidWall(static_cast<int>(closest.x / cellSize), static_cast<int>(closest.y / cellSize)))
+                    {
+                        continue;
+                    }
+
+                    if (t < minT)
+                    {
+                        minT = t;
+                        hitChar = ch;
+                        bestHitPos = closest;
+                    }
+                }
+            }
+        }
+
+        // キャラクターに衝突した場合 (壁よりも手前にいる敵に確実に当たる)
+        if (hitChar)
+        {
+            position = bestHitPos;
+            ApplyHit(hitChar, bestHitPos);
+            if (!IsActive())
+            {
+                return; // 弾が消滅した場合はここで終了
+            }
+        }
+        else if (hitWall)
+        {
+            // 壁に衝突した場合
+            position = p1;
+            SetActive(false);
+            return;
+        }
+
+        // サブステップ位置を更新
+        position = p1;
     }
 }
-
-#include "ObjectManager.h"
-#include "Player.h"
 
 /**
  * @brief 弾の描画処理
@@ -152,9 +278,69 @@ void Bullet::Draw()
  * @param otherCollider 衝突相手のコライダー
  * @details 衝突相手が敵またはプレイヤーで、かつ別チームであればダメージを与え、血しぶきエフェクトを発生させて自身は消滅する
  */
+/**
+ * @brief キャラクターへの着弾・ダメージ処理
+ * @param target 着弾したキャラクター
+ * @param hitPos 着弾地点の座標
+ */
+void Bullet::ApplyHit(Character* target, const Vector2& hitPos)
+{
+    if (!target) return;
+
+    // 多重ヒット防止: 同一弾丸による同一対象への重複ダメージを遮断
+    if (std::find(hitTargets.begin(), hitTargets.end(), static_cast<void*>(target)) != hitTargets.end())
+    {
+        return;
+    }
+    hitTargets.push_back(static_cast<void*>(target));
+
+    if (target->GetObjectTag() == ObjectTag::Enemy) {
+        Enemy *enemy = dynamic_cast<Enemy *>(target);
+        if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
+    } else if (target->GetObjectTag() == ObjectTag::Player) {
+        Player *player = dynamic_cast<Player *>(target);
+        if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
+    }
+
+    // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す
+    float effectX = hitPos.x;
+    float effectY = hitPos.y;
+    Vector2 cPos = target->GetPosition();
+    float cRadius = target->GetRadius();
+    float dx = hitPos.x - cPos.x;
+    float dy = hitPos.y - cPos.y;
+    float dist = std::sqrt(dx * dx + dy * dy);
+    if (cRadius > 0.0f && dist > 0.001f && dist < cRadius)
+    {
+        effectX = cPos.x + (dx / dist) * cRadius;
+        effectY = cPos.y + (dy / dist) * cRadius;
+    }
+
+    auto scene = SceneManager::GetInstance().GetCurrentScene();
+    if (scene && scene->GetEffectManager())
+    {
+        scene->GetEffectManager()->AddBloodEffect(effectX, effectY, 16);
+    }
+
+    // 貫通弾の処理: pierceCount が残っている場合は弾を消さずに続行
+    if (pierceCount > 0)
+    {
+        pierceCount--;
+    }
+    else
+    {
+        SetActive(false);
+    }
+}
+
+/**
+ * @brief 他のコライダーと衝突したときの処理
+ * @param otherCollider 衝突相手のコライダー
+ * @details 衝突相手が敵またはプレイヤーで、かつ別チームであればダメージを与え、血しぶきエフェクトを発生させて自身は消滅する
+ */
 void Bullet::OnCollisionEnter(Collider *otherCollider)
 {
-    if (otherCollider->GetOwner())
+    if (otherCollider && otherCollider->GetOwner())
     {
         Character *target = dynamic_cast<Character *>(otherCollider->GetOwner());
         bool canHit = false;
@@ -173,22 +359,6 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
 
         if (canHit)
         {
-            // 多重ヒット防止: 同一弾丸による同一対象への重複ダメージを遮断
-            if (std::find(hitTargets.begin(), hitTargets.end(), static_cast<void*>(target)) != hitTargets.end())
-            {
-                return;
-            }
-            hitTargets.push_back(static_cast<void*>(target));
-
-            if (target->GetObjectTag() == ObjectTag::Enemy) {
-                Enemy *enemy = dynamic_cast<Enemy *>(target);
-                if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
-            } else if (target->GetObjectTag() == ObjectTag::Player) {
-                Player *player = dynamic_cast<Player *>(target);
-                if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
-            }
-            
-            // 敵またはプレイヤーに弾が当たった瞬間に、当たった場所（被弾境界位置）でエフェクトを呼び出す
             float hitX = position.x;
             float hitY = position.y;
             CircleCollider *circleCol = dynamic_cast<CircleCollider *>(otherCollider);
@@ -202,26 +372,12 @@ void Bullet::OnCollisionEnter(Collider *otherCollider)
                 float dist = std::sqrt(dx * dx + dy * dy);
                 if (targetRadius > 0.0f && dist > 0.001f && dist < targetRadius)
                 {
-                    // 弾がフレーム間の移動で敵内部に入り込んだ場合、敵表面（被弾地点）に補正
                     hitX = cx + (dx / dist) * targetRadius;
                     hitY = cy + (dy / dist) * targetRadius;
                 }
             }
 
-            auto scene = SceneManager::GetInstance().GetCurrentScene();
-            if (scene && scene->GetEffectManager())
-            {
-                scene->GetEffectManager()->AddBloodEffect(hitX, hitY, 16);
-            }
-            // 貫通弾の処理: pierceCount が残っている場合は弾を消さずに続行
-            if (pierceCount > 0)
-            {
-                pierceCount--;
-            }
-            else
-            {
-                SetActive(false);
-            }
+            ApplyHit(target, Vector2(hitX, hitY));
         }
     }
 }
