@@ -9,7 +9,7 @@ void DebugManager::Update()
     if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_TAB) ||
         InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F1))
     {
-        ToggleDebugMode();
+     //   ToggleDebugMode();
     }
 }
 
