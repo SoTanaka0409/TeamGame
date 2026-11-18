@@ -6,6 +6,7 @@
 #include "SoundManager.h"
 #include "SoundVisualizer.h"
 #include "CutinManager.h"
+#include "HitFeedbackManager.h"
 #include "GameBalanceManager.h"
 #include "DebugManager.h"
 #include "DxLib.h"
@@ -123,6 +124,7 @@ void GameScene::Init()
     prevEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
     MatchManager::GetInstance().Reset();
     SoundVisualizer::GetInstance().Clear();
+    HitFeedbackManager::GetInstance().Clear();
 
     brightTimer = 0.0f;
     int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
@@ -227,10 +229,17 @@ void GameScene::Update()
             {
                 // カットイン演出の強烈なインパクト期間中はゲーム世界をヒットストップ
             }
+            else if (HitFeedbackManager::GetInstance().ShouldSkipWorldUpdate())
+            {
+                // とどめを刺した直後の一瞬の停止・スロー演出（このフレームはゲーム世界を進めない）
+            }
             else
             {
                 Scene::Update();
             }
+
+            // 当たった手ごたえ演出（画面揺れ・ダメージ数字など）のタイマー更新
+            HitFeedbackManager::GetInstance().Update();
 
             // 3D空間オーディオのリスナー（プレイヤー）位置・向きの更新およびサウンド解放
             if (player && player->IsActive())
@@ -633,6 +642,14 @@ void GameScene::Draw()
         Camera::TargetWorldY = playerWorldY + m_cameraOffset.y;
     }
 
+    // 当たった手ごたえの画面揺れ（描画のあいだだけカメラをずらし、Drawの最後で元に戻す）
+    Vector2 shakeOffset = HitFeedbackManager::GetInstance().GetShakeOffset();
+    float shakeZoom = (Camera::ZoomScale > 0.001f) ? Camera::ZoomScale : 1.0f;
+    float shakeWorldX = shakeOffset.x / shakeZoom;
+    float shakeWorldY = shakeOffset.y / shakeZoom;
+    Camera::TargetWorldX += shakeWorldX;
+    Camera::TargetWorldY += shakeWorldY;
+
     stage.DrawZoomCamera(playerWorldX, playerWorldY, zoomCellSize, worldCellSize, isDebugView, stageName.c_str(), -1);
     Scene::Draw();
     stage.DrawForegroundGrass(playerWorldX, playerWorldY, zoomCellSize, worldCellSize);
@@ -673,7 +690,10 @@ void GameScene::Draw()
     {
         player->RenderBloodSplatterOverlay(1920, 1080);
     }
-    
+
+    // 当たった手ごたえ: ヒットマーカー（×印）とダメージ数字（暗闇の上に出す）
+    HitFeedbackManager::GetInstance().Draw();
+
     // 左上: [ESC] MENU のみ（背景プレートなし、控えめなサブテキスト色）
     FontManager::GetInstance().DrawString(24, 18, "[ESC] MENU", HudStyle::ColSubText(), 15);
 
@@ -1043,6 +1063,10 @@ void GameScene::Draw()
         // 操作説明オーバーレイ描画
         UI::ControlsGuide::Draw(1920, 1080);
     }
+
+    // 画面揺れで一時的にずらしたカメラを元に戻す（照準の計算に揺れが入らないようにする）
+    Camera::TargetWorldX -= shakeWorldX;
+    Camera::TargetWorldY -= shakeWorldY;
 }
 
 

@@ -13,6 +13,7 @@
 #include "SceneManager.h"
 #include "Scene.h"
 #include "../Managers/SoundManager.h"
+#include "../Managers/HitFeedbackManager.h"
 #include "GameSettings.h"
 #include "CharacterManager.h"
 #include "GameBalanceManager.h"
@@ -586,7 +587,15 @@ void Player::Update()
                     scene->GetEffectManager()->AddKnifeSlashEffect(ePos.x, ePos.y, dirAngle);
                 }
 
+                int hpBefore = targetEnemy->status.GetCurrentHp();
+                bool wasDying = targetEnemy->IsDying();
                 targetEnemy->StealthKill();
+
+                // ナイフ暗殺の手ごたえ演出（とどめ扱い）
+                if (!wasDying && targetEnemy->IsDying())
+                {
+                    HitFeedbackManager::GetInstance().OnPlayerHit(targetEnemy, targetEnemy->GetPosition(), hpBefore, true);
+                }
             }
         }
     }

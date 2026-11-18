@@ -229,6 +229,9 @@
     <ClCompile Include="Source\Managers\SoundVisualizer.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Managers\HitFeedbackManager.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Managers\WeaponManager.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -348,6 +351,7 @@
     <ClInclude Include="Source\Managers\SkillManager.h" />
     <ClInclude Include="Source\Managers\SoundManager.h" />
     <ClInclude Include="Source\Managers\SoundVisualizer.h" />
+    <ClInclude Include="Source\Managers\HitFeedbackManager.h" />
     <ClInclude Include="Source\Managers\WeaponManager.h" />
     <ClInclude Include="Source\Objects\Item.h" />
     <ClInclude Include="Source\Objects\Object2D.h" />

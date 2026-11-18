@@ -4,6 +4,7 @@
 #include "../Characters/Player.h"
 #include "../Weapons/Bullet.h"
 #include "../Managers/EffectManager.h"
+#include "../Managers/HitFeedbackManager.h"
 #include "../Managers/ObjectManager.h"
 #include "../Managers/SceneManager.h"
 #include "../Scenes/Scene.h"
@@ -193,7 +194,17 @@ void Skill::ApplyDebuff(Character* user)
                             Enemy* enemy = dynamic_cast<Enemy*>(chara);
                             if (enemy)
                             {
+                                int hpBefore = enemy->status.GetCurrentHp();
+                                bool wasDying = enemy->IsDying();
                                 enemy->Damage(halfHpDamage, user->GetCharacterName(), user->teamId);
+
+                                // プレイヤー本人のスキルが当たったときの手ごたえ演出
+                                bool isKill = !wasDying && enemy->IsDying();
+                                if ((enemy->status.GetCurrentHp() < hpBefore || isKill) &&
+                                    HitFeedbackManager::IsLocalPlayerAttack(user->GetCharacterName(), user->teamId))
+                                {
+                                    HitFeedbackManager::GetInstance().OnPlayerHit(enemy, enemy->GetPosition(), halfHpDamage, isKill);
+                                }
                             }
                             else
                             {

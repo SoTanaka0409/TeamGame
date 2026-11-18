@@ -11,6 +11,7 @@
 #include "SceneManager.h"
 #include "Stage.h"
 #include "ObjectManager.h"
+#include "../Managers/HitFeedbackManager.h"
 
 /**
  * @brief Bulletのコンストラクタ
@@ -296,7 +297,20 @@ void Bullet::ApplyHit(Character* target, const Vector2& hitPos)
 
     if (target->GetObjectTag() == ObjectTag::Enemy) {
         Enemy *enemy = dynamic_cast<Enemy *>(target);
-        if (enemy) enemy->Damage(this->damage, this->shooterName, this->teamId);
+        if (enemy)
+        {
+            int hpBefore = enemy->status.GetCurrentHp();
+            bool wasDying = enemy->IsDying();
+            enemy->Damage(this->damage, this->shooterName, this->teamId);
+
+            // プレイヤー本人の弾が当たったときだけ、手ごたえ演出（ヒットマーカー・ダメージ数字・画面揺れ）を出す
+            bool isKill = !wasDying && enemy->IsDying();
+            if ((enemy->status.GetCurrentHp() < hpBefore || isKill) &&
+                HitFeedbackManager::IsLocalPlayerAttack(this->shooterName, this->teamId))
+            {
+                HitFeedbackManager::GetInstance().OnPlayerHit(enemy, hitPos, this->damage, isKill);
+            }
+        }
     } else if (target->GetObjectTag() == ObjectTag::Player) {
         Player *player = dynamic_cast<Player *>(target);
         if (player) player->TakeDamage(this->damage, this->shooterName, this->teamId);
