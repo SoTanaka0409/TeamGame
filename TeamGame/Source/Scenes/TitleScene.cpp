@@ -7,6 +7,7 @@
 #include "SoundManager.h"
 #include "GameSettings.h"
 #include "../UI/ControlsGuide.h"
+#include "../UI/HudStyle.h"
 #include "../Managers/FontManager.h"
 #include <string>
 #include <random>
@@ -335,10 +336,8 @@ void TitleScene::Draw()
         // 設定画面ヘッダー（中央揃え・600px幅フレーム）
         const int hW = 600;
         const int hX1 = (1920 - hW) / 2;
-        const int hX2 = hX1 + hW;
-        DrawBox(hX1, 160, hX2, 230, GetColor(20, 30, 45), TRUE);
-        DrawBox(hX1, 160, hX2, 230, GetColor(0, 180, 255), FALSE);
-        DrawBox(hX1 + 2, 162, hX2 - 2, 228, GetColor(30, 70, 110), FALSE);
+        HudStyle::DrawRoundPanel(hX1, 160, hW, 70, HudStyle::RadiusPanel, GetColor(20, 30, 45), GetColor(0, 180, 255));
+        HudStyle::DrawRoundBox(hX1 + 2, 162, hX1 + hW - 2, 228, HudStyle::RadiusPanel - 2, GetColor(30, 70, 110), FALSE);
 
         FontManager::GetInstance().DrawStringCenter(1920 / 2, 180, "=== SETTINGS ===", GetColor(255, 255, 255), 28);
     }
@@ -452,10 +451,7 @@ void TitleScene::Draw()
         else
         {
             // メニュー用半透明プレート (画像がない場合のフォールバック)
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-            DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 270, menuStartY + 3 * menuSpacing + 10, GetColor(10, 15, 25), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(menuStartX - 50, menuStartY - 20, menuStartX + 270, menuStartY + 3 * menuSpacing + 10, GetColor(60, 80, 110), FALSE);
+            HudStyle::DrawRoundPanel(menuStartX - 50, menuStartY - 20, 320, 3 * menuSpacing + 30, HudStyle::RadiusPanel, GetColor(10, 15, 25), GetColor(60, 80, 110), 140);
 
             const char* items[] = { "GAME START", "SETTINGS", "EXIT" };
             for (int i = 0; i < 3; i++)
@@ -468,18 +464,15 @@ void TitleScene::Draw()
     }
     else if (state == TitleState::SETTINGS)
     {
-        // 拡大したメイン設定ボックス (幅920px・十分な余白と洗練されたネオン枠)
+        // 拡大したメイン設定ボックス (幅920px・十分な余白と洗練されたネオン角丸枠)
         const int boxW = 920;
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
         const int boxY1 = 270;
         const int boxY2 = 815;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
-        DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(15, 22, 36), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(0, 160, 240), FALSE);
-        DrawBox(boxX1 + 2, boxY1 + 2, boxX2 - 2, boxY2 - 2, GetColor(30, 70, 110), FALSE);
+        HudStyle::DrawRoundPanel(boxX1, boxY1, boxW, boxY2 - boxY1, HudStyle::RadiusModal, GetColor(15, 22, 36), GetColor(0, 160, 240), 230);
+        HudStyle::DrawRoundBox(boxX1 + 2, boxY1 + 2, boxX2 - 2, boxY2 - 2, HudStyle::RadiusModal - 2, GetColor(30, 70, 110), FALSE);
 
         const int sMenuStartY = 335;
         const int sMenuSpacing = 68;
@@ -499,19 +492,13 @@ void TitleScene::Draw()
 
             if (isSelected)
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(25, 45, 75), TRUE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(0, 200, 255), FALSE);
-                DrawBox(boxX1 + 35, iy - 6, boxX1 + 43, iy + 42, GetColor(255, 215, 0), TRUE);
+                HudStyle::DrawRoundPanel(boxX1 + 35, iy - 6, boxW - 70, 48, HudStyle::RadiusButton, GetColor(25, 45, 75), GetColor(0, 200, 255), 180);
+                HudStyle::DrawAccentPill(boxX1 + 40, iy + 1, 34, GetColor(255, 215, 0), 5);
                 FontManager::GetInstance().DrawString(boxX1 + 55, iy + 5, "▶", GetColor(255, 215, 0), 26);
             }
             else
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
-                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(12, 18, 28), TRUE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                DrawBox(boxX1 + 35, iy - 6, boxX2 - 35, iy + 42, GetColor(35, 50, 70), FALSE);
+                HudStyle::DrawRoundPanel(boxX1 + 35, iy - 6, boxW - 70, 48, HudStyle::RadiusButton, GetColor(12, 18, 28), GetColor(35, 50, 70), 100);
             }
 
             unsigned int color = isSelected ? GetColor(255, 255, 0) : GetColor(210, 225, 240);
@@ -525,11 +512,8 @@ void TitleScene::Draw()
         // 画面下部: 選択項目の日本語表記＆解説パネル (自動折り返し対応で枠はみ出しゼロ)
         int infoY1 = 568;
         int infoY2 = 790;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
-        DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(10, 15, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(boxX1 + 35, infoY1, boxX2 - 35, infoY2, GetColor(45, 70, 100), FALSE);
-        DrawBox(boxX1 + 35, infoY1, boxX1 + 43, infoY2, GetColor(232, 170, 60), TRUE); // 琥珀アクセント
+        HudStyle::DrawRoundPanel(boxX1 + 35, infoY1, boxW - 70, infoY2 - infoY1, HudStyle::RadiusPanel, GetColor(10, 15, 25), GetColor(45, 70, 100), 230);
+        HudStyle::DrawAccentPill(boxX1 + 41, infoY1 + 10, (infoY2 - infoY1) - 20, GetColor(232, 170, 60), 5); // 琥珀アクセント
 
         int infoTextMaxW = (boxX2 - 35 - 24) - (boxX1 + 58);
 

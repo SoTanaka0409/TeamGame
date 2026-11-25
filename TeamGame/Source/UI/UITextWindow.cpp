@@ -1,4 +1,5 @@
 ﻿#include "UITextWindow.h"
+#include "HudStyle.h"
 
 namespace UI {
 
@@ -327,10 +328,7 @@ void UITextWindow::Draw(int x, int y) const {
     if (m_bgGraphHandle >= 0) {
         Draw9Slice(x, y, m_windowWidth, m_windowHeight);
     } else if (m_drawBoxBg) {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, m_boxAlpha);
-        DrawBox(x, y, x + m_windowWidth, y + m_windowHeight, m_boxBgColor, TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(x, y, x + m_windowWidth, y + m_windowHeight, m_boxBorderColor, FALSE);
+        HudStyle::DrawRoundPanel(x, y, m_windowWidth, m_windowHeight, HudStyle::RadiusPanel, m_boxBgColor, m_boxBorderColor, m_boxAlpha);
     }
 
     int fontHeight = (m_fontHandle == -1) ? 16 : GetFontSizeToHandle(m_fontHandle);

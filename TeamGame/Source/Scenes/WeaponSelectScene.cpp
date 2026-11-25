@@ -5,6 +5,7 @@
 #include "../Managers/SceneManager.h"
 #include "../Managers/FontManager.h"
 #include "../Managers/InputManager.h"
+#include "../UI/HudStyle.h"
 #include <DxLib.h>
 
 WeaponSelectScene::WeaponSelectScene() {
@@ -236,10 +237,10 @@ void WeaponSelectScene::Draw() {
     const int backBtnH = 50;
     bool isBackHovered = (mouseX >= backBtnX && mouseX <= backBtnX + backBtnW && mouseY >= backBtnY && mouseY <= backBtnY + backBtnH);
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, isBackHovered ? 240 : 180);
-    DrawBox(backBtnX, backBtnY, backBtnX + backBtnW, backBtnY + backBtnH, isBackHovered ? GetColor(35, 50, 75) : GetColor(18, 25, 38), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(backBtnX, backBtnY, backBtnX + backBtnW, backBtnY + backBtnH, isBackHovered ? GetColor(0, 220, 255) : GetColor(60, 85, 115), FALSE);
+    HudStyle::DrawRoundPanel(backBtnX, backBtnY, backBtnW, backBtnH, HudStyle::RadiusButton,
+                             isBackHovered ? GetColor(35, 50, 75) : GetColor(18, 25, 38),
+                             isBackHovered ? GetColor(0, 220, 255) : GetColor(60, 85, 115),
+                             isBackHovered ? 240 : 180);
     FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 14, "← キャラ選択に戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 20);
 
     FontManager::GetInstance().DrawStringCenter(960, 48, "WEAPON SELECT", GetColor(255, 220, 0), 48);
@@ -257,11 +258,10 @@ void WeaponSelectScene::Draw() {
     int slot1W = 1680;
     int slot1H = 134;
 
-    DrawBox(slot1X, slot1Y, slot1X + slot1W, slot1Y + slot1H, GetColor(22, 30, 45), TRUE);
-    DrawBox(slot1X, slot1Y, slot1X + slot1W, slot1Y + slot1H, GetColor(0, 160, 230), FALSE);
+    HudStyle::DrawRoundPanel(slot1X, slot1Y, slot1W, slot1H, HudStyle::RadiusPanel, GetColor(22, 30, 45), GetColor(0, 160, 230));
 
     // 固定表示タグ
-    DrawBox(slot1X + 20, slot1Y + 20, slot1X + 175, slot1Y + 54, GetColor(0, 140, 220), TRUE);
+    HudStyle::DrawRoundBox(slot1X + 20, slot1Y + 20, slot1X + 175, slot1Y + 54, HudStyle::RadiusBadge, GetColor(0, 140, 220), TRUE);
     FontManager::GetInstance().DrawStringCenter(slot1X + 97, slot1Y + 27, "SLOT 1 [固定]", GetColor(255, 255, 255), 18);
 
     FontManager::GetInstance().DrawFormatString(slot1X + 195, slot1Y + 22, GetColor(255, 255, 255), 24, "【%s】 (%s)", m_slot1Weapon.name.c_str(), m_slot1Weapon.category.c_str());
@@ -287,16 +287,14 @@ void WeaponSelectScene::Draw() {
         bool isSelected = (i == m_selectedSlot2Index);
 
         if (isSelected) {
-            DrawBox(cardX - 4, startY - 4, cardX + cardW + 4, startY + cardH + 4, GetColor(255, 200, 0), TRUE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(35, 45, 65), TRUE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(255, 255, 255), FALSE);
+            HudStyle::DrawRoundBox(cardX - 4, startY - 4, cardX + cardW + 4, startY + cardH + 4, HudStyle::RadiusPanel + 4, GetColor(255, 200, 0), TRUE);
+            HudStyle::DrawRoundPanel(cardX, startY, cardW, cardH, HudStyle::RadiusPanel, GetColor(35, 45, 65), GetColor(255, 255, 255));
         } else {
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(20, 26, 38), TRUE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(60, 75, 95), FALSE);
+            HudStyle::DrawRoundPanel(cardX, startY, cardW, cardH, HudStyle::RadiusPanel, GetColor(20, 26, 38), GetColor(60, 75, 95));
         }
 
         // 武器タイトルヘッダー
-        DrawBox(cardX + 20, startY + 20, cardX + cardW - 20, startY + 65, isSelected ? GetColor(0, 140, 220) : GetColor(35, 45, 60), TRUE);
+        HudStyle::DrawRoundBox(cardX + 20, startY + 20, cardX + cardW - 20, startY + 65, HudStyle::RadiusBadge, isSelected ? GetColor(0, 140, 220) : GetColor(35, 45, 60), TRUE);
         FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + 30, wpn.name.c_str(), GetColor(255, 255, 255), 24);
 
         // 武器詳細
@@ -309,11 +307,11 @@ void WeaponSelectScene::Draw() {
         textY += 40;
 
         // 特徴説明 (読める18ptで自動折り返し・はみ出し防止)
-        DrawBox(cardX + 24, textY, cardX + cardW - 24, textY + 72, GetColor(12, 16, 24), TRUE);
+        HudStyle::DrawRoundBox(cardX + 24, textY, cardX + cardW - 24, textY + 72, HudStyle::RadiusBadge, GetColor(12, 16, 24), TRUE);
         FontManager::GetInstance().DrawStringWrappedCenter(cardX + cardW / 2, textY + 12, cardW - 72, wpn.description.c_str(), GetColor(210, 220, 235), 18, 4);
 
         if (isSelected) {
-            DrawBox(cardX + 30, startY + cardH - 52, cardX + cardW - 30, startY + cardH - 14, GetColor(255, 200, 0), TRUE);
+            HudStyle::DrawRoundBox(cardX + 30, startY + cardH - 52, cardX + cardW - 30, startY + cardH - 14, HudStyle::RadiusBadge, GetColor(255, 200, 0), TRUE);
             FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 43, "【 タップ / ENTER で出撃確認 】", GetColor(0, 0, 0), 19);
         }
     }
@@ -351,12 +349,12 @@ void WeaponSelectScene::Draw() {
         const int modalY = (1080 - modalH) / 2;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        DrawBox(modalX, modalY, modalX + modalW, modalY + modalH, GetColor(16, 22, 34), TRUE);
+        HudStyle::DrawRoundBox(modalX, modalY, modalX + modalW, modalY + modalH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawBox(modalX, modalY, modalX + modalW, modalY + modalH, GetColor(0, 180, 255), FALSE);
-        DrawBox(modalX + 2, modalY + 2, modalX + modalW - 2, modalY + modalH - 2, GetColor(0, 120, 180), FALSE);
-        DrawBox(modalX + 4, modalY + 4, modalX + modalW - 4, modalY + modalH - 4, GetColor(30, 50, 80), FALSE);
+        HudStyle::DrawRoundBox(modalX, modalY, modalX + modalW, modalY + modalH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
+        HudStyle::DrawRoundBox(modalX + 2, modalY + 2, modalX + modalW - 2, modalY + modalH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
+        HudStyle::DrawRoundBox(modalX + 4, modalY + 4, modalX + modalW - 4, modalY + modalH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
 
         // ヘッダータイトル
         int headerY = modalY + 24;
@@ -372,10 +370,7 @@ void WeaponSelectScene::Draw() {
         int infoCardW = modalW - 90;
         int infoCardH = 264;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-        DrawBox(infoCardX, infoCardY, infoCardX + infoCardW, infoCardY + infoCardH, GetColor(10, 15, 24), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(infoCardX, infoCardY, infoCardX + infoCardW, infoCardY + infoCardH, GetColor(0, 140, 200), FALSE);
+        HudStyle::DrawRoundPanel(infoCardX, infoCardY, infoCardW, infoCardH, HudStyle::RadiusPanel, GetColor(10, 15, 24), GetColor(0, 140, 200), 200);
 
         int labelW = 154;
         int textX = infoCardX + 20 + labelW + 22;
@@ -383,8 +378,7 @@ void WeaponSelectScene::Draw() {
 
         // 行1: 選択キャラクター
         int rowY = infoCardY + 18;
-        DrawBox(infoCardX + 20, rowY, infoCardX + 20 + labelW, rowY + 38, GetColor(25, 45, 75), TRUE);
-        DrawBox(infoCardX + 20, rowY, infoCardX + 20 + labelW, rowY + 38, GetColor(0, 180, 255), FALSE);
+        HudStyle::DrawRoundPanel(infoCardX + 20, rowY, labelW, 38, HudStyle::RadiusBadge, GetColor(25, 45, 75), GetColor(0, 180, 255));
         FontManager::GetInstance().DrawStringCenter(infoCardX + 20 + labelW / 2, rowY + 8, "出撃キャラ", GetColor(0, 200, 255), 18);
 
         char charLine[256];
@@ -398,8 +392,7 @@ void WeaponSelectScene::Draw() {
         rowY += 14;
 
         // 行2: SLOT 1 武器
-        DrawBox(infoCardX + 20, rowY, infoCardX + 20 + labelW, rowY + 38, GetColor(20, 35, 50), TRUE);
-        DrawBox(infoCardX + 20, rowY, infoCardX + 20 + labelW, rowY + 38, GetColor(0, 140, 200), FALSE);
+        HudStyle::DrawRoundPanel(infoCardX + 20, rowY, labelW, 38, HudStyle::RadiusBadge, GetColor(20, 35, 50), GetColor(0, 140, 200));
         FontManager::GetInstance().DrawStringCenter(infoCardX + 20 + labelW / 2, rowY + 8, "メイン [固定]", GetColor(180, 210, 240), 18);
 
         char slot1Line[256];
@@ -413,8 +406,7 @@ void WeaponSelectScene::Draw() {
         rowY += 14;
 
         // 行3: SLOT 2 武器
-        DrawBox(infoCardX + 20, rowY, infoCardX + 20 + labelW, rowY + 38, GetColor(45, 38, 20), TRUE);
-        DrawBox(infoCardX + 20, rowY, infoCardX + 20 + labelW, rowY + 38, GetColor(255, 200, 0), FALSE);
+        HudStyle::DrawRoundPanel(infoCardX + 20, rowY, labelW, 38, HudStyle::RadiusBadge, GetColor(45, 38, 20), GetColor(255, 200, 0));
         FontManager::GetInstance().DrawStringCenter(infoCardX + 20 + labelW / 2, rowY + 8, "サブ [選択]", GetColor(255, 220, 80), 18);
 
         char slot2Line[256];
@@ -435,25 +427,25 @@ void WeaponSelectScene::Draw() {
 
         // ボタン0: 出撃開始 (START GAME)
         bool isSel0 = (m_confirmCursor == 0);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, isSel0 ? 240 : 180);
-        DrawBox(btn0X, btnY, btn0X + btnW, btnY + btnH, isSel0 ? GetColor(20, 50, 40) : GetColor(18, 28, 38), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(btn0X, btnY, btn0X + btnW, btnY + btnH, isSel0 ? GetColor(0, 255, 180) : GetColor(50, 90, 80), FALSE);
+        HudStyle::DrawRoundPanel(btn0X, btnY, btnW, btnH, HudStyle::RadiusButton,
+                                 isSel0 ? GetColor(20, 50, 40) : GetColor(18, 28, 38),
+                                 isSel0 ? GetColor(0, 255, 180) : GetColor(50, 90, 80),
+                                 isSel0 ? 240 : 180);
         if (isSel0) {
-            DrawBox(btn0X + 1, btnY + 1, btn0X + btnW - 1, btnY + btnH - 1, GetColor(0, 255, 180), FALSE);
-            DrawBox(btn0X, btnY, btn0X + 8, btnY + btnH, GetColor(0, 255, 180), TRUE);
+            HudStyle::DrawRoundBox(btn0X + 1, btnY + 1, btn0X + btnW - 1, btnY + btnH - 1, HudStyle::RadiusButton - 1, GetColor(0, 255, 180), FALSE);
+            HudStyle::DrawAccentPill(btn0X + 6, btnY + 8, btnH - 16, GetColor(0, 255, 180), 5);
         }
         FontManager::GetInstance().DrawStringCenter(btn0X + btnW / 2, btnY + 18, "▶  出撃開始 (START GAME)", isSel0 ? GetColor(255, 255, 255) : GetColor(180, 220, 200), 22);
 
         // ボタン1: 装備を変更 (CANCEL)
         bool isSel1 = (m_confirmCursor == 1);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, isSel1 ? 240 : 180);
-        DrawBox(btn1X, btnY, btn1X + btnW, btnY + btnH, isSel1 ? GetColor(50, 25, 30) : GetColor(28, 20, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(btn1X, btnY, btn1X + btnW, btnY + btnH, isSel1 ? GetColor(255, 100, 100) : GetColor(80, 50, 60), FALSE);
+        HudStyle::DrawRoundPanel(btn1X, btnY, btnW, btnH, HudStyle::RadiusButton,
+                                 isSel1 ? GetColor(50, 25, 30) : GetColor(28, 20, 25),
+                                 isSel1 ? GetColor(255, 100, 100) : GetColor(80, 50, 60),
+                                 isSel1 ? 240 : 180);
         if (isSel1) {
-            DrawBox(btn1X + 1, btnY + 1, btn1X + btnW - 1, btnY + btnH - 1, GetColor(255, 100, 100), FALSE);
-            DrawBox(btn1X, btnY, btn1X + 8, btnY + btnH, GetColor(255, 100, 100), TRUE);
+            HudStyle::DrawRoundBox(btn1X + 1, btnY + 1, btn1X + btnW - 1, btnY + btnH - 1, HudStyle::RadiusButton - 1, GetColor(255, 100, 100), FALSE);
+            HudStyle::DrawAccentPill(btn1X + 6, btnY + 8, btnH - 16, GetColor(255, 100, 100), 5);
         }
         FontManager::GetInstance().DrawStringCenter(btn1X + btnW / 2, btnY + 18, "←  装備を変更 (CANCEL)", isSel1 ? GetColor(255, 255, 255) : GetColor(220, 180, 180), 22);
     }

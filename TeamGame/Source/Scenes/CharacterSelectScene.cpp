@@ -5,6 +5,7 @@
 #include "../Managers/SceneManager.h"
 #include "../Managers/FontManager.h"
 #include "../Managers/InputManager.h"
+#include "../UI/HudStyle.h"
 #include <DxLib.h>
 
 CharacterSelectScene::CharacterSelectScene() {
@@ -266,10 +267,10 @@ void CharacterSelectScene::Draw() {
     const int backBtnH = 50;
     bool isBackHovered = (mouseX >= backBtnX && mouseX <= backBtnX + backBtnW && mouseY >= backBtnY && mouseY <= backBtnY + backBtnH);
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, isBackHovered ? 240 : 180);
-    DrawBox(backBtnX, backBtnY, backBtnX + backBtnW, backBtnY + backBtnH, isBackHovered ? GetColor(35, 50, 75) : GetColor(18, 25, 38), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(backBtnX, backBtnY, backBtnX + backBtnW, backBtnY + backBtnH, isBackHovered ? GetColor(0, 220, 255) : GetColor(60, 85, 115), FALSE);
+    HudStyle::DrawRoundPanel(backBtnX, backBtnY, backBtnW, backBtnH, HudStyle::RadiusButton,
+                             isBackHovered ? GetColor(35, 50, 75) : GetColor(18, 25, 38),
+                             isBackHovered ? GetColor(0, 220, 255) : GetColor(60, 85, 115),
+                             isBackHovered ? 240 : 180);
     FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 14, "← タイトルへ戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 20);
 
     FontManager::GetInstance().DrawStringCenter(960, 56, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
@@ -289,15 +290,14 @@ void CharacterSelectScene::Draw() {
         bool isSelected = (i == m_selectedIndex);
 
         if (isSelected) {
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(32, 44, 68), TRUE);
-            // 均一なセレクション太枠線
-            DrawBox(cardX - 3, startY - 3, cardX + cardW + 3, startY + cardH + 3, chara.themeColor, FALSE);
-            DrawBox(cardX - 2, startY - 2, cardX + cardW + 2, startY + cardH + 2, chara.themeColor, FALSE);
-            DrawBox(cardX - 1, startY - 1, cardX + cardW + 1, startY + cardH + 1, GetColor(255, 255, 255), FALSE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, chara.themeColor, FALSE);
+            HudStyle::DrawRoundBox(cardX, startY, cardX + cardW, startY + cardH, HudStyle::RadiusPanel, GetColor(32, 44, 68), TRUE);
+            // 均一なセレクション角丸太枠線
+            HudStyle::DrawRoundBox(cardX - 3, startY - 3, cardX + cardW + 3, startY + cardH + 3, HudStyle::RadiusPanel + 3, chara.themeColor, FALSE);
+            HudStyle::DrawRoundBox(cardX - 2, startY - 2, cardX + cardW + 2, startY + cardH + 2, HudStyle::RadiusPanel + 2, chara.themeColor, FALSE);
+            HudStyle::DrawRoundBox(cardX - 1, startY - 1, cardX + cardW + 1, startY + cardH + 1, HudStyle::RadiusPanel + 1, GetColor(255, 255, 255), FALSE);
+            HudStyle::DrawRoundBox(cardX, startY, cardX + cardW, startY + cardH, HudStyle::RadiusPanel, chara.themeColor, FALSE);
         } else {
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(20, 26, 38), TRUE);
-            DrawBox(cardX, startY, cardX + cardW, startY + cardH, GetColor(60, 75, 95), FALSE);
+            HudStyle::DrawRoundPanel(cardX, startY, cardW, cardH, HudStyle::RadiusPanel, GetColor(20, 26, 38), GetColor(60, 75, 95));
         }
 
         // アバター領域
@@ -308,7 +308,7 @@ void CharacterSelectScene::Draw() {
         int avX2 = cardX + cardW - avatarMargin;
         int avY2 = avY1 + avatarH;
 
-        DrawBox(avX1, avY1, avX2, avY2, GetColor(12, 16, 24), TRUE);
+        HudStyle::DrawRoundBox(avX1, avY1, avX2, avY2, HudStyle::RadiusBadge, GetColor(12, 16, 24), TRUE);
 
         if (i < static_cast<int>(m_previewHandles.size()) && m_previewHandles[i] != -1) {
             int imgW = 0, imgH = 0;
@@ -331,7 +331,7 @@ void CharacterSelectScene::Draw() {
             DrawCircle(circleX, circleY, 36, chara.themeColor, TRUE);
             FontManager::GetInstance().DrawFormatString(circleX - 8, circleY - 12, GetColor(255, 255, 255), 24, "%d", chara.id);
         }
-        DrawBox(avX1, avY1, avX2, avY2, chara.themeColor, FALSE);
+        HudStyle::DrawRoundBox(avX1, avY1, avX2, avY2, HudStyle::RadiusBadge, chara.themeColor, FALSE);
 
         // キャラ情報テキスト (読める文字サイズを保ち、はみ出しを厳密に防止)
         int textY = avY2 + 16;
@@ -358,7 +358,7 @@ void CharacterSelectScene::Draw() {
 
         // 選択案内
         if (isSelected) {
-            DrawBox(cardX + 16, startY + cardH - 48, cardX + cardW - 16, startY + cardH - 12, chara.themeColor, TRUE);
+            HudStyle::DrawRoundBox(cardX + 16, startY + cardH - 48, cardX + cardW - 16, startY + cardH - 12, HudStyle::RadiusBadge, chara.themeColor, TRUE);
             FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 40, "[ タップ / ENTER ] 決定", GetColor(10, 10, 15), 18);
         }
     }
@@ -371,11 +371,8 @@ void CharacterSelectScene::Draw() {
         int infoW = totalW;
         int infoH = 148;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 230);
-        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, GetColor(20, 28, 44), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(infoX, infoY, infoX + infoW, infoY + infoH, curChara.themeColor, FALSE);
-        DrawBox(infoX + 1, infoY + 1, infoX + infoW - 1, infoY + infoH - 1, curChara.themeColor, FALSE);
+        HudStyle::DrawRoundPanel(infoX, infoY, infoW, infoH, HudStyle::RadiusPanel, GetColor(20, 28, 44), curChara.themeColor, 230);
+        HudStyle::DrawRoundBox(infoX + 1, infoY + 1, infoX + infoW - 1, infoY + infoH - 1, HudStyle::RadiusPanel - 1, curChara.themeColor, FALSE);
 
         FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 24, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());
         DrawLine(infoX + 35, infoY + 48, infoX + infoW - 35, infoY + 48, GetColor(60, 90, 130));
@@ -400,12 +397,12 @@ void CharacterSelectScene::Draw() {
         const int modalY = (1080 - modalH) / 2;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        DrawBox(modalX, modalY, modalX + modalW, modalY + modalH, GetColor(16, 22, 34), TRUE);
+        HudStyle::DrawRoundBox(modalX, modalY, modalX + modalW, modalY + modalH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawBox(modalX, modalY, modalX + modalW, modalY + modalH, GetColor(0, 180, 255), FALSE);
-        DrawBox(modalX + 2, modalY + 2, modalX + modalW - 2, modalY + modalH - 2, GetColor(0, 120, 180), FALSE);
-        DrawBox(modalX + 4, modalY + 4, modalX + modalW - 4, modalY + modalH - 4, GetColor(30, 50, 80), FALSE);
+        HudStyle::DrawRoundBox(modalX, modalY, modalX + modalW, modalY + modalH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
+        HudStyle::DrawRoundBox(modalX + 2, modalY + 2, modalX + modalW - 2, modalY + modalH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
+        HudStyle::DrawRoundBox(modalX + 4, modalY + 4, modalX + modalW - 4, modalY + modalH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
 
         // ヘッダータイトル
         int headerY = modalY + 24;
@@ -421,17 +418,14 @@ void CharacterSelectScene::Draw() {
         int infoCardW = modalW - 90;
         int infoCardH = 236;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-        DrawBox(infoCardX, infoCardY, infoCardX + infoCardW, infoCardY + infoCardH, GetColor(10, 15, 24), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(infoCardX, infoCardY, infoCardX + infoCardW, infoCardY + infoCardH, curChara.themeColor, FALSE);
+        HudStyle::DrawRoundPanel(infoCardX, infoCardY, infoCardW, infoCardH, HudStyle::RadiusPanel, GetColor(10, 15, 24), curChara.themeColor, 200);
 
         // アバター画像
         int avW = 176;
         int avH = infoCardH - 28;
         int avX = infoCardX + 18;
         int avY = infoCardY + 14;
-        DrawBox(avX, avY, avX + avW, avY + avH, GetColor(18, 24, 34), TRUE);
+        HudStyle::DrawRoundBox(avX, avY, avX + avW, avY + avH, HudStyle::RadiusBadge, GetColor(18, 24, 34), TRUE);
         if (m_selectedIndex < static_cast<int>(m_previewHandles.size()) && m_previewHandles[m_selectedIndex] != -1) {
             int imgW = 0, imgH = 0;
             GetGraphSize(m_previewHandles[m_selectedIndex], &imgW, &imgH);
@@ -453,7 +447,7 @@ void CharacterSelectScene::Draw() {
             DrawCircle(circleX, circleY, 36, curChara.themeColor, TRUE);
             FontManager::GetInstance().DrawFormatString(circleX - 8, circleY - 12, GetColor(255, 255, 255), 24, "%d", curChara.id);
         }
-        DrawBox(avX, avY, avX + avW, avY + avH, curChara.themeColor, FALSE);
+        HudStyle::DrawRoundBox(avX, avY, avX + avW, avY + avH, HudStyle::RadiusBadge, curChara.themeColor, FALSE);
 
         // キャラステータス & スキル (テキストは右枠を絶対に超えないよう折り返し＆フィットサイズ保護)
         int statX = avX + avW + 26;
@@ -486,25 +480,25 @@ void CharacterSelectScene::Draw() {
 
         // ボタン0: 決定して武器選択へ (YES)
         bool isSel0 = (m_confirmCursor == 0);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, isSel0 ? 240 : 180);
-        DrawBox(btn0X, btnY, btn0X + btnW, btnY + btnH, isSel0 ? GetColor(20, 50, 40) : GetColor(18, 28, 38), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(btn0X, btnY, btn0X + btnW, btnY + btnH, isSel0 ? GetColor(0, 255, 180) : GetColor(50, 90, 80), FALSE);
+        HudStyle::DrawRoundPanel(btn0X, btnY, btnW, btnH, HudStyle::RadiusButton,
+                                 isSel0 ? GetColor(20, 50, 40) : GetColor(18, 28, 38),
+                                 isSel0 ? GetColor(0, 255, 180) : GetColor(50, 90, 80),
+                                 isSel0 ? 240 : 180);
         if (isSel0) {
-            DrawBox(btn0X + 1, btnY + 1, btn0X + btnW - 1, btnY + btnH - 1, GetColor(0, 255, 180), FALSE);
-            DrawBox(btn0X, btnY, btn0X + 8, btnY + btnH, GetColor(0, 255, 180), TRUE);
+            HudStyle::DrawRoundBox(btn0X + 1, btnY + 1, btn0X + btnW - 1, btnY + btnH - 1, HudStyle::RadiusButton - 1, GetColor(0, 255, 180), FALSE);
+            HudStyle::DrawAccentPill(btn0X + 6, btnY + 8, btnH - 16, GetColor(0, 255, 180), 5);
         }
         FontManager::GetInstance().DrawStringCenter(btn0X + btnW / 2, btnY + 18, "○  決定して武器選択へ (YES)", isSel0 ? GetColor(255, 255, 255) : GetColor(180, 220, 200), 21);
 
         // ボタン1: 選び直す (CANCEL)
         bool isSel1 = (m_confirmCursor == 1);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, isSel1 ? 240 : 180);
-        DrawBox(btn1X, btnY, btn1X + btnW, btnY + btnH, isSel1 ? GetColor(50, 25, 30) : GetColor(28, 20, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(btn1X, btnY, btn1X + btnW, btnY + btnH, isSel1 ? GetColor(255, 100, 100) : GetColor(80, 50, 60), FALSE);
+        HudStyle::DrawRoundPanel(btn1X, btnY, btnW, btnH, HudStyle::RadiusButton,
+                                 isSel1 ? GetColor(50, 25, 30) : GetColor(28, 20, 25),
+                                 isSel1 ? GetColor(255, 100, 100) : GetColor(80, 50, 60),
+                                 isSel1 ? 240 : 180);
         if (isSel1) {
-            DrawBox(btn1X + 1, btnY + 1, btn1X + btnW - 1, btnY + btnH - 1, GetColor(255, 100, 100), FALSE);
-            DrawBox(btn1X, btnY, btn1X + 8, btnY + btnH, GetColor(255, 100, 100), TRUE);
+            HudStyle::DrawRoundBox(btn1X + 1, btnY + 1, btn1X + btnW - 1, btnY + btnH - 1, HudStyle::RadiusButton - 1, GetColor(255, 100, 100), FALSE);
+            HudStyle::DrawAccentPill(btn1X + 6, btnY + 8, btnH - 16, GetColor(255, 100, 100), 5);
         }
         FontManager::GetInstance().DrawStringCenter(btn1X + btnW / 2, btnY + 18, "×  選び直す (CANCEL)", isSel1 ? GetColor(255, 255, 255) : GetColor(220, 180, 180), 21);
     }

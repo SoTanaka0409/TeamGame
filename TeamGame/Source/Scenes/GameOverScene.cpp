@@ -1,5 +1,6 @@
 ﻿#include "FontManager.h"
 #include "GameOverScene.h"
+#include "../UI/HudStyle.h"
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
@@ -183,7 +184,7 @@ void GameOverScene::Draw()
         // 背後のおどろおどろしい赤黒いグロー光彩
         float glowPulse = std::abs(sinf(animTimer * 4.0f));
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(45 + glowPulse * 35));
-        DrawBox(logoX - 25, logoY - 15, logoX + logoW + 25, logoY + logoH + 15, GetColor(180, 20, 20), TRUE);
+        HudStyle::DrawRoundBox(logoX - 25, logoY - 15, logoX + logoW + 25, logoY + logoH + 15, HudStyle::RadiusModal, GetColor(180, 20, 20), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
         // GAME OVER ロゴ画像の描画
@@ -203,12 +204,12 @@ void GameOverScene::Draw()
     const int panelY = 160 + logoH + 65;
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(25, 8, 12), TRUE);
+    HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(25, 8, 12), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-    // 多重レッドネオン枠
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(220, 45, 45), FALSE);
-    DrawBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, GetColor(140, 25, 25), FALSE);
+    // 多重レッドネオン角丸枠
+    HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(220, 45, 45), FALSE);
+    HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(140, 25, 25), FALSE);
 
     // メニュー選択肢カード
     struct GameOverOption {
@@ -233,26 +234,18 @@ void GameOverScene::Draw()
 
         if (isSelected)
         {
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 240);
-            DrawBox(btnX, by, btnX + btnW, by + btnH, GetColor(60, 20, 26), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            HudStyle::DrawRoundPanel(btnX, by, btnW, btnH, HudStyle::RadiusButton, GetColor(60, 20, 26), GetColor(255, 80, 80), 240);
+            HudStyle::DrawRoundBorder(btnX, by, btnW, btnH, HudStyle::RadiusButton, GetColor(255, 80, 80), 2);
 
-            DrawBox(btnX, by, btnX + btnW, by + btnH, GetColor(255, 80, 80), FALSE);
-            DrawBox(btnX + 1, by + 1, btnX + btnW - 1, by + btnH - 1, GetColor(255, 80, 80), FALSE);
-
-            // 左端アクティブバー
-            DrawBox(btnX, by, btnX + 6, by + btnH, GetColor(255, 80, 80), TRUE);
+            // 左端インセットアクティブバー
+            HudStyle::DrawAccentPill(btnX + 5, by + 8, btnH - 16, GetColor(255, 80, 80), 5);
 
             // 選択矢印
             FontManager::GetInstance().DrawString(btnX + btnW - 35, by + 26, "▶", GetColor(255, 80, 80), 22);
         }
         else
         {
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-            DrawBox(btnX, by, btnX + btnW, by + btnH, GetColor(20, 7, 10), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-            DrawBox(btnX, by, btnX + btnW, by + btnH, GetColor(100, 35, 40), FALSE);
+            HudStyle::DrawRoundPanel(btnX, by, btnW, btnH, HudStyle::RadiusButton, GetColor(20, 7, 10), GetColor(100, 35, 40), 180);
         }
 
         unsigned int titleCol = isSelected ? GetColor(255, 230, 230) : GetColor(180, 150, 150);

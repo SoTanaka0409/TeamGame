@@ -843,15 +843,15 @@ void GameScene::Draw()
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
 
-        // パネル背景
+        // パネル背景（角丸）
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(16, 22, 34), TRUE);
+        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 多重ネオン外枠
-        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 180, 255), FALSE);
-        DrawBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, GetColor(0, 120, 180), FALSE);
-        DrawBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, GetColor(30, 50, 80), FALSE);
+        // 多重ネオン角丸外枠
+        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
+        HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
+        HudStyle::DrawRoundBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
 
         // ヘッダータイトル
         int headerY = panelY + 22;
@@ -894,26 +894,18 @@ void GameScene::Draw()
             // カード背景
             if (isSelected)
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 235);
                 unsigned int bgCol = items[i].isAlert ? GetColor(50, 30, 35) : GetColor(32, 54, 88);
-                DrawBox(bx, by, bx + colW, by + rowH, bgCol, TRUE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
                 unsigned int borderCol = items[i].isAlert ? GetColor(255, 100, 100) : GetColor(0, 220, 255);
-                DrawBox(bx, by, bx + colW, by + rowH, borderCol, FALSE);
-                DrawBox(bx + 1, by + 1, bx + colW - 1, by + rowH - 1, borderCol, FALSE);
+                HudStyle::DrawRoundPanel(bx, by, colW, rowH, HudStyle::RadiusPanel, bgCol, borderCol, 235);
+                HudStyle::DrawRoundBox(bx + 1, by + 1, bx + colW - 1, by + rowH - 1, HudStyle::RadiusPanel - 1, borderCol, FALSE);
 
-                // 左端アクティブバー
-                DrawBox(bx, by, bx + 6, by + rowH, borderCol, TRUE);
+                // 左端インセットアクティブバー
+                HudStyle::DrawAccentPill(bx + 5, by + 10, rowH - 20, borderCol, 5);
             }
             else
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-                DrawBox(bx, by, bx + colW, by + rowH, GetColor(18, 25, 38), TRUE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
                 unsigned int borderCol = items[i].isAlert ? GetColor(100, 45, 55) : GetColor(45, 65, 95);
-                DrawBox(bx, by, bx + colW, by + rowH, borderCol, FALSE);
+                HudStyle::DrawRoundPanel(bx, by, colW, rowH, HudStyle::RadiusPanel, GetColor(18, 25, 38), borderCol, 180);
             }
 
             // アイコン背景枠
@@ -922,8 +914,7 @@ void GameScene::Draw()
             int iby = by + (rowH - iconBoxSize) / 2;
             unsigned int iconBorder = isSelected ? (items[i].isAlert ? GetColor(255, 120, 120) : GetColor(0, 220, 255)) : GetColor(40, 55, 75);
             unsigned int iconBg = isSelected ? (items[i].isAlert ? GetColor(40, 22, 28) : GetColor(24, 38, 60)) : GetColor(14, 20, 30);
-            DrawBox(ibx, iby, ibx + iconBoxSize, iby + iconBoxSize, iconBg, TRUE);
-            DrawBox(ibx, iby, ibx + iconBoxSize, iby + iconBoxSize, iconBorder, FALSE);
+            HudStyle::DrawRoundPanel(ibx, iby, iconBoxSize, iconBoxSize, HudStyle::RadiusButton, iconBg, iconBorder);
 
             // アイコン画像の描画
             if (pauseIconHandles[i] != -1)
@@ -969,12 +960,12 @@ void GameScene::Draw()
         const int panelY = (1080 - panelH) / 2;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(16, 22, 34), TRUE);
+        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 180, 255), FALSE);
-        DrawBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, GetColor(0, 120, 180), FALSE);
-        DrawBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, GetColor(30, 50, 80), FALSE);
+        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
+        HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
+        HudStyle::DrawRoundBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
 
         int headerY = panelY + 22;
         FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY, "SETTINGS", GetColor(255, 220, 0), 30);
@@ -1012,24 +1003,16 @@ void GameScene::Draw()
 
             if (isSelected)
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 235);
                 unsigned int bgCol = sItems[i].isSpecial ? GetColor(45, 48, 25) : GetColor(25, 45, 75);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, bgCol, TRUE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
                 unsigned int borderCol = sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
-                DrawBox(itemStartX + 1, iy + 1, itemStartX + itemW - 1, iy + itemH - 1, borderCol, FALSE);
-                DrawBox(itemStartX, iy, itemStartX + 8, iy + itemH, borderCol, TRUE);
+                HudStyle::DrawRoundPanel(itemStartX, iy, itemW, itemH, HudStyle::RadiusButton, bgCol, borderCol, 235);
+                HudStyle::DrawRoundBox(itemStartX + 1, iy + 1, itemStartX + itemW - 1, iy + itemH - 1, HudStyle::RadiusButton - 1, borderCol, FALSE);
+                HudStyle::DrawAccentPill(itemStartX + 5, iy + 8, itemH - 16, borderCol, 5);
             }
             else
             {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, GetColor(12, 18, 28), TRUE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
                 unsigned int borderCol = sItems[i].isSpecial ? GetColor(160, 130, 40) : GetColor(45, 65, 95);
-                DrawBox(itemStartX, iy, itemStartX + itemW, iy + itemH, borderCol, FALSE);
+                HudStyle::DrawRoundPanel(itemStartX, iy, itemW, itemH, HudStyle::RadiusButton, GetColor(12, 18, 28), borderCol, 180);
             }
 
             int badgeX = itemStartX + 18;
@@ -1037,8 +1020,7 @@ void GameScene::Draw()
             int badgeSize = 48;
             unsigned int badgeBorder = isSelected ? (sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255)) : GetColor(50, 70, 95);
             unsigned int badgeBg = isSelected ? GetColor(35, 55, 85) : GetColor(20, 28, 42);
-            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBg, TRUE);
-            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, badgeBorder, FALSE);
+            HudStyle::DrawRoundPanel(badgeX, badgeY, badgeSize, badgeSize, HudStyle::RadiusBadge, badgeBg, badgeBorder);
             unsigned int badgeTextCol = isSelected ? GetColor(255, 255, 255) : GetColor(160, 180, 200);
             FontManager::GetInstance().DrawStringCenter(badgeX + badgeSize / 2, badgeY + 10, sItems[i].badge, badgeTextCol, 22);
 

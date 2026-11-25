@@ -1,4 +1,5 @@
 ﻿#include "ResultScene.h"
+#include "../UI/HudStyle.h"
 #include "../Managers/FontManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
@@ -99,8 +100,7 @@ void ResultScene::Draw()
     }
     else
     {
-        DrawBox(1920 / 2 - 250, 120, 1920 / 2 + 250, 180, GetColor(20, 35, 55), TRUE);
-        DrawBox(1920 / 2 - 250, 120, 1920 / 2 + 250, 180, GetColor(0, 200, 255), FALSE);
+        HudStyle::DrawRoundPanel(1920 / 2 - 250, 120, 500, 60, HudStyle::RadiusButton, GetColor(20, 35, 55), GetColor(0, 200, 255));
         FontManager::GetInstance().DrawStringCenter(1920 / 2, 134, "=== RESULT ===", GetColor(255, 220, 0), 32);
     }
 
@@ -120,9 +120,6 @@ void ResultScene::Draw()
     int btnX = (1920 - btnW) / 2;
     int btnY = panelY + 340;
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-    DrawBox(btnX, btnY, btnX + btnW, btnY + btnH, GetColor(25, 40, 65), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(btnX, btnY, btnX + btnW, btnY + btnH, GetColor(0, 180, 255), FALSE);
+    HudStyle::DrawRoundPanel(btnX, btnY, btnW, btnH, HudStyle::RadiusButton, GetColor(25, 40, 65), GetColor(0, 180, 255), 180);
     FontManager::GetInstance().DrawStringCenter(1920 / 2, btnY + 17, "[ ENTER / SPACE ] タイトルへ戻る", GetColor(255, 255, 255), 22);
 }

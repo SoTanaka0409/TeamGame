@@ -8,6 +8,7 @@
 #include "GameBalanceManager.h"
 #include "ItemManager.h"
 #include "DebugManager.h"
+#include "../UI/HudStyle.h"
 #include "../Skills/SkillData.h"
 #include <string>
 
@@ -145,10 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             // 右上のデバッグ情報パネル（x=1420〜1900）の直下に配置して他のUIと重ならないようにする
             int fpsX = 1420;
             int fpsY = 195;
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
-            DrawBox(fpsX, fpsY, fpsX + 220, fpsY + 34, GetColor(10, 15, 25), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(fpsX, fpsY, fpsX + 220, fpsY + 34, fpsColor, FALSE);
+            HudStyle::DrawRoundPanel(fpsX, fpsY, 220, 34, HudStyle::RadiusBadge, GetColor(10, 15, 25), fpsColor, 190);
             DrawFormatString(fpsX + 12, fpsY + 8, fpsColor, "FPS: %5.1f (%4.1fms)", currentFps, frameTimeMs);
         }
 

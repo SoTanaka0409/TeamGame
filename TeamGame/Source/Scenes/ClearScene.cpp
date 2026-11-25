@@ -1,4 +1,5 @@
 ﻿#include "ClearScene.h"
+#include "../UI/HudStyle.h"
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
@@ -145,7 +146,7 @@ void ClearScene::Draw()
         // 背後の上品なゴールドグロー光彩演出
         float glowPulse = std::abs(sinf(animTimer * 3.5f));
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(35 + glowPulse * 30));
-        DrawBox(logoX - 25, logoY - 12, logoX + logoW + 25, logoY + logoH + 12, GetColor(230, 190, 40), TRUE);
+        HudStyle::DrawRoundBox(logoX - 25, logoY - 12, logoX + logoW + 25, logoY + logoH + 12, HudStyle::RadiusModal, GetColor(230, 190, 40), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
         // GAME CLEAR ロゴ画像の描画
@@ -198,10 +199,7 @@ void ClearScene::Draw()
     }
     else
     {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
-        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(20, 30, 45), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 200, 255), FALSE);
+        HudStyle::DrawRoundPanel(panelX, panelY, panelW, panelH, HudStyle::RadiusPanel, GetColor(20, 30, 45), GetColor(0, 200, 255), 190);
     }
 
     // パネル上部タイトル「STAGE RESULT」を中央揃えで描画

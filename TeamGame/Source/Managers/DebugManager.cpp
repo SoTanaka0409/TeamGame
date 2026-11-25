@@ -1,6 +1,7 @@
 ﻿#include "DebugManager.h"
 #include "DxLib.h"
 #include "InputManager.h"
+#include "../UI/HudStyle.h"
 #include <cstdio>
 
 void DebugManager::Update()
@@ -23,11 +24,8 @@ void DebugManager::DrawDebugOverlay(const std::string& stageName, float playerX,
     int boxW = 480;
     int boxH = 175;
 
-    // デバッグ枠背景（右上に配置・枠サイズを拡大して文字のはみ出しを防止）
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
-    DrawBox(startX, startY, startX + boxW, startY + boxH, GetColor(0, 0, 0), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(startX, startY, startX + boxW, startY + boxH, GetColor(0, 200, 255), FALSE);
+    // デバッグ枠背景（右上に配置・角丸パネル）
+    HudStyle::DrawRoundPanel(startX, startY, boxW, boxH, HudStyle::RadiusPanel, GetColor(0, 0, 0), GetColor(0, 200, 255), 190);
 
     // モード状態
     unsigned int statusColor = GetColor(0, 255, 100);

@@ -808,8 +808,7 @@ void Player::Draw()
             int boxX2 = static_cast<int>(eScreenX + 75);
             int boxY2 = static_cast<int>(eScreenY - 30);
 
-            DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(20, 20, 20), TRUE);
-            DrawBox(boxX1, boxY1, boxX2, boxY2, GetColor(255, 200, 0), FALSE);
+            HudStyle::DrawRoundPanel(boxX1, boxY1, boxX2 - boxX1, boxY2 - boxY1, HudStyle::RadiusBadge, GetColor(20, 20, 20), GetColor(255, 200, 0));
             DrawStringF(eScreenX - 65.0f, eScreenY - 50.0f, "[SPACE] KNIFE KILL", GetColor(255, 230, 0));
         }
 
@@ -894,10 +893,7 @@ void Player::RenderHighRiskEnemyIndicators() const
             int textX = static_cast<int>(tipX) - textW / 2;
             int textY = static_cast<int>(tipY) - 26;
 
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-            DrawBox(textX - 4, textY - 2, textX + textW, textY + textH, GetColor(0, 0, 0), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(textX - 4, textY - 2, textX + textW, textY + textH, GetColor(255, 220, 0), FALSE);
+            HudStyle::DrawRoundPanel(textX - 4, textY - 2, textW + 4, textH + 2, HudStyle::RadiusBadge, GetColor(0, 0, 0), GetColor(255, 220, 0), 200);
 
             // 距離テキスト（鮮やかな黄色で最前面表示）
             DrawString(textX, textY, distText, GetColor(255, 230, 40));
@@ -1401,9 +1397,9 @@ void Player::DrawUI(int screenX, int screenY)
             activeFrames = GetEffectRemainingFrames(SkillMinorTag::HighRisk);
         }
 
-        // 下地トラック（半透明ブラック）
+        // 下地トラック（半透明ブラック・角丸）
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-        DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(10, 15, 20), TRUE);
+        HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(10, 15, 20), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
         if (activeFrames > 0)
@@ -1414,9 +1410,9 @@ void Player::DrawUI(int screenX, int screenY)
             int fillW = static_cast<int>(mpW * actRatio);
 
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-            DrawBox(mpX, mpY, mpX + fillW, mpY + mpH, GetColor(255, 180, 20), TRUE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, GetColor(255, 180, 20), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(255, 220, 80), FALSE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(255, 220, 80), FALSE);
 
             char actText[32];
             snprintf(actText, sizeof(actText), "ACTIVE %.1fs", activeFrames / 60.0f);
@@ -1430,9 +1426,9 @@ void Player::DrawUI(int screenX, int screenY)
             int fillW = static_cast<int>(mpW * mpRatio);
 
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 175);
-            DrawBox(mpX, mpY, mpX + fillW, mpY + mpH, GetColor(0, 160, 240), TRUE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, GetColor(0, 160, 240), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(30, 70, 110), FALSE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(30, 70, 110), FALSE);
 
             char ctText[32];
             snprintf(ctText, sizeof(ctText), "MP CHARGING %.1fs", ct / 60.0f);
@@ -1446,11 +1442,11 @@ void Player::DrawUI(int screenX, int screenY)
             int pulseAlpha = 180 + static_cast<int>(55.0f * std::sin(readyTimer * 0.08f));
 
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, pulseAlpha);
-            DrawBox(mpX, mpY, mpX + mpW, mpY + mpH, GetColor(0, 205, 255), TRUE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(0, 205, 255), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
             // 発光枠
-            DrawBox(mpX - 1, mpY - 1, mpX + mpW + 1, mpY + mpH + 1, GetColor(220, 250, 255), FALSE);
+            HudStyle::DrawRoundBox(mpX - 1, mpY - 1, mpX + mpW + 1, mpY + mpH + 1, HudStyle::RadiusGauge + 1, GetColor(220, 250, 255), FALSE);
 
             const char* readyKey = (m_inputType == PlayerInputType::KEYBOARD_MOUSE) ? "READY [F]" : "READY [RT]";
             FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 15) / 2, readyKey, GetColor(255, 255, 255), 14);
@@ -1463,9 +1459,9 @@ void Player::DrawUI(int screenX, int screenY)
     float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / static_cast<float>(maxHp) : 0.0f;
     if (hpRatio < 0.0f) hpRatio = 0.0f; else if (hpRatio > 1.0f) hpRatio = 1.0f;
 
-    // 下地トラック（半透明ブラック）
+    // 下地トラック（半透明ブラック・角丸）
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-    DrawBox(hpX, hpY, hpX + hpW, hpY + hpH, GetColor(10, 15, 20), TRUE);
+    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, GetColor(10, 15, 20), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
     // HPゲージ充填 (緑 -> 黄 -> 赤)
@@ -1475,9 +1471,9 @@ void Player::DrawUI(int screenX, int screenY)
     else if (hpRatio <= 0.50f) hpCol = GetColor(240, 180, 40);
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 195);
-    DrawBox(hpX, hpY, hpX + hpFillW, hpY + hpH, hpCol, TRUE);
+    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpFillW, hpY + hpH, HudStyle::RadiusGauge, hpCol, TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(hpX, hpY, hpX + hpW, hpY + hpH, GetColor(50, 60, 70), FALSE);
+    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, GetColor(50, 60, 70), FALSE);
 
     // HP数値表示
     char hpStr[32];

@@ -1,5 +1,6 @@
 ﻿#include "Camera.h"
 #include "FontManager.h"
+#include "../UI/HudStyle.h"
 #define NOMINMAX
 #include "Enemy.h"
 #include "SoundManager.h"
@@ -1282,14 +1283,14 @@ void Enemy::Draw()
         int strW = GetDrawStringWidthToHandle(displayName.c_str(), static_cast<int>(displayName.length()), font12);
         int textX = static_cast<int>(screenX) - strW / 2;
 
-        // ネーム背景帯
+        // ネーム背景帯（角丸）
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 170);
-        DrawBox(textX - 3, static_cast<int>(tagY) - 1, textX + strW + 3, static_cast<int>(tagY) + 13, GetColor(10, 15, 25), TRUE);
+        HudStyle::DrawRoundBox(textX - 3, static_cast<int>(tagY) - 1, textX + strW + 3, static_cast<int>(tagY) + 13, 4, GetColor(10, 15, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
         DrawStringToHandle(textX, static_cast<int>(tagY), displayName.c_str(), nameColor, font12);
 
-        // HPバー描画
+        // HPバー描画（角丸）
         int maxHp = status.GetMaxHp();
         int curHp = status.GetCurrentHp();
         float hpRate = (maxHp > 0) ? ((float)curHp / (float)maxHp) : 0.0f;
@@ -1297,10 +1298,10 @@ void Enemy::Draw()
         if (hpRate > 1.0f) hpRate = 1.0f;
 
         int hpY = static_cast<int>(tagY) + 14;
-        DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(20, 20, 20), TRUE);
+        HudStyle::DrawRoundBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, 3, GetColor(20, 20, 20), TRUE);
         unsigned int hpColor = (teamId == 0) ? GetColor(50, 220, 120) : GetColor(255, 60, 60);
-        DrawBox(barX, hpY, barX + static_cast<int>(barW * hpRate), hpY + barH, hpColor, TRUE);
-        DrawBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, GetColor(80, 80, 80), FALSE);
+        HudStyle::DrawRoundBox(barX, hpY, barX + static_cast<int>(barW * hpRate), hpY + barH, 2, hpColor, TRUE);
+        HudStyle::DrawRoundBox(barX - 1, hpY - 1, barX + barW + 1, hpY + barH + 1, 3, GetColor(80, 80, 80), FALSE);
     }
 
     // HomingKill 特攻突撃中の残虐・暴走演出（全身が血のように赤黒く脈動し、頭上に死のカウントダウンと赤黒いオーラ）

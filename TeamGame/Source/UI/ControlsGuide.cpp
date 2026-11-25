@@ -1,4 +1,5 @@
 ﻿#include "ControlsGuide.h"
+#include "HudStyle.h"
 #include "../Managers/FontManager.h"
 #include <DxLib.h>
 #include <cmath>
@@ -8,13 +9,13 @@ namespace UI
 
 void ControlsGuide::DrawKeyBadge(int x, int y, int w, int h, const char* text, unsigned int borderColor, unsigned int textColor)
 {
-    // キーボードのキートップ風の立体感
-    DrawBox(x, y, x + w, y + h, GetColor(35, 45, 60), TRUE);
-    DrawBox(x + 1, y + 1, x + w - 1, y + h - 1, GetColor(50, 65, 85), TRUE);
-    DrawBox(x + 2, y + 2, x + w - 2, y + h - 3, GetColor(25, 32, 45), TRUE);
+    // キーボードのキートップ風の立体感（角丸）
+    HudStyle::DrawRoundBox(x, y, x + w, y + h, HudStyle::RadiusBadge, GetColor(35, 45, 60), TRUE);
+    HudStyle::DrawRoundBox(x + 1, y + 1, x + w - 1, y + h - 1, HudStyle::RadiusBadge - 1, GetColor(50, 65, 85), TRUE);
+    HudStyle::DrawRoundBox(x + 2, y + 2, x + w - 2, y + h - 3, HudStyle::RadiusBadge - 2, GetColor(25, 32, 45), TRUE);
 
-    // 枠線
-    DrawBox(x, y, x + w, y + h, borderColor, FALSE);
+    // 枠線（角丸）
+    HudStyle::DrawRoundBox(x, y, x + w, y + h, HudStyle::RadiusBadge, borderColor, FALSE);
 
     // 文字をバッジ内に収まるサイズで中央揃え
     int fitSize = FontManager::GetInstance().GetFittingFontSize(text, w - 12, 18, 14);
@@ -35,15 +36,15 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2;
 
-    // パネル背景
+    // パネル背景（角丸）
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(18, 24, 38), TRUE);
+    HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(18, 24, 38), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-    // ネオン枠線 (多重枠)
-    DrawBox(panelX, panelY, panelX + panelW, panelY + panelH, GetColor(0, 180, 255), FALSE);
-    DrawBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, GetColor(0, 120, 180), FALSE);
-    DrawBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, GetColor(30, 50, 80), FALSE);
+    // ネオン枠線 (角丸多重枠)
+    HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
+    HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
+    HudStyle::DrawRoundBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
 
     // 3. パネルヘッダー
     int headerY = panelY + 24;
@@ -59,10 +60,9 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
 
     // --- 列1: 移動 & 照準 ---
     int col1X = panelX + 50;
-    DrawBox(col1X, cardY, col1X + cardW, cardY + cardH, GetColor(12, 16, 26), TRUE);
-    DrawBox(col1X, cardY, col1X + cardW, cardY + cardH, GetColor(50, 80, 120), FALSE);
-    DrawBox(col1X, cardY, col1X + cardW, cardY + 46, GetColor(25, 45, 75), TRUE);
-    FontManager::GetInstance().DrawStringCenter(col1X + cardW / 2, cardY + 11, "【移動 ＆ 照準】", GetColor(100, 220, 255), 24);
+    HudStyle::DrawRoundPanel(col1X, cardY, cardW, cardH, HudStyle::RadiusPanel, GetColor(12, 16, 26), GetColor(50, 80, 120));
+    HudStyle::DrawRoundBox(col1X + 6, cardY + 6, col1X + cardW - 6, cardY + 48, 8, GetColor(25, 45, 75), TRUE);
+    FontManager::GetInstance().DrawStringCenter(col1X + cardW / 2, cardY + 13, "【移動 ＆ 照準】", GetColor(100, 220, 255), 24);
 
     int rowY = cardY + 68;
     int stepY = 90;
@@ -96,10 +96,9 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
 
     // --- 列2: 戦闘 & スキル ---
     int col2X = col1X + cardW + cardGap;
-    DrawBox(col2X, cardY, col2X + cardW, cardY + cardH, GetColor(12, 16, 26), TRUE);
-    DrawBox(col2X, cardY, col2X + cardW, cardY + cardH, GetColor(120, 50, 50), FALSE);
-    DrawBox(col2X, cardY, col2X + cardW, cardY + 46, GetColor(75, 25, 25), TRUE);
-    FontManager::GetInstance().DrawStringCenter(col2X + cardW / 2, cardY + 11, "【戦闘 ＆ スキル】", GetColor(255, 120, 100), 24);
+    HudStyle::DrawRoundPanel(col2X, cardY, cardW, cardH, HudStyle::RadiusPanel, GetColor(12, 16, 26), GetColor(120, 50, 50));
+    HudStyle::DrawRoundBox(col2X + 6, cardY + 6, col2X + cardW - 6, cardY + 48, 8, GetColor(75, 25, 25), TRUE);
+    FontManager::GetInstance().DrawStringCenter(col2X + cardW / 2, cardY + 13, "【戦闘 ＆ スキル】", GetColor(255, 120, 100), 24);
 
     rowY = cardY + 68;
     int stepY2 = 96;
@@ -136,10 +135,9 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
 
     // --- 列3: システム & ゲームルール ---
     int col3X = col2X + cardW + cardGap;
-    DrawBox(col3X, cardY, col3X + cardW, cardY + cardH, GetColor(12, 16, 26), TRUE);
-    DrawBox(col3X, cardY, col3X + cardW, cardY + cardH, GetColor(60, 100, 70), FALSE);
-    DrawBox(col3X, cardY, col3X + cardW, cardY + 46, GetColor(25, 60, 35), TRUE);
-    FontManager::GetInstance().DrawStringCenter(col3X + cardW / 2, cardY + 11, "【システム ＆ ルール】", GetColor(120, 255, 160), 24);
+    HudStyle::DrawRoundPanel(col3X, cardY, cardW, cardH, HudStyle::RadiusPanel, GetColor(12, 16, 26), GetColor(60, 100, 70));
+    HudStyle::DrawRoundBox(col3X + 6, cardY + 6, col3X + cardW - 6, cardY + 48, 8, GetColor(25, 60, 35), TRUE);
+    FontManager::GetInstance().DrawStringCenter(col3X + cardW / 2, cardY + 13, "【システム ＆ ルール】", GetColor(120, 255, 160), 24);
 
     rowY = cardY + 68;
     // Esc
@@ -151,8 +149,7 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
     // ゲームのコツ・ルールボックス (十分な高さと自動折り返しで絶対に枠はみ出しなし)
     int hintBoxY = rowY;
     int hintBoxH = cardH - (hintBoxY - cardY) - 20;
-    DrawBox(col3X + 16, hintBoxY, col3X + cardW - 16, hintBoxY + hintBoxH, GetColor(18, 30, 25), TRUE);
-    DrawBox(col3X + 16, hintBoxY, col3X + cardW - 16, hintBoxY + hintBoxH, GetColor(50, 120, 70), FALSE);
+    HudStyle::DrawRoundPanel(col3X + 16, hintBoxY, cardW - 32, hintBoxH, HudStyle::RadiusButton, GetColor(18, 30, 25), GetColor(50, 120, 70));
 
     int hintTextX = col3X + 30;
     int hintMaxW = (col3X + cardW - 30) - hintTextX;
@@ -168,8 +165,7 @@ void ControlsGuide::Draw(int screenWidth, int screenHeight)
 
     // 5. フッター案内
     int footerY = panelY + panelH - 50;
-    DrawBox(panelX + 460, footerY - 6, panelX + panelW - 460, footerY + 34, GetColor(25, 40, 60), TRUE);
-    DrawBox(panelX + 460, footerY - 6, panelX + panelW - 460, footerY + 34, GetColor(0, 180, 255), FALSE);
+    HudStyle::DrawRoundPanel(panelX + 460, footerY - 6, panelW - 920, 40, HudStyle::RadiusButton, GetColor(25, 40, 60), GetColor(0, 180, 255));
     FontManager::GetInstance().DrawStringCenter(screenWidth / 2, footerY + 2, "[ ESC / Enter / Space / クリック ] で戻る", GetColor(255, 240, 120), 20);
 }
 
@@ -181,17 +177,13 @@ void ControlsGuide::DrawMiniHud(int screenWidth, int screenHeight)
     int barX = screenWidth - barW - 15;
     int barY = screenHeight - barH - 12;
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
-    DrawBox(barX, barY, barX + barW, barY + barH, GetColor(10, 15, 25), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawBox(barX, barY, barX + barW, barY + barH, GetColor(0, 140, 200), FALSE);
+    HudStyle::DrawRoundPanel(barX, barY, barW, barH, HudStyle::RadiusButton, GetColor(10, 15, 25), GetColor(0, 140, 200), 190);
 
     int curX = barX + 16;
 
     auto drawMiniBadge = [&](const char* badge, const char* label, unsigned int badgeCol) {
         int bW = 14 + FontManager::GetInstance().GetStringWidth(badge, 15);
-        DrawBox(curX, barY + 5, curX + bW, barY + barH - 5, GetColor(25, 35, 50), TRUE);
-        DrawBox(curX, barY + 5, curX + bW, barY + barH - 5, badgeCol, FALSE);
+        HudStyle::DrawRoundPanel(curX, barY + 5, bW, barH - 10, HudStyle::RadiusBadge, GetColor(25, 35, 50), badgeCol);
         FontManager::GetInstance().DrawStringCenter(curX + bW / 2, barY + 10, badge, GetColor(255, 255, 255), 15);
         curX += bW + 6;
 

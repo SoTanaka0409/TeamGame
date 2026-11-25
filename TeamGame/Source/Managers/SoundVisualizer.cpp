@@ -1,5 +1,6 @@
-#include "SoundVisualizer.h"
+﻿#include "SoundVisualizer.h"
 #include "FontManager.h"
+#include "../UI/HudStyle.h"
 #include "../Characters/Player.h"
 #include <DxLib.h>
 #include <cmath>
@@ -200,12 +201,12 @@ void SoundVisualizer::Draw(const Player* player, float playerScreenX, float play
         int bx2 = bx1 + badgeW;
         int by2 = by1 + badgeH;
 
-        // バッジ背景（黒＋半透明）
+        // バッジ背景（黒＋半透明・角丸）
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(alpha * 0.85f));
-        DrawBox(bx1, by1, bx2, by2, GetColor(15, 20, 30), TRUE);
+        HudStyle::DrawRoundBox(bx1, by1, bx2, by2, HudStyle::RadiusBadge, GetColor(15, 20, 30), TRUE);
 
-        // バッジ外枠（アクセントカラー）
-        DrawBox(bx1, by1, bx2, by2, primaryColor, FALSE);
+        // バッジ外枠（アクセントカラー・角丸）
+        HudStyle::DrawRoundBox(bx1, by1, bx2, by2, HudStyle::RadiusBadge, primaryColor, FALSE);
 
         // 距離文字の描画
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
