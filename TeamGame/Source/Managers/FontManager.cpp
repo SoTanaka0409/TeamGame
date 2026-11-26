@@ -1,4 +1,8 @@
 ﻿#include "FontManager.h"
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -45,19 +49,61 @@ FontManager::~FontManager() {
     Clear();
 }
 
+void FontManager::EnsureBundledFontsLoaded() {
+    if (m_bundledFontsLoaded) return;
+    m_bundledFontsLoaded = true;
+
+    auto tryLoadFontFile = [&](const wchar_t* relPath) -> bool {
+        const wchar_t* prefixes[] = { L"", L"TeamGame\\", L"..\\", L"..\\..\\" };
+        for (const wchar_t* prefix : prefixes) {
+            std::wstring fullPath = std::wstring(prefix) + relPath;
+            DWORD attr = GetFileAttributesW(fullPath.c_str());
+            if (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+                if (AddFontResourceExW(fullPath.c_str(), FR_PRIVATE, 0) > 0) {
+                    m_loadedFontPaths.push_back(fullPath);
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    if (tryLoadFontFile(L"Resource\\Fonts\\MPLUS1p-Medium.ttf")) {
+        m_uiFontName = "M PLUS 1p Medium";
+    }
+    if (tryLoadFontFile(L"Resource\\Fonts\\Rajdhani-Bold.ttf")) {
+        m_displayFontName = "Rajdhani";
+    }
+}
+
+const std::string& FontManager::GetUiFontName() const {
+    return m_uiFontName;
+}
+
+const std::string& FontManager::GetDisplayFontName() const {
+    return m_displayFontName;
+}
+
 std::string FontManager::MakeKey(int size, int thick, const std::string& name, int type) const {
     return name + "_" + std::to_string(size) + "_" + std::to_string(thick) + "_" + std::to_string(type);
 }
 
 int FontManager::GetFont(int fontSize, int thick, const std::string& fontName, int fontType) {
-    std::string key = MakeKey(fontSize, thick, fontName, fontType);
+    EnsureBundledFontsLoaded();
+
+    const std::string& resolvedName = fontName.empty() ? m_uiFontName : fontName;
+    std::string key = MakeKey(fontSize, thick, resolvedName, fontType);
     auto it = m_fontMap.find(key);
     if (it != m_fontMap.end()) {
         return it->second;
     }
 
-    const char* namePtr = fontName.empty() ? nullptr : fontName.c_str();
+    const char* namePtr = resolvedName.empty() ? nullptr : resolvedName.c_str();
     int handle = CreateFontToHandle(namePtr, fontSize, thick, fontType);
+    if (handle == -1 && !resolvedName.empty()) {
+        // 指定フォント生成失敗時はデフォルトフォントへフォールバック
+        handle = CreateFontToHandle(nullptr, fontSize, thick, fontType);
+    }
     if (handle != -1) {
         m_fontMap[key] = handle;
     }
@@ -72,6 +118,14 @@ void FontManager::DrawString(int x, int y, const char* str, unsigned int color, 
     } else {
         ::DrawString(x, y, str, color);
     }
+}
+
+void FontManager::DrawStringShadow(int x, int y, const char* str, unsigned int color, int fontSize, int thick, const std::string& fontName, int shadowAlpha) {
+    if (!str) return;
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, shadowAlpha);
+    DrawString(x + 2, y + 2, str, GetColor(0, 0, 0), fontSize, thick, fontName);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    DrawString(x, y, str, color, fontSize, thick, fontName);
 }
 
 void FontManager::DrawFormatString(int x, int y, unsigned int color, int fontSize, const char* format, ...) {
@@ -96,6 +150,13 @@ void FontManager::DrawStringCenter(int centerX, int y, const char* str, unsigned
     int width = GetStringWidth(str, fontSize, thick, fontName);
     int drawX = centerX - width / 2;
     DrawString(drawX, y, str, color, fontSize, thick, fontName);
+}
+
+void FontManager::DrawStringCenterShadow(int centerX, int y, const char* str, unsigned int color, int fontSize, int thick, const std::string& fontName, int shadowAlpha) {
+    if (!str) return;
+    int width = GetStringWidth(str, fontSize, thick, fontName);
+    int drawX = centerX - width / 2;
+    DrawStringShadow(drawX, y, str, color, fontSize, thick, fontName, shadowAlpha);
 }
 
 void FontManager::DrawStringRight(int rightX, int y, const char* str, unsigned int color, int fontSize, int thick, const std::string& fontName) {
@@ -298,4 +359,10 @@ void FontManager::Clear() {
         }
     }
     m_fontMap.clear();
+
+    for (const auto& path : m_loadedFontPaths) {
+        RemoveFontResourceExW(path.c_str(), FR_PRIVATE, 0);
+    }
+    m_loadedFontPaths.clear();
+    m_bundledFontsLoaded = false;
 }

@@ -24,8 +24,13 @@ class GameOverScene : public Scene
     int gameOverBgIndex = -1;        ///< ゲームオーバー画面背景画像の配列番号
     int windowFrameIndex = -1;       ///< UITextWindow枠画像の配列番号
     int gameOverLogoIndex = -1;      ///< ゲームオーバーロゴ画像の配列番号
+    int uiModalImgIndex = -1;        ///< 手描き質感モーダル枠画像
+    int uiBtnIdleImgIndex = -1;      ///< 非選択ボタン質感画像
+    int uiBtnSelImgIndex = -1;       ///< 選択中ボタン質感画像
 
     bool prevClick = false;          ///< 前フレームでのマウスクリック状態
+    int prevMouseX = -1;             ///< 前フレームのマウスX座標
+    int prevMouseY = -1;             ///< 前フレームのマウスY座標
 
     // UITextWindow による敗北メッセージ枠描画
     UI::UITextWindow* defeatWindow = nullptr; ///< 敗北パネル用テキストウィンドウ

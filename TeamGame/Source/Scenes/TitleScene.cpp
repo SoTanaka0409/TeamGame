@@ -35,6 +35,13 @@ TitleScene::TitleScene()
     btnExitImgIndex     = Load2DImage("Title_Exit.png");
     btnBannerImgIndex   = Load2DImage("Title_BloodBanner.png");
 
+    // 手描き・ホラー質感UIパーツ
+    uiModalImgIndex     = Load2DImage("Images/UI/PreGame/panel_modal.png");
+    uiStripImgIndex     = Load2DImage("Images/UI/PreGame/panel_strip.png");
+    uiBtnIdleImgIndex   = Load2DImage("Images/UI/PreGame/btn_idle.png");
+    uiBtnSelImgIndex    = Load2DImage("Images/UI/PreGame/btn_selected.png");
+    uiUnderlineImgIndex = Load2DImage("Images/UI/PreGame/header_underline.png");
+
 }
 
 void TitleScene::Init()
@@ -76,12 +83,17 @@ void TitleScene::Update()
     bool mouseClicked = (currMouseLeft && !prevMouseLeft);
     bool mouseMoved = (prevMouseX != -1 && (mouseX != prevMouseX || mouseY != prevMouseY));
 
+    auto& input = InputManager::GetInstance();
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
     bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
-waitTimer++;
-if (!currEnter && !currMouseLeft)
+    bool upPressed = (currUp && !prevUp) || input.IsPadUpPressed();
+    bool downPressed = (currDown && !prevDown) || input.IsPadDownPressed();
+    bool confirmPressed = (currEnter && !prevEnter) || input.IsPadConfirmPressed();
+    bool cancelPressed = (currEsc && !prevEsc) || input.IsPadCancelPressed();
+    waitTimer++;
+    if (!currEnter && !currMouseLeft && !input.IsPadConfirmHeld())
     {
         hasReleasedConfirm = true;
     }
@@ -142,14 +154,14 @@ if (!currEnter && !currMouseLeft)
             }
         }
 
-        // --- キーボード操作 (W/S/Up/Down/Enter/Space) ---
-        if (currUp && !prevUp) cursor--;
-        if (currDown && !prevDown) cursor++;
+        // --- キーボード・ゲームパッド操作 ---
+        if (upPressed) cursor--;
+        if (downPressed) cursor++;
         if (cursor < 0) cursor = 2;
         if (cursor > 2) cursor = 0;
 
         // 長押し・連打による誤進行防止: 一度キーが離されており、かつ最低15フレーム経過していること
-        if (hasReleasedConfirm && waitTimer >= 15 && currEnter && !prevEnter)
+        if (hasReleasedConfirm && waitTimer >= 15 && confirmPressed)
         {
             SoundManager::GetInstance().PlayTapSE();
             if (cursor == 0)
@@ -179,19 +191,19 @@ if (!currEnter && !currMouseLeft)
     }
     else if (state == TitleState::SETTINGS)
     {
-        const int boxW = 920;
+        const int boxW = 860;
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
-        const int menuStartY = 335;
-        const int menuSpacing = 68;
+        const int menuStartY = 315;
+        const int menuSpacing = 74;
 
         // マウス操作（ホバーで選択、クリックで決定）
         for (int i = 0; i < 3; i++)
         {
-            int bx1 = boxX1 + 35;
-            int bx2 = boxX2 - 35;
+            int bx1 = boxX1 + 40;
+            int bx2 = boxX2 - 40;
             int by1 = menuStartY + i * menuSpacing - 6;
-            int by2 = menuStartY + i * menuSpacing + 42;
+            int by2 = by1 + 52;
             if (mouseX >= bx1 && mouseX <= bx2 && mouseY >= by1 && mouseY <= by2)
             {
                 if (mouseMoved && cursor != i) cursor = i;
@@ -218,12 +230,12 @@ if (!currEnter && !currMouseLeft)
             }
         }
 
-        if (currUp && !prevUp) cursor--;
-        if (currDown && !prevDown) cursor++;
+        if (upPressed) cursor--;
+        if (downPressed) cursor++;
         if (cursor < 0) cursor = 2;
         if (cursor > 2) cursor = 0;
 
-        if (currEnter && !prevEnter)
+        if (confirmPressed)
         {
             SoundManager::GetInstance().PlayTapSE();
             if (cursor == 0)
@@ -243,7 +255,7 @@ if (!currEnter && !currMouseLeft)
             }
         }
 
-        if (currEsc && !prevEsc)
+        if (cancelPressed)
         {
             SoundManager::GetInstance().PlayTapSE();
             state = TitleState::MAIN;
@@ -254,7 +266,7 @@ if (!currEnter && !currMouseLeft)
     {
         if (hasReleasedConfirm && waitTimer >= 15)
         {
-            if ((currEnter && !prevEnter) || (currEsc && !prevEsc) || mouseClicked)
+            if (confirmPressed || cancelPressed || mouseClicked)
             {
                 SoundManager::GetInstance().PlayTapSE();
                 state = TitleState::SETTINGS;
@@ -297,26 +309,9 @@ void TitleScene::Draw()
     // =========================================================================
     if (state == TitleState::SETTINGS)
     {
-        if (settingsBgIndex != -1)
-        {
-            // 設定画面用の背景画像を配列番号から描画
-            DrawFullScreen2DImage(settingsBgIndex, false);
-        }
-        else if (titleBgIndex != -1)
-        {
-            // 設定画像がない場合はタイトル背景に暗幕フィルターを重ねて描画
-            DrawFullScreen2DImage(titleBgIndex, false);
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 160);
-            DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        }
-        else
-        {
-            // 画像がない場合のデフォルト背景
-            DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
-        }
+        int bgH = (settingsBgIndex != -1) ? Get2DImage(settingsBgIndex) : Get2DImage(titleBgIndex);
+        HudStyle::DrawTacticalBackdrop(1920, 1080, bgH, 960, 520, 480);
     }
-
     else if (titleBgIndex != -1)
     {
         // タイトル画面全般の背景画像を配列番号から描画
@@ -325,7 +320,7 @@ void TitleScene::Draw()
     else
     {
         // 画像がない場合のデフォルト背景
-        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
+        DrawBox(0, 0, 1920, 1080, HudStyle::ColCanvas(), TRUE);
     }
 
     // =========================================================================
@@ -333,13 +328,7 @@ void TitleScene::Draw()
     // =========================================================================
     if (state == TitleState::SETTINGS)
     {
-        // 設定画面ヘッダー（中央揃え・600px幅フレーム）
-        const int hW = 600;
-        const int hX1 = (1920 - hW) / 2;
-        HudStyle::DrawRoundPanel(hX1, 160, hW, 70, HudStyle::RadiusPanel, GetColor(20, 30, 45), GetColor(0, 180, 255));
-        HudStyle::DrawRoundBox(hX1 + 2, 162, hX1 + hW - 2, 228, HudStyle::RadiusPanel - 2, GetColor(30, 70, 110), FALSE);
-
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, 180, "=== SETTINGS ===", GetColor(255, 255, 255), 28);
+        HudStyle::DrawSectionHeading(1920 / 2, 132, "設定", Get2DImage(uiUnderlineImgIndex), 46);
     }
     else
     {
@@ -437,52 +426,49 @@ void TitleScene::Draw()
                 }
             }
 
-            // 画面下部に選択中項目の日本語表記を表示
+            // 画面下部に選択中項目の短い案内と控えめなキーバッジを表示
             const char* mainJpTexts[3] = {
-                "【 ゲーム開始 】 ソロプレイ戦闘を開始します",
-                "【 各種設定 】 エイム固定モードや操作説明を設定・確認します",
-                "【 ゲーム終了 】 アプリケーションを終了します"
+                "キャラクターを選んでゲームを始めます",
+                "エイム固定や操作説明を確認します",
+                "ゲームを終了します"
             };
-            FontManager::GetInstance().DrawStringCenter(1920 / 2, 835, mainJpTexts[cursor], GetColor(255, 215, 0), 24);
-
-            // 下部に控えめな操作ガイドを表示
-            FontManager::GetInstance().DrawStringCenter(1920 / 2, 878, "[W/S / ↑↓] キー または マウスで選択  /  [ENTER] または クリックで決定", GetColor(160, 180, 200), 20);
+            FontManager::GetInstance().DrawStringCenterShadow(1920 / 2, 846, mainJpTexts[cursor], HudStyle::ColAmber(), 20);
+            int hx = 770;
+            hx += HudStyle::DrawKeyHintItem(hx, 892, "W / S", "選ぶ") + 28;
+            HudStyle::DrawKeyHintItem(hx, 892, "Enter / クリック", "決定");
         }
         else
         {
             // メニュー用半透明プレート (画像がない場合のフォールバック)
-            HudStyle::DrawRoundPanel(menuStartX - 50, menuStartY - 20, 320, 3 * menuSpacing + 30, HudStyle::RadiusPanel, GetColor(10, 15, 25), GetColor(60, 80, 110), 140);
+            HudStyle::DrawRoundPanel(menuStartX - 50, menuStartY - 20, 320, 3 * menuSpacing + 30, HudStyle::RadiusPanel, HudStyle::ColBg(), HudStyle::ColBorder(), 180);
 
-            const char* items[] = { "GAME START", "SETTINGS", "EXIT" };
+            const char* items[] = { "ゲーム開始", "設定", "終了" };
             for (int i = 0; i < 3; i++)
             {
-                unsigned int color = (i == cursor) ? GetColor(255, 255, 0) : GetColor(200, 200, 200);
-                if (i == cursor) FontManager::GetInstance().DrawString(menuStartX - 30, menuStartY + i * menuSpacing, ">", color, 26);
-                FontManager::GetInstance().DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color, 26);
+                unsigned int color = (i == cursor) ? HudStyle::ColAmber() : HudStyle::ColText();
+                if (i == cursor) FontManager::GetInstance().DrawString(menuStartX - 30, menuStartY + i * menuSpacing, "▶", color, 24);
+                FontManager::GetInstance().DrawString(menuStartX, menuStartY + i * menuSpacing, items[i], color, 24);
             }
         }
     }
     else if (state == TitleState::SETTINGS)
     {
-        // 拡大したメイン設定ボックス (幅920px・十分な余白と洗練されたネオン角丸枠)
-        const int boxW = 920;
+        const int boxW = 860;
         const int boxX1 = (1920 - boxW) / 2;
         const int boxX2 = boxX1 + boxW;
-        const int boxY1 = 270;
-        const int boxY2 = 815;
+        const int boxY1 = 260;
+        const int boxY2 = 760;
 
-        HudStyle::DrawRoundPanel(boxX1, boxY1, boxW, boxY2 - boxY1, HudStyle::RadiusModal, GetColor(15, 22, 36), GetColor(0, 160, 240), 230);
-        HudStyle::DrawRoundBox(boxX1 + 2, boxY1 + 2, boxX2 - 2, boxY2 - 2, HudStyle::RadiusModal - 2, GetColor(30, 70, 110), FALSE);
+        HudStyle::DrawTexturedPanel(boxX1, boxY1, boxW, boxY2 - boxY1, Get2DImage(uiModalImgIndex), HudStyle::ColBg(), HudStyle::ColBorder(), 245);
 
-        const int sMenuStartY = 335;
-        const int sMenuSpacing = 68;
+        const int sMenuStartY = 315;
+        const int sMenuSpacing = 74;
 
-        // 選択項目は英語表記 (AIM LOCK, CONTROLS GUIDE, BACK)
-        std::string modeVal = GameSettings::GetInstance().isAimLockHoldMode ? "HOLD" : "TOGGLE";
+        std::string modeVal = GameSettings::GetInstance().isAimLockHoldMode ? "長押し" : "切り替え";
         std::string items[3] = {
-            std::string("AIM LOCK (E-KEY) : ") + modeVal,
-            "CONTROLS GUIDE",
-            "BACK"
+            std::string("エイム固定（Eキー）　：　") + modeVal,
+            "操作説明を見る",
+            "タイトルへ戻る"
         };
 
         for (int i = 0; i < 3; i++)
@@ -490,56 +476,50 @@ void TitleScene::Draw()
             int iy = sMenuStartY + i * sMenuSpacing;
             bool isSelected = (i == cursor);
 
+            HudStyle::DrawTexturedPanel(boxX1 + 40, iy - 6, boxW - 80, 52,
+                                        Get2DImage(isSelected ? uiBtnSelImgIndex : uiBtnIdleImgIndex),
+                                        isSelected ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                        isSelected ? HudStyle::ColAmber() : HudStyle::ColBorderSoft(),
+                                        isSelected ? 245 : 210);
+
+            unsigned int color = isSelected ? HudStyle::ColAmber() : HudStyle::ColText();
             if (isSelected)
             {
-                HudStyle::DrawRoundPanel(boxX1 + 35, iy - 6, boxW - 70, 48, HudStyle::RadiusButton, GetColor(25, 45, 75), GetColor(0, 200, 255), 180);
-                HudStyle::DrawAccentPill(boxX1 + 40, iy + 1, 34, GetColor(255, 215, 0), 5);
-                FontManager::GetInstance().DrawString(boxX1 + 55, iy + 5, "▶", GetColor(255, 215, 0), 26);
+                FontManager::GetInstance().DrawString(boxX1 + 58, iy + 8, "▶", HudStyle::ColEnemy(), 20);
             }
-            else
-            {
-                HudStyle::DrawRoundPanel(boxX1 + 35, iy - 6, boxW - 70, 48, HudStyle::RadiusButton, GetColor(12, 18, 28), GetColor(35, 50, 70), 100);
-            }
-
-            unsigned int color = isSelected ? GetColor(255, 255, 0) : GetColor(210, 225, 240);
-            FontManager::GetInstance().DrawString(boxX1 + 92, iy + 5, items[i].c_str(), color, 26);
+            FontManager::GetInstance().DrawString(boxX1 + 86, iy + 7, items[i].c_str(), color, 22, isSelected ? 7 : 5);
         }
 
-        // 区切り線
-        int divY = 550;
-        DrawLine(boxX1 + 40, divY, boxX2 - 40, divY, GetColor(0, 140, 200));
-
-        // 画面下部: 選択項目の日本語表記＆解説パネル (自動折り返し対応で枠はみ出しゼロ)
+        // 解説エリア（自然な質感枠）
         int infoY1 = 568;
-        int infoY2 = 790;
-        HudStyle::DrawRoundPanel(boxX1 + 35, infoY1, boxW - 70, infoY2 - infoY1, HudStyle::RadiusPanel, GetColor(10, 15, 25), GetColor(45, 70, 100), 230);
-        HudStyle::DrawAccentPill(boxX1 + 41, infoY1 + 10, (infoY2 - infoY1) - 20, GetColor(232, 170, 60), 5); // 琥珀アクセント
+        int infoY2 = 716;
+        HudStyle::DrawTexturedPanel(boxX1 + 40, infoY1, boxW - 80, infoY2 - infoY1, Get2DImage(uiStripImgIndex), HudStyle::ColCard(), HudStyle::ColBorderSoft(), 230);
 
-        int infoTextMaxW = (boxX2 - 35 - 24) - (boxX1 + 58);
+        int infoTextMaxW = (boxX2 - 64) - (boxX1 + 68);
 
         if (cursor == 0)
         {
-            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: エイム固定モード 】", GetColor(255, 215, 0), 24);
-            std::string modeJa = GameSettings::GetInstance().isAimLockHoldMode ? "長押し (HOLD)" : "切り替え (TOGGLE)";
-            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 48, (std::string("日本語表記: エイム固定 (Eキー) [") + modeJa + "]").c_str(), GetColor(220, 235, 250), 20);
+            const char* modeTitle = GameSettings::GetInstance().isAimLockHoldMode ? "長押しモード" : "切り替えモード";
+            FontManager::GetInstance().DrawString(boxX1 + 68, infoY1 + 24, modeTitle, HudStyle::ColAmber(), 20, 7);
             const char* descText = GameSettings::GetInstance().isAimLockHoldMode ?
-                "※ Eキーを押している間だけ照準を固定します (Enterまたはクリックで「切り替え」に変更)" :
-                "※ Eキーを押すごとに固定のON/OFFを切り替えます (Enterまたはクリックで「長押し」に変更)";
-            FontManager::GetInstance().DrawStringWrapped(boxX1 + 58, infoY1 + 82, infoTextMaxW, descText, GetColor(145, 190, 230), 20, 6);
+                "Eキーを押している間だけ照準の向きを固定します。" :
+                "Eキーを押すたびに照準固定のオン・オフを切り替えます。";
+            FontManager::GetInstance().DrawStringWrapped(boxX1 + 68, infoY1 + 62, infoTextMaxW, descText, HudStyle::ColText(), 18, 4);
         }
         else if (cursor == 1)
         {
-            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: 操作説明画面 】", GetColor(255, 215, 0), 24);
-            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 操作説明 (ヘルプ / ガイド)", GetColor(220, 235, 250), 20);
-            FontManager::GetInstance().DrawStringWrapped(boxX1 + 58, infoY1 + 82, infoTextMaxW, "※ 移動・射撃・スキル・暗闇索敵などの全操作ガイドおよびルールを表示します", GetColor(145, 190, 230), 20, 6);
+            FontManager::GetInstance().DrawString(boxX1 + 68, infoY1 + 24, "操作説明", HudStyle::ColAmber(), 20, 7);
+            FontManager::GetInstance().DrawStringWrapped(boxX1 + 68, infoY1 + 62, infoTextMaxW, "移動・射撃・スキル・索敵ルールの操作ガイドを開きます。", HudStyle::ColText(), 18, 4);
         }
         else if (cursor == 2)
         {
-            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 14, "【 選択項目: メインメニューへ戻る 】", GetColor(255, 215, 0), 24);
-            FontManager::GetInstance().DrawString(boxX1 + 58, infoY1 + 48, "日本語表記: 戻る (タイトルメニューへ)", GetColor(220, 235, 250), 20);
-            FontManager::GetInstance().DrawStringWrapped(boxX1 + 58, infoY1 + 82, infoTextMaxW, "※ 現在の設定内容を保持したまま、タイトルメイン画面に戻ります", GetColor(145, 190, 230), 20, 6);
+            FontManager::GetInstance().DrawString(boxX1 + 68, infoY1 + 24, "タイトルへ戻る", HudStyle::ColAmber(), 20, 7);
+            FontManager::GetInstance().DrawStringWrapped(boxX1 + 68, infoY1 + 62, infoTextMaxW, "設定を保存してタイトル画面へ戻ります。", HudStyle::ColText(), 18, 4);
         }
 
-        FontManager::GetInstance().DrawString(boxX1 + 58, infoY2 - 36, "[ W / S / ↑ / ↓ / マウス ] 選択    [ ENTER / クリック ] 決定・切替    [ ESC ] 戻る", GetColor(140, 180, 215), 18);
+        int hx = 680;
+        hx += HudStyle::DrawKeyHintItem(hx, 808, "W / S", "選ぶ") + 28;
+        hx += HudStyle::DrawKeyHintItem(hx, 808, "Enter / クリック", "決定") + 28;
+        HudStyle::DrawKeyHintItem(hx, 808, "Esc", "戻る");
     }
 }

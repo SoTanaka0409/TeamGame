@@ -13,6 +13,11 @@ class InputManager
     int currentMouse;
     int previousMouse;
 
+    int currentPad;
+    int previousPad;
+    int currentStickDir;
+    int previousStickDir;
+
     /**
      * @brief コンストラクタ
      * @details 初期化を行い、外部からのインスタンス化を防ぐ。
@@ -91,4 +96,14 @@ class InputManager
      * @details 指定したマウスボタンが現在フレームで離されたかを判定する。
      */
     bool IsMouseReleased(int button) const;
+
+    // --- ゲームパッド（PAD1）メニュー操作ヘルパー ---
+    bool IsPadUpPressed() const;
+    bool IsPadDownPressed() const;
+    bool IsPadLeftPressed() const;
+    bool IsPadRightPressed() const;
+    bool IsPadConfirmPressed() const;
+    bool IsPadConfirmHeld() const;
+    bool IsPadCancelPressed() const;
+    bool IsPadStartPressed() const;
 };

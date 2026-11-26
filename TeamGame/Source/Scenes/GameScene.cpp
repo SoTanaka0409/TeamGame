@@ -125,6 +125,9 @@ void GameScene::Init()
     MatchManager::GetInstance().Reset();
     SoundVisualizer::GetInstance().Clear();
     HitFeedbackManager::GetInstance().Clear();
+    CutinManager::GetInstance().Reset();
+    prevMouseX = -1;
+    prevMouseY = -1;
 
     brightTimer = 0.0f;
     int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
@@ -192,12 +195,21 @@ void GameScene::Init()
         if (pauseIconHandles[i] == -1) pauseIconHandles[i] = LoadGraphWithSearch(p3);
         if (pauseIconHandles[i] == -1) pauseIconHandles[i] = LoadGraphWithSearch(pauseIconNames[i]);
     }
+
+    // タイトル・選択画面と共通の手描き質感UIパーツをロード
+    uiModalImgIndex     = Load2DImage("Images/UI/PreGame/panel_modal.png");
+    uiStripImgIndex     = Load2DImage("Images/UI/PreGame/panel_strip.png");
+    uiBtnIdleImgIndex   = Load2DImage("Images/UI/PreGame/btn_idle.png");
+    uiBtnSelImgIndex    = Load2DImage("Images/UI/PreGame/btn_selected.png");
+    uiUnderlineImgIndex = Load2DImage("Images/UI/PreGame/header_underline.png");
 }
 
 void GameScene::Update()
 {
+    auto& input = InputManager::GetInstance();
     bool currEsc = (CheckHitKey(KEY_INPUT_ESCAPE) != 0);
-    bool isEscTriggered = (currEsc && !prevEsc) || InputManager::GetInstance().IsKeyPressed(KEY_INPUT_ESCAPE);
+    bool isEscTriggered = (currEsc && !prevEsc) || input.IsKeyPressed(KEY_INPUT_ESCAPE) || input.IsPadStartPressed();
+    bool isCancelTriggered = isEscTriggered || input.IsPadCancelPressed();
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
     bool currLeft = (CheckHitKey(KEY_INPUT_LEFT) != 0 || CheckHitKey(KEY_INPUT_A) != 0);
@@ -205,25 +217,40 @@ void GameScene::Update()
     bool currEnter = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
     bool currClick = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
 
+    bool upPressed = (currUp && !prevUp) || input.IsPadUpPressed();
+    bool downPressed = (currDown && !prevDown) || input.IsPadDownPressed();
+    bool leftPressed = (currLeft && !prevLeft) || input.IsPadLeftPressed();
+    bool rightPressed = (currRight && !prevRight) || input.IsPadRightPressed();
+    bool confirmPressed = (currEnter && !prevEnter) || input.IsPadConfirmPressed();
+
+    // ウィンドウ拡縮対応のマウス座標
+    int mouseX = 0, mouseY = 0;
+    GetMousePoint(&mouseX, &mouseY);
+    int drawW = 1920, drawH = 1080;
+    GetDrawScreenSize(&drawW, &drawH);
+    if (drawW > 0 && drawH > 0 && (drawW != 1920 || drawH != 1080))
+    {
+        mouseX = static_cast<int>(mouseX * (1920.0f / drawW));
+        mouseY = static_cast<int>(mouseY * (1080.0f / drawH));
+    }
+    bool mouseMoved = (prevMouseX != -1 && (mouseX != prevMouseX || mouseY != prevMouseY));
+
     if (state == GameState::PLAYING)
     {
         if (isEscTriggered)
         {
             state = GameState::PAUSED;
             pauseMenuCursor = 0;
+            SetMouseDispFlag(TRUE);
         }
         else
         {
             // スタイリッシュカットイン演出の更新
             CutinManager::GetInstance().Update();
 
-            gameTimer += 0.016f;
-
             if (introTimer > 0.0f)
             {
                 introTimer -= 1.0f;
-                // ホスト側はイントロ中にステージ初期化情報を定期送信して同期を確実にする
-                
             }
             else if (CutinManager::GetInstance().ShouldPauseGame())
             {
@@ -235,6 +262,7 @@ void GameScene::Update()
             }
             else
             {
+                gameTimer += 0.016f;
                 Scene::Update();
             }
 
@@ -249,69 +277,72 @@ void GameScene::Update()
             SoundManager::GetInstance().Update();
             SoundVisualizer::GetInstance().Update();
 
-            // ランダムな時間帯に（15秒間）全エリアが明るくなる処理
-            if (brightTimer > 0.0f)
+            // 薄明イベント・定期音波ピンはイントロ終了後（戦闘開始後）からカウント進行
+            if (introTimer <= 0.0f)
             {
-                brightTimer -= 1.0f;
-            }
-            else
-            {
-                nextBrightInterval -= 1.0f;
-                if (nextBrightInterval <= 0.0f)
+                if (brightTimer > 0.0f)
                 {
-                    brightTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("BrightEventDurationFrames", 900));
-                    int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
-                    int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
-                    int brightRange = (brightMax > brightMin) ? (brightMax - brightMin) : 900;
-                    nextBrightInterval = static_cast<float>(brightMin + (std::rand() % brightRange));
+                    brightTimer -= 1.0f;
                 }
-            }
-
-            // 15秒周期で双方が音波を発して互いの位置を探知する処理
-            sonarPingTimer -= 1.0f;
-            if (sonarNotificationTimer > 0.0f) sonarNotificationTimer -= 1.0f;
-
-            if (sonarPingTimer <= 0.0f)
-            {
-                sonarPingTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarPingIntervalFrames", 900));
-                sonarNotificationTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarNotificationFrames", 180));
-
-                if (objectManager)
+                else
                 {
-                    for (auto obj : objectManager->GetObjects())
+                    nextBrightInterval -= 1.0f;
+                    if (nextBrightInterval <= 0.0f)
                     {
-                        Character* ch = dynamic_cast<Character*>(obj);
-                        if (ch && ch->IsActive())
+                        brightTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("BrightEventDurationFrames", 900));
+                        int brightMin = GameBalanceManager::GetInstance().GetInt("BrightEventMinIntervalFrames", 1200);
+                        int brightMax = GameBalanceManager::GetInstance().GetInt("BrightEventMaxIntervalFrames", 2100);
+                        int brightRange = (brightMax > brightMin) ? (brightMax - brightMin) : 900;
+                        nextBrightInterval = static_cast<float>(brightMin + (std::rand() % brightRange));
+                    }
+                }
+
+                // 15秒周期で双方が音波を発して互いの位置を探知する処理
+                sonarPingTimer -= 1.0f;
+                if (sonarNotificationTimer > 0.0f) sonarNotificationTimer -= 1.0f;
+
+                if (sonarPingTimer <= 0.0f)
+                {
+                    sonarPingTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarPingIntervalFrames", 900));
+                    sonarNotificationTimer = static_cast<float>(GameBalanceManager::GetInstance().GetInt("SonarNotificationFrames", 180));
+
+                    if (objectManager)
+                    {
+                        for (auto obj : objectManager->GetObjects())
                         {
-                            Vector2 pos = ch->GetPosition();
-                            unsigned int waveCol = (ch->teamId == 0) ? GetColor(0, 220, 255) : GetColor(255, 100, 50);
-                            if (effectManager)
+                            Character* ch = dynamic_cast<Character*>(obj);
+                            if (ch && ch->IsActive())
                             {
-                                effectManager->AddSonarWaveEffect(pos.x, pos.y, waveCol);
-                            }
-
-                            // 敵キャラクター（自チーム以外）がソナーを発した場合、ライトの範囲内にいない時のみ視覚インジケーターに登録
-                            if (ch->teamId != 0)
-                            {
-                                if (!player || !player->IsWorldPosInLight(pos))
+                                Vector2 pos = ch->GetPosition();
+                                unsigned int waveCol = (ch->teamId == 0) ? GetColor(0, 220, 255) : GetColor(255, 100, 50);
+                                if (effectManager)
                                 {
-                                    SoundVisualizer::GetInstance().AddSound(SoundVisualType::SonarPing, pos, 2500.0f);
+                                    effectManager->AddSonarWaveEffect(pos.x, pos.y, waveCol);
                                 }
-                            }
 
-                            // 音波により相手チームに位置を伝達
-                            for (auto otherObj : objectManager->GetObjects())
-                            {
-                                Enemy* e = dynamic_cast<Enemy*>(otherObj);
-                                if (e && e->IsActive() && e->teamId != ch->teamId && e->teamId != -1)
+                                // 敵キャラクター（自チーム以外）がソナーを発した場合、ライトの範囲内にいない時のみ視覚インジケーターに登録
+                                if (ch->teamId != 0)
                                 {
-                                    e->OnHearGunshot(pos, 99999.0f, ch->teamId);
+                                    if (!player || !player->IsWorldPosInLight(pos))
+                                    {
+                                        SoundVisualizer::GetInstance().AddSound(SoundVisualType::SonarPing, pos, 2500.0f);
+                                    }
+                                }
+
+                                // 音波により相手チームに位置を伝達
+                                for (auto otherObj : objectManager->GetObjects())
+                                {
+                                    Enemy* e = dynamic_cast<Enemy*>(otherObj);
+                                    if (e && e->IsActive() && e->teamId != ch->teamId && e->teamId != -1)
+                                    {
+                                        e->OnHearGunshot(pos, 99999.0f, ch->teamId);
+                                    }
                                 }
                             }
                         }
                     }
+                    SoundManager::GetInstance().Play3D("gunshot", player ? player->GetPosition() : Vector2(960, 540), 1000.0f, 0.4f, 0);
                 }
-                SoundManager::GetInstance().Play3D("gunshot", player ? player->GetPosition() : Vector2(960, 540), 1000.0f, 0.4f, 0);
             }
 
             // リスポーン処理およびキル数カウントをMatchManagerに移譲
@@ -353,6 +384,7 @@ void GameScene::Update()
                 return;
             }
 
+#ifdef _DEBUG
             DebugManager::GetInstance().Update();
 
             if (DebugManager::GetInstance().IsDebugMode())
@@ -386,37 +418,36 @@ void GameScene::Update()
                         player->SetStage(const_cast<Stage*>(&stageManager.GetCurrentStage()), cellSize);
                         SpawnEnemiesRandomly(5);
                     }
+                }
             }
+#endif
         }
-    }
     }
     else if (state == GameState::PAUSED)
     {
-        if (isEscTriggered) state = GameState::PLAYING;
+        if (isCancelTriggered) state = GameState::PLAYING;
 
-        if (currUp && !prevUp)
+        if (upPressed)
         {
             pauseMenuCursor = (pauseMenuCursor + 4) % 6;
             SoundManager::GetInstance().PlayTapSE(0.4f);
         }
-        else if (currDown && !prevDown)
+        else if (downPressed)
         {
             pauseMenuCursor = (pauseMenuCursor + 2) % 6;
             SoundManager::GetInstance().PlayTapSE(0.4f);
         }
-        else if (currLeft && !prevLeft)
+        else if (leftPressed)
         {
             pauseMenuCursor = (pauseMenuCursor % 2 == 1) ? (pauseMenuCursor - 1) : (pauseMenuCursor + 1);
             SoundManager::GetInstance().PlayTapSE(0.4f);
         }
-        else if (currRight && !prevRight)
+        else if (rightPressed)
         {
             pauseMenuCursor = (pauseMenuCursor % 2 == 0) ? (pauseMenuCursor + 1) : (pauseMenuCursor - 1);
             SoundManager::GetInstance().PlayTapSE(0.4f);
         }
 
-        int mouseX = 0, mouseY = 0;
-        GetMousePoint(&mouseX, &mouseY);
         const int panelW = 1060;
         const int panelH = 660;
         const int panelX = (1920 - panelW) / 2;
@@ -439,18 +470,19 @@ void GameScene::Update()
             if (mouseX >= bx && mouseX <= bx + colW &&
                 mouseY >= by && mouseY <= by + rowH)
             {
-                if (pauseMenuCursor != i)
+                if (mouseMoved && pauseMenuCursor != i)
                 {
                     pauseMenuCursor = i;
                 }
                 if (currClick && !prevClick)
                 {
+                    pauseMenuCursor = i;
                     mouseClickedItem = true;
                 }
             }
         }
 
-        if ((currEnter && !prevEnter) || mouseClickedItem)
+        if (confirmPressed || mouseClickedItem)
         {
             SoundManager::GetInstance().PlayTapSE();
             if (pauseMenuCursor == 0) // ゲーム再開
@@ -483,14 +515,12 @@ void GameScene::Update()
     }
     else if (state == GameState::SETTINGS)
     {
-        if (isEscTriggered) state = GameState::PAUSED;
-        if (currUp && !prevUp) settingsMenuCursor--;
-        if (currDown && !prevDown) settingsMenuCursor++;
+        if (isCancelTriggered) state = GameState::PAUSED;
+        if (upPressed) settingsMenuCursor--;
+        if (downPressed) settingsMenuCursor++;
         if (settingsMenuCursor < 0) settingsMenuCursor = 2;
         if (settingsMenuCursor > 2) settingsMenuCursor = 0;
 
-        int mouseX = 0, mouseY = 0;
-        GetMousePoint(&mouseX, &mouseY);
         const int panelW = 680;
         const int panelH = 500;
         const int panelX = (1920 - panelW) / 2;
@@ -499,7 +529,7 @@ void GameScene::Update()
         const int itemH = 76;
         const int itemSpacing = 95;
         const int itemStartX = panelX + (panelW - itemW) / 2;
-        const int itemStartY = panelY + 130;
+        const int itemStartY = panelY + 120; // Draw()の座標と完全一致
 
         bool mouseClickedItem = false;
         for (int i = 0; i < 3; i++)
@@ -508,16 +538,21 @@ void GameScene::Update()
             if (mouseX >= itemStartX && mouseX <= itemStartX + itemW &&
                 mouseY >= iy && mouseY <= iy + itemH)
             {
-                settingsMenuCursor = i;
+                if (mouseMoved && settingsMenuCursor != i)
+                {
+                    settingsMenuCursor = i;
+                }
                 if (currClick && !prevClick)
                 {
+                    settingsMenuCursor = i;
                     mouseClickedItem = true;
                 }
             }
         }
 
-        if ((currEnter && !prevEnter) || mouseClickedItem)
+        if (confirmPressed || mouseClickedItem)
         {
+            SoundManager::GetInstance().PlayTapSE();
             if (settingsMenuCursor == 0)
             {
                 GameSettings::GetInstance().isAimLockHoldMode = !GameSettings::GetInstance().isAimLockHoldMode;
@@ -535,7 +570,7 @@ void GameScene::Update()
     }
     else if (state == GameState::CONTROLS)
     {
-        if ((currEnter && !prevEnter) || isEscTriggered || (currClick && !prevClick))
+        if (confirmPressed || isCancelTriggered || (currClick && !prevClick))
         {
             state = previousStateBeforeControls;
         }
@@ -550,6 +585,8 @@ void GameScene::Update()
     prevRight = currRight;
     prevEnter = currEnter;
     prevClick = currClick;
+    prevMouseX = mouseX;
+    prevMouseY = mouseY;
 }
 
 void GameScene::Draw()
@@ -694,22 +731,22 @@ void GameScene::Draw()
     // 当たった手ごたえ: ヒットマーカー（×印）とダメージ数字（暗闇の上に出す）
     HitFeedbackManager::GetInstance().Draw();
 
-    // 左上: [ESC] MENU のみ（背景プレートなし、控えめなサブテキスト色）
-    FontManager::GetInstance().DrawString(24, 18, "[ESC] MENU", HudStyle::ColSubText(), 15);
+    // 左上: 控えめなメニューキーバッジ
+    HudStyle::DrawKeyHintItem(24, 16, "Esc", "メニュー");
 
     // デバッグ情報 (Theme / Variation) はデバッグモード時のみ表示
     if (DebugManager::GetInstance().IsDebugMode())
     {
-        FontManager::GetInstance().DrawString(24, 40, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), HudStyle::ColSubText(), 14);
-        FontManager::GetInstance().DrawString(24, 58, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), HudStyle::ColSubText(), 14);
+        FontManager::GetInstance().DrawString(24, 48, (std::string("Theme: ") + std::to_string((int)stageManager.GetCurrentTheme() + 1)).c_str(), HudStyle::ColSubText(), 14);
+        FontManager::GetInstance().DrawString(24, 66, (std::string("Variation: ") + std::to_string(stageManager.GetCurrentVariation() + 1)).c_str(), HudStyle::ColSubText(), 14);
     }
 
-    // 画面上部中央: 統合キル数パネル (プロフェッショナル HUD)
+    // 画面上部中央: 統合キル数バー（タイトル・選択画面と共通の手描き質感プレート）
     int maxKills = MatchManager::GetInstance().GetTargetKillCount();
     int topPanelW = 680;
-    int topPanelH = 32;
+    int topPanelH = 38;
     int topPanelX = (1920 - topPanelW) / 2;
-    int topPanelY = 18;
+    int topPanelY = 14;
 
     // バトルロワイヤル状態（Botが錯乱中）かどうかの判定
     bool isBattleRoyaleActive = false;
@@ -728,93 +765,90 @@ void GameScene::Draw()
     if (isBattleRoyaleActive)
     {
         int brW = 540;
-        int brH = 58;
+        int brH = 62;
         int brX = (1920 - brW) / 2;
-        int brY = 16;
+        int brY = 14;
 
         float timeSec = GetNowCount() / 1000.0f;
-        int pulseAlpha = static_cast<int>(180 + std::sin(timeSec * 12.0f) * 60);
+        int pulseAlpha = static_cast<int>(210 + std::sin(timeSec * 12.0f) * 35);
 
-        HudStyle::DrawPanel(brX, brY, brW, brH, true, HudStyle::ColEnemy(), pulseAlpha);
+        HudStyle::DrawTexturedPanel(brX, brY, brW, brH, Get2DImage(uiBtnSelImgIndex), HudStyle::ColBg(), HudStyle::ColEnemy(), pulseAlpha);
 
-        // バトロワ警告テキスト
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 6, "!! BATTLE ROYALE : ALL-OUT WAR !!", HudStyle::ColAmber(), 26, 9);
+        FontManager::GetInstance().DrawStringCenterShadow(1920 / 2, brY + 7, "全員敵対・総力戦！", HudStyle::ColAmber(), 22, 8);
 
         char brSubText[64];
-        snprintf(brSubText, sizeof(brSubText), "全員孤立・敵対中！ 残り時間: %.1f秒", panicRemainingFrames / 60.0f);
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 34, brSubText, HudStyle::ColText(), 18, 6);
+        snprintf(brSubText, sizeof(brSubText), "残り %.1f 秒", panicRemainingFrames / 60.0f);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, brY + 36, brSubText, HudStyle::ColText(), 16, 6);
     }
     else
     {
-        // 1本の一体型パネル
-        HudStyle::DrawPanel(topPanelX, topPanelY, topPanelW, topPanelH, true);
+        HudStyle::DrawTexturedPanel(topPanelX, topPanelY, topPanelW, topPanelH, Get2DImage(uiStripImgIndex), HudStyle::ColBg(), HudStyle::ColBorder(), 230);
 
         int team0Kills = MatchManager::GetInstance().GetTeam0Kills();
         int team1Kills = MatchManager::GetInstance().GetTeam1Kills();
 
-        // 左: 味方キル数 (鋼色)
+        // 左: 味方キル数
         char allyText[64];
-        snprintf(allyText, sizeof(allyText), "ALLY  %d / %d", team0Kills, maxKills);
-        FontManager::GetInstance().DrawString(topPanelX + 16, topPanelY + 8, allyText, HudStyle::ColAlly(), 15);
+        snprintf(allyText, sizeof(allyText), "味方　%d / %d", team0Kills, maxKills);
+        FontManager::GetInstance().DrawString(topPanelX + 20, topPanelY + 10, allyText, HudStyle::ColAlly(), 16, 7);
 
-        // 右: 敵キル数 (赤)
+        // 右: 敵キル数
         char enemyText[64];
-        snprintf(enemyText, sizeof(enemyText), "%d / %d  ENEMY", team1Kills, maxKills);
-        int enemyW = FontManager::GetInstance().GetStringWidth(enemyText, 15);
-        FontManager::GetInstance().DrawString(topPanelX + topPanelW - 16 - enemyW, topPanelY + 8, enemyText, HudStyle::ColEnemy(), 15);
+        snprintf(enemyText, sizeof(enemyText), "%d / %d　敵", team1Kills, maxKills);
+        FontManager::GetInstance().DrawStringRight(topPanelX + topPanelW - 20, topPanelY + 10, enemyText, HudStyle::ColEnemy(), 16, 7);
 
         // 中央: 対向ゲージ (味方は中央から左へ、敵は中央から右へ)
         int centerX = 1920 / 2;
-        int halfGaugeW = 120;
-        int gaugeH = 6;
+        int halfGaugeW = 140;
+        int gaugeH = 7;
         int gaugeY = topPanelY + (topPanelH - gaugeH) / 2;
 
         float allyRatio = (maxKills > 0) ? static_cast<float>(team0Kills) / maxKills : 0.0f;
         float enemyRatio = (maxKills > 0) ? static_cast<float>(team1Kills) / maxKills : 0.0f;
 
-        // 味方ゲージ (中央から左へ伸長)
         HudStyle::DrawSplitGauge(centerX - 4 - halfGaugeW, gaugeY, halfGaugeW, gaugeH, allyRatio, HudStyle::ColAlly(), true);
-        // 敵ゲージ (中央から右へ伸長)
         HudStyle::DrawSplitGauge(centerX + 4, gaugeY, halfGaugeW, gaugeH, enemyRatio, HudStyle::ColEnemy(), false);
 
-        // 中央セパレータティック
-        DrawBox(centerX - 1, topPanelY + 8, centerX + 1, topPanelY + topPanelH - 8, HudStyle::ColBorder(), TRUE);
+        DrawBox(centerX - 1, topPanelY + 9, centerX + 1, topPanelY + topPanelH - 9, HudStyle::ColBorder(), TRUE);
     }
 
-    // 上部中央: 通知バナーの縦積みスタック（重なりを防止）
-    int bannerStackY = (isBattleRoyaleActive ? 80 : topPanelY + topPanelH + 8);
+    // 上部中央: 通知バナーの縦積みスタック（手描き質感ミニバー）
+    int bannerStackY = (isBattleRoyaleActive ? 84 : topPanelY + topPanelH + 8);
 
-    // 薄明時間帯（MOONLIGHT）バナー
+    // 薄明イベントバナー
     if (brightTimer > 0.0f)
     {
         char moonBuf[64];
-        snprintf(moonBuf, sizeof(moonBuf), "MOONLIGHT ACTIVE  %.1fs", brightTimer / 60.0f);
-        HudStyle::DrawBanner(1920 / 2, bannerStackY, 320, 26, moonBuf, HudStyle::ColAmber(), 14);
-        bannerStackY += 26 + 6;
+        snprintf(moonBuf, sizeof(moonBuf), "薄明発生中　残り %.1f秒", brightTimer / 60.0f);
+        int bw = 300;
+        int bh = 30;
+        HudStyle::DrawTexturedPanel(1920 / 2 - bw / 2, bannerStackY, bw, bh, Get2DImage(uiBtnIdleImgIndex), HudStyle::ColBg(), HudStyle::ColAmberDim(), 225);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, bannerStackY + 7, moonBuf, HudStyle::ColAmber(), 15, 6);
+        bannerStackY += bh + 6;
     }
 
-    // ソナーピン（SONAR PING）探知バナー
+    // 音波ピン探知バナー
     if (sonarNotificationTimer > 0.0f)
     {
-        HudStyle::DrawBanner(1920 / 2, bannerStackY, 340, 26, "SONAR PING DETECTED", HudStyle::ColAlly(), 14);
-        bannerStackY += 26 + 6;
+        int bw = 260;
+        int bh = 30;
+        HudStyle::DrawTexturedPanel(1920 / 2 - bw / 2, bannerStackY, bw, bh, Get2DImage(uiBtnIdleImgIndex), HudStyle::ColBg(), HudStyle::ColAlly(), 225);
+        FontManager::GetInstance().DrawStringCenter(1920 / 2, bannerStackY + 7, "音波探知発生！", HudStyle::ColAlly(), 15, 6);
+        bannerStackY += bh + 6;
     }
 
     // 画面左下にプレイヤーのキャラクターHUD（HP・MP・武器）UIを表示
     if (player && player->IsActive()) {
         player->DrawUI(24, 855);
     }
-    
 
     if (state == GameState::PLAYING && introTimer > 0.0f)
     {
-        SetFontSize(80);
         if (introTimer > 60.0f) {
-            DrawString(1920 / 2 - 150, 1080 / 2 - 100, "READY...", GetColor(255, 200, 50));
+            FontManager::GetInstance().DrawStringCenterShadow(1920 / 2, 1080 / 2 - 70, "まもなく開始...", HudStyle::ColAmber(), 62, 8);
         } else {
-            DrawString(1920 / 2 - 180, 1080 / 2 - 100, "BRAWL!", GetColor(255, 50, 50));
+            HudStyle::DrawSectionHeading(1920 / 2, 1080 / 2 - 76, "戦闘開始！", Get2DImage(uiUnderlineImgIndex), 72);
         }
-        SetFontSize(32);
     }
 
     int activeAllyCount = GetActiveAllyCount();
@@ -832,32 +866,22 @@ void GameScene::Draw()
 
     if (state == GameState::PAUSED)
     {
-        // 1. 全面暗転オーバーレイ (背景を適度に暗くして集中)
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-        DrawBox(0, 0, 1920, 1080, GetColor(5, 10, 20), TRUE);
+        // 1. 全面暗転オーバーレイ
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+        DrawBox(0, 0, 1920, 1080, GetColor(5, 6, 4), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 2. メインパネル枠
+        // 2. メインパネル枠（手描き質感）
         const int panelW = 1060;
         const int panelH = 660;
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
 
-        // パネル背景（角丸）
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        HudStyle::DrawTexturedPanel(panelX, panelY, panelW, panelH, Get2DImage(uiModalImgIndex), HudStyle::ColBg(), HudStyle::ColBorder(), 250);
 
-        // 多重ネオン角丸外枠
-        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
-        HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
-        HudStyle::DrawRoundBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
-
-        // ヘッダータイトル
-        int headerY = panelY + 22;
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY, "PAUSE MENU", GetColor(255, 220, 0), 30);
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY + 36, "- ポーズ / メニュー選択 -", GetColor(160, 200, 240), 16);
-        DrawLine(panelX + 60, headerY + 66, panelX + panelW - 60, headerY + 66, GetColor(0, 140, 200));
+        // ヘッダータイトル（日本語＋血痕ブラシ下線）
+        int headerY = panelY + 32;
+        HudStyle::DrawSectionHeading(1920 / 2, headerY, "ポーズ", Get2DImage(uiUnderlineImgIndex), 36);
 
         // 3. 各項目のカード (2列×3行グリッド)
         const int colW = 460;
@@ -869,18 +893,17 @@ void GameScene::Draw()
 
         struct MenuItemInfo {
             const char* titleJa;
-            const char* titleEn;
             const char* desc;
             bool isAlert;
         };
 
         const MenuItemInfo items[6] = {
-            { "ゲーム再開", "RESUME", "戦闘に戻ってプレイを続行します", false },
-            { "やり直し", "RESTART", "ステージを最初からやり直します", false },
-            { "各種設定", "SETTINGS", "エイム固定や各種環境の設定", false },
-            { "操作説明", "CONTROLS", "キーボード・マウスの操作ヘルプ", false },
-            { "タイトルへ", "TITLE", "タイトル画面へ戻ります", true },
-            { "ゲーム終了", "EXIT GAME", "ゲームを終了して終了します", true }
+            { "ゲーム再開", "戦闘を続行します", false },
+            { "やり直し", "ステージを最初からやり直します", false },
+            { "各種設定", "エイム固定や操作説明", false },
+            { "操作説明", "キーボード・マウス操作ガイド", false },
+            { "タイトルへ", "タイトル画面へ戻ります", true },
+            { "ゲーム終了", "ゲームを終了します", true }
         };
 
         for (int i = 0; i < 6; i++)
@@ -891,86 +914,58 @@ void GameScene::Draw()
             int by = startY + r * (rowH + spacingY);
             bool isSelected = (i == pauseMenuCursor);
 
-            // カード背景
-            if (isSelected)
-            {
-                unsigned int bgCol = items[i].isAlert ? GetColor(50, 30, 35) : GetColor(32, 54, 88);
-                unsigned int borderCol = items[i].isAlert ? GetColor(255, 100, 100) : GetColor(0, 220, 255);
-                HudStyle::DrawRoundPanel(bx, by, colW, rowH, HudStyle::RadiusPanel, bgCol, borderCol, 235);
-                HudStyle::DrawRoundBox(bx + 1, by + 1, bx + colW - 1, by + rowH - 1, HudStyle::RadiusPanel - 1, borderCol, FALSE);
-
-                // 左端インセットアクティブバー
-                HudStyle::DrawAccentPill(bx + 5, by + 10, rowH - 20, borderCol, 5);
-            }
-            else
-            {
-                unsigned int borderCol = items[i].isAlert ? GetColor(100, 45, 55) : GetColor(45, 65, 95);
-                HudStyle::DrawRoundPanel(bx, by, colW, rowH, HudStyle::RadiusPanel, GetColor(18, 25, 38), borderCol, 180);
-            }
+            HudStyle::DrawTexturedPanel(bx, by, colW, rowH,
+                                        Get2DImage(isSelected ? uiBtnSelImgIndex : uiBtnIdleImgIndex),
+                                        isSelected ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                        isSelected ? (items[i].isAlert ? HudStyle::ColEnemy() : HudStyle::ColAmber()) : HudStyle::ColBorderSoft(),
+                                        isSelected ? 248 : 210);
 
             // アイコン背景枠
-            const int iconBoxSize = 88;
-            int ibx = bx + 16;
+            const int iconBoxSize = 84;
+            int ibx = bx + 18;
             int iby = by + (rowH - iconBoxSize) / 2;
-            unsigned int iconBorder = isSelected ? (items[i].isAlert ? GetColor(255, 120, 120) : GetColor(0, 220, 255)) : GetColor(40, 55, 75);
-            unsigned int iconBg = isSelected ? (items[i].isAlert ? GetColor(40, 22, 28) : GetColor(24, 38, 60)) : GetColor(14, 20, 30);
-            HudStyle::DrawRoundPanel(ibx, iby, iconBoxSize, iconBoxSize, HudStyle::RadiusButton, iconBg, iconBorder);
+            DrawBox(ibx, iby, ibx + iconBoxSize, iby + iconBoxSize, HudStyle::ColCanvas(), TRUE);
+            DrawBox(ibx, iby, ibx + iconBoxSize, iby + iconBoxSize, isSelected ? HudStyle::ColAmberDim() : HudStyle::ColBorderDim(), FALSE);
 
-            // アイコン画像の描画
             if (pauseIconHandles[i] != -1)
             {
-                int pad = 8;
+                int pad = 10;
                 DrawExtendGraph(ibx + pad, iby + pad, ibx + iconBoxSize - pad, iby + iconBoxSize - pad, pauseIconHandles[i], TRUE);
             }
 
-            // テキスト情報
-            int textX = ibx + iconBoxSize + 18;
-            unsigned int titleCol = isSelected ? (items[i].isAlert ? GetColor(255, 180, 180) : GetColor(255, 235, 80)) : GetColor(220, 225, 235);
-            FontManager::GetInstance().DrawString(textX, by + 22, items[i].titleJa, titleCol, 22);
+            // テキスト情報（英語併記を廃止してすっきり日本語のみ）
+            int textX = ibx + iconBoxSize + 20;
+            unsigned int titleCol = isSelected ? (items[i].isAlert ? HudStyle::ColEnemy() : HudStyle::ColAmber()) : HudStyle::ColText();
+            FontManager::GetInstance().DrawString(textX, by + 26, items[i].titleJa, titleCol, 24, isSelected ? 7 : 5);
 
-            unsigned int enCol = isSelected ? (items[i].isAlert ? GetColor(240, 140, 140) : GetColor(140, 200, 255)) : GetColor(120, 135, 150);
-            FontManager::GetInstance().DrawString(textX + 115, by + 26, items[i].titleEn, enCol, 15);
-
-            unsigned int descCol = isSelected ? GetColor(200, 220, 240) : GetColor(130, 145, 160);
-            FontManager::GetInstance().DrawString(textX, by + 58, items[i].desc, descCol, 14);
-
-            // 選択中のカーソル矢印
-            if (isSelected)
-            {
-                unsigned int arrowCol = items[i].isAlert ? GetColor(255, 100, 100) : GetColor(0, 220, 255);
-                FontManager::GetInstance().DrawString(bx + colW - 30, by + (rowH - 24) / 2, "▶", arrowCol, 22);
-            }
+            unsigned int descCol = isSelected ? HudStyle::ColText() : HudStyle::ColSubText();
+            FontManager::GetInstance().DrawString(textX, by + 64, items[i].desc, descCol, 15);
         }
 
-        // フッター案内
-        int footerY = panelY + panelH - 45;
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, footerY, "[ ↑ / ↓ / ← / → / マウス ] 選択    [ Enter / クリック ] 決定    [ ESC ] 再開", GetColor(160, 190, 220), 16);
+        // フッター案内（控えめなキーバッジ）
+        int footerY = panelY + panelH - 48;
+        int hx = 640;
+        hx += HudStyle::DrawKeyHintItem(hx, footerY, "↑↓←→ / マウス", "選ぶ") + 28;
+        hx += HudStyle::DrawKeyHintItem(hx, footerY, "Enter / クリック", "決定") + 28;
+        HudStyle::DrawKeyHintItem(hx, footerY, "Esc", "再開");
     }
     else if (state == GameState::SETTINGS)
     {
         // 1. 全面暗転オーバーレイ
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-        DrawBox(0, 0, 1920, 1080, GetColor(5, 10, 20), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+        DrawBox(0, 0, 1920, 1080, GetColor(5, 6, 4), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 2. メインパネル枠
+        // 2. メインパネル枠（手描き質感）
         const int panelW = 680;
         const int panelH = 500;
         const int panelX = (1920 - panelW) / 2;
         const int panelY = (1080 - panelH) / 2;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        HudStyle::DrawTexturedPanel(panelX, panelY, panelW, panelH, Get2DImage(uiModalImgIndex), HudStyle::ColBg(), HudStyle::ColBorder(), 250);
 
-        HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
-        HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
-        HudStyle::DrawRoundBox(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + panelH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
-
-        int headerY = panelY + 22;
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY, "SETTINGS", GetColor(255, 220, 0), 30);
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, headerY + 36, "- 各種設定 -", GetColor(160, 200, 240), 16);
-        DrawLine(panelX + 40, headerY + 64, panelX + panelW - 40, headerY + 64, GetColor(0, 140, 200));
+        int headerY = panelY + 32;
+        HudStyle::DrawSectionHeading(1920 / 2, headerY, "設定", Get2DImage(uiUnderlineImgIndex), 36);
 
         const int itemW = 580;
         const int itemH = 76;
@@ -978,22 +973,21 @@ void GameScene::Draw()
         const int itemStartX = panelX + (panelW - itemW) / 2;
         const int itemStartY = panelY + 120;
 
-        std::string modeText = std::string("AIM LOCK (E-KEY) : ") + (GameSettings::GetInstance().isAimLockHoldMode ? "HOLD" : "TOGGLE");
+        std::string modeText = std::string("エイム固定（Eキー）：") + (GameSettings::GetInstance().isAimLockHoldMode ? "長押し" : "切り替え");
         std::string modeDesc = GameSettings::GetInstance().isAimLockHoldMode ?
-            "エイム固定 (Eキー): Eキーを押している間だけエイムを固定します" :
-            "エイム固定 (Eキー): Eキーを押すごとにエイム固定のON/OFFを切り替えます";
+            "Eキーを押している間だけエイムを固定" :
+            "Eキーを押すたびにエイム固定を切り替え";
 
         struct SettingsItemInfo {
             std::string title;
             std::string desc;
             const char* badge;
-            bool isSpecial;
         };
 
         SettingsItemInfo sItems[3] = {
-            { modeText, modeDesc, "⚙", false },
-            { "CONTROLS GUIDE", "操作説明: キーボード・マウス操作＆ルールのヘルプを表示", "？", true },
-            { "BACK TO PAUSE MENU", "戻る: 一時停止メニューへ戻ります", "←", false }
+            { modeText, modeDesc, "E" },
+            { "操作説明を見る", "操作方法とルールを確認", "?" },
+            { "ポーズへ戻る", "ポーズメニューへ戻る", "←" }
         };
 
         for (int i = 0; i < 3; i++)
@@ -1001,44 +995,33 @@ void GameScene::Draw()
             int iy = itemStartY + i * itemSpacing;
             bool isSelected = (i == settingsMenuCursor);
 
-            if (isSelected)
-            {
-                unsigned int bgCol = sItems[i].isSpecial ? GetColor(45, 48, 25) : GetColor(25, 45, 75);
-                unsigned int borderCol = sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255);
-                HudStyle::DrawRoundPanel(itemStartX, iy, itemW, itemH, HudStyle::RadiusButton, bgCol, borderCol, 235);
-                HudStyle::DrawRoundBox(itemStartX + 1, iy + 1, itemStartX + itemW - 1, iy + itemH - 1, HudStyle::RadiusButton - 1, borderCol, FALSE);
-                HudStyle::DrawAccentPill(itemStartX + 5, iy + 8, itemH - 16, borderCol, 5);
-            }
-            else
-            {
-                unsigned int borderCol = sItems[i].isSpecial ? GetColor(160, 130, 40) : GetColor(45, 65, 95);
-                HudStyle::DrawRoundPanel(itemStartX, iy, itemW, itemH, HudStyle::RadiusButton, GetColor(12, 18, 28), borderCol, 180);
-            }
+            HudStyle::DrawTexturedPanel(itemStartX, iy, itemW, itemH,
+                                        Get2DImage(isSelected ? uiBtnSelImgIndex : uiBtnIdleImgIndex),
+                                        isSelected ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                        isSelected ? HudStyle::ColAmber() : HudStyle::ColBorderSoft(),
+                                        isSelected ? 248 : 210);
 
             int badgeX = itemStartX + 18;
             int badgeY = iy + 14;
             int badgeSize = 48;
-            unsigned int badgeBorder = isSelected ? (sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255)) : GetColor(50, 70, 95);
-            unsigned int badgeBg = isSelected ? GetColor(35, 55, 85) : GetColor(20, 28, 42);
-            HudStyle::DrawRoundPanel(badgeX, badgeY, badgeSize, badgeSize, HudStyle::RadiusBadge, badgeBg, badgeBorder);
-            unsigned int badgeTextCol = isSelected ? GetColor(255, 255, 255) : GetColor(160, 180, 200);
-            FontManager::GetInstance().DrawStringCenter(badgeX + badgeSize / 2, badgeY + 10, sItems[i].badge, badgeTextCol, 22);
+            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, HudStyle::ColCanvas(), TRUE);
+            DrawBox(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, isSelected ? HudStyle::ColAmberDim() : HudStyle::ColBorderDim(), FALSE);
+            unsigned int badgeTextCol = isSelected ? HudStyle::ColAmber() : HudStyle::ColSubText();
+            FontManager::GetInstance().DrawStringCenter(badgeX + badgeSize / 2, badgeY + 12, sItems[i].badge, badgeTextCol, 20, 7);
 
             int textX = badgeX + badgeSize + 18;
-            unsigned int titleCol = isSelected ? (sItems[i].isSpecial ? GetColor(255, 235, 80) : GetColor(255, 240, 100)) : GetColor(220, 225, 235);
-            FontManager::GetInstance().DrawString(textX, iy + 12, sItems[i].title.c_str(), titleCol, 22);
+            unsigned int titleCol = isSelected ? HudStyle::ColAmber() : HudStyle::ColText();
+            FontManager::GetInstance().DrawString(textX, iy + 14, sItems[i].title.c_str(), titleCol, 21, isSelected ? 7 : 5);
 
-            unsigned int descCol = isSelected ? GetColor(200, 220, 240) : GetColor(130, 145, 160);
-            FontManager::GetInstance().DrawString(textX, iy + 44, sItems[i].desc.c_str(), descCol, 15);
-
-            if (isSelected)
-            {
-                FontManager::GetInstance().DrawString(itemStartX + itemW - 35, iy + 24, "▶", sItems[i].isSpecial ? GetColor(255, 215, 0) : GetColor(0, 220, 255), 22);
-            }
+            unsigned int descCol = isSelected ? HudStyle::ColText() : HudStyle::ColSubText();
+            FontManager::GetInstance().DrawString(textX, iy + 45, sItems[i].desc.c_str(), descCol, 15);
         }
 
-        int footerY = panelY + panelH - 38;
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, footerY, "[ ↑ / ↓ / マウス ] 選択    [ Enter / クリック ] 決定・切替    [ ESC ] ポーズに戻る", GetColor(160, 190, 220), 16);
+        int footerY = panelY + panelH - 44;
+        int hx = 685;
+        hx += HudStyle::DrawKeyHintItem(hx, footerY, "↑ / ↓", "選ぶ") + 28;
+        hx += HudStyle::DrawKeyHintItem(hx, footerY, "Enter / クリック", "決定") + 28;
+        HudStyle::DrawKeyHintItem(hx, footerY, "Esc", "戻る");
     }
     else if (state == GameState::CONTROLS)
     {

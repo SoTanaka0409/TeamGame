@@ -42,8 +42,19 @@ private:
     // 【2D画像配列キャッシュ & 番号（インデックス）管理】
     // 一度読み込まれた画像は配列にキャッシュされ、番号（インデックス）で呼び出せます。
     // ========================================================
-    int m_bgImageIndex = -1;       ///< 背景画像の配列番号
-    int m_windowFrameIndex = -1;   ///< UITextWindow枠画像の配列番号
+    int m_bgImageIndex = -1;          ///< 背景画像の配列番号
+    int m_windowFrameIndex = -1;      ///< UITextWindow枠画像の配列番号
+    int m_cardIdleImgIndex = -1;      ///< 非選択カード質感画像
+    int m_cardSelImgIndex = -1;       ///< 選択中カード質感画像
+    int m_modalImgIndex = -1;         ///< 確認モーダル質感画像
+    int m_stripImgIndex = -1;         ///< 情報バー質感画像
+    int m_btnIdleImgIndex = -1;       ///< 非選択ボタン質感画像
+    int m_btnSelImgIndex = -1;        ///< 選択中ボタン質感画像
+    int m_underlineImgIndex = -1;     ///< 見出し血痕アンダーライン画像
+    int m_wpnHandgunImgIndex = -1;    ///< ハンドガン手描きイラスト
+    int m_wpnShotgunImgIndex = -1;    ///< ショットガン手描きイラスト
+    int m_wpnSniperImgIndex = -1;     ///< スナイパー手描きイラスト
+    int m_wpnSmgImgIndex = -1;        ///< サブマシンガン手描きイラスト
 
     // UITextWindow による出撃確認枠描画
     UI::UITextWindow m_summaryWindow; ///< 出撃確認用テキストウィンドウ

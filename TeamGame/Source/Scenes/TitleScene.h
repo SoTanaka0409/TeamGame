@@ -58,6 +58,11 @@ class TitleScene : public Scene
     int btnSettingsImgIndex = -1;///< SETTINGS 画像の配列番号
     int btnExitImgIndex = -1;    ///< EXIT 画像の配列番号
     int btnBannerImgIndex = -1;  ///< 選択用血痕スプラッターバナー画像の配列番号
+    int uiModalImgIndex = -1;    ///< 手描き質感モーダル枠画像の配列番号
+    int uiStripImgIndex = -1;    ///< 手描き質感説明枠画像の配列番号
+    int uiBtnIdleImgIndex = -1;  ///< 非選択ボタン質感画像の配列番号
+    int uiBtnSelImgIndex = -1;   ///< 選択中ボタン質感画像の配列番号
+    int uiUnderlineImgIndex = -1;///< 見出し血痕アンダーライン画像の配列番号
 
     // UITextWindow によるメッセージ・情報枠描画
     mutable class UI::UITextWindow* messageWindow = nullptr; ///< 通知メッセージ用テキストウィンドウ

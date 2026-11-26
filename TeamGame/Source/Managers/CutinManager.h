@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -30,6 +30,11 @@ public:
      * @brief 画面最前面への描画処理
      */
     void Draw();
+
+    /**
+     * @brief カットイン演出を強制終了・リセットする（シーン遷移・リトライ時用）
+     */
+    void Reset() { m_isActive = false; m_timer = 0; m_shards.clear(); }
 
     /**
      * @brief カットイン演出中かどうか

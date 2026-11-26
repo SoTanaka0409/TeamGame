@@ -26,7 +26,17 @@ void CharacterSelectScene::Init() {
     if (m_bgImageIndex == -1) {
         m_bgImageIndex = Load2DImage("select_bg.png");
     }
-    m_windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
+    if (m_bgImageIndex == -1) {
+        m_bgImageIndex = Load2DImage("Titleu.jpg");
+    }
+    m_windowFrameIndex  = Load2DImage("ui_window.png");
+    m_cardIdleImgIndex  = Load2DImage("Images/UI/PreGame/panel_card_idle.png");
+    m_cardSelImgIndex   = Load2DImage("Images/UI/PreGame/panel_card_selected.png");
+    m_modalImgIndex     = Load2DImage("Images/UI/PreGame/panel_modal.png");
+    m_stripImgIndex     = Load2DImage("Images/UI/PreGame/panel_strip.png");
+    m_btnIdleImgIndex   = Load2DImage("Images/UI/PreGame/btn_idle.png");
+    m_btnSelImgIndex    = Load2DImage("Images/UI/PreGame/btn_selected.png");
+    m_underlineImgIndex = Load2DImage("Images/UI/PreGame/header_underline.png");
 
     // UITextWindow による詳細説明枠の設定
     m_detailWindow.SetFixedSize(1200, 110);
@@ -88,17 +98,17 @@ void CharacterSelectScene::Update() {
     bool mouseMoved = (m_prevMouseX != -1 && (mouseX != m_prevMouseX || mouseY != m_prevMouseY));
 
     // 誤進行防止: 決定キーが一度離されていることを検知
-    bool anyConfirmHeld = (input.IsKeyHeld(KEY_INPUT_Z) || input.IsKeyHeld(KEY_INPUT_RETURN) || input.IsKeyHeld(KEY_INPUT_SPACE) || currMouseLeft);
+    bool anyConfirmHeld = (input.IsKeyHeld(KEY_INPUT_Z) || input.IsKeyHeld(KEY_INPUT_RETURN) || input.IsKeyHeld(KEY_INPUT_SPACE) || currMouseLeft || input.IsPadConfirmHeld());
     if (!anyConfirmHeld) {
         m_hasReleasedConfirm = true;
     }
 
     if (m_state == SelectState::SELECTING) {
-        // --- 画面左上: タイトルに戻るボタン ---
+        // --- 画面左上: 戻るボタン ---
         const int backBtnX = 50;
         const int backBtnY = 40;
-        const int backBtnW = 240;
-        const int backBtnH = 50;
+        const int backBtnW = 160;
+        const int backBtnH = 44;
         if (mouseX >= backBtnX && mouseX <= backBtnX + backBtnW &&
             mouseY >= backBtnY && mouseY <= backBtnY + backBtnH) {
             if (mouseClicked && m_hasReleasedConfirm) {
@@ -115,12 +125,12 @@ void CharacterSelectScene::Update() {
         }
 
         // --- キャラクターカードのタップ（マウスクリック＆ホバー）判定 ---
-        int cardW = 310;
-        int cardH = 450;
-        int gap = 20;
+        int cardW = 316;
+        int cardH = 440;
+        int gap = 24;
         int totalW = count * cardW + (count - 1) * gap;
         int startX = (1920 - totalW) / 2;
-        int startY = 175;
+        int startY = 185;
 
         for (int i = 0; i < count; i++) {
             int cardX = startX + i * (cardW + gap);
@@ -139,16 +149,16 @@ void CharacterSelectScene::Update() {
             }
         }
 
-        // --- キーボード操作 (← / → / A / D で選択) ---
-        if (input.IsKeyPressed(KEY_INPUT_LEFT) || input.IsKeyPressed(KEY_INPUT_A)) {
+        // --- キーボード・ゲームパッド操作 ---
+        if (input.IsKeyPressed(KEY_INPUT_LEFT) || input.IsKeyPressed(KEY_INPUT_A) || input.IsPadLeftPressed()) {
             m_selectedIndex = (m_selectedIndex - 1 + count) % count;
         }
-        if (input.IsKeyPressed(KEY_INPUT_RIGHT) || input.IsKeyPressed(KEY_INPUT_D)) {
+        if (input.IsKeyPressed(KEY_INPUT_RIGHT) || input.IsKeyPressed(KEY_INPUT_D) || input.IsPadRightPressed()) {
             m_selectedIndex = (m_selectedIndex + 1) % count;
         }
 
-        // 決定キー（Z, Enter, Space）で確認画面へ
-        if (m_hasReleasedConfirm && (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE))) {
+        // 決定キー（Z, Enter, Space, パッドA）で確認画面へ
+        if (m_hasReleasedConfirm && (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE) || input.IsPadConfirmPressed())) {
             if (m_selectedIndex >= 0 && m_selectedIndex < count) {
                 SoundManager::GetInstance().PlayTapSE();
                 m_state = SelectState::CONFIRMING;
@@ -157,8 +167,8 @@ void CharacterSelectScene::Update() {
             }
         }
 
-        // ESCキーでタイトル画面へ戻る
-        if (input.IsKeyPressed(KEY_INPUT_ESCAPE)) {
+        // ESCキー / パッドBでタイトル画面へ戻る
+        if (input.IsKeyPressed(KEY_INPUT_ESCAPE) || input.IsPadCancelPressed()) {
             auto titleScene = std::make_shared<TitleScene>();
             titleScene->state = TitleScene::TitleState::MAIN;
             titleScene->cursor = 0;
@@ -171,14 +181,14 @@ void CharacterSelectScene::Update() {
     }
     else if (m_state == SelectState::CONFIRMING) {
         // --- 確認ダイアログ内のボタン当たり判定 ---
-        const int modalW = 980;
-        const int modalH = 540;
+        const int modalW = 880;
+        const int modalH = 460;
         const int modalX = (1920 - modalW) / 2;
         const int modalY = (1080 - modalH) / 2;
 
-        const int btnW = 380;
-        const int btnH = 62;
-        const int btnY = modalY + modalH - 92;
+        const int btnW = 340;
+        const int btnH = 56;
+        const int btnY = modalY + modalH - 84;
         const int btn0X = modalX + 70;
         const int btn1X = modalX + modalW - 70 - btnW;
 
@@ -206,14 +216,15 @@ void CharacterSelectScene::Update() {
             }
         }
 
-        // --- キーボード操作 (← / → / A / D で選択肢切り替え) ---
+        // --- キーボード・ゲームパッド操作 ---
         if (input.IsKeyPressed(KEY_INPUT_LEFT) || input.IsKeyPressed(KEY_INPUT_RIGHT) ||
-            input.IsKeyPressed(KEY_INPUT_A) || input.IsKeyPressed(KEY_INPUT_D)) {
+            input.IsKeyPressed(KEY_INPUT_A) || input.IsKeyPressed(KEY_INPUT_D) ||
+            input.IsPadLeftPressed() || input.IsPadRightPressed()) {
             m_confirmCursor = (m_confirmCursor == 0) ? 1 : 0;
         }
 
-        // Enter / Z / Space で決定
-        if (m_hasReleasedConfirm && (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE))) {
+        // Enter / Z / Space / パッドA で決定
+        if (m_hasReleasedConfirm && (input.IsKeyPressed(KEY_INPUT_Z) || input.IsKeyPressed(KEY_INPUT_RETURN) || input.IsKeyPressed(KEY_INPUT_SPACE) || input.IsPadConfirmPressed())) {
             SoundManager::GetInstance().PlayTapSE();
             if (m_confirmCursor == 0) {
                 PlayerSelectionManager::GetInstance().SetSelectedCharacter(m_characters[m_selectedIndex]);
@@ -228,8 +239,8 @@ void CharacterSelectScene::Update() {
             }
         }
 
-        // ESCキーで確認をキャンセルして選択に戻る
-        if (input.IsKeyPressed(KEY_INPUT_ESCAPE)) {
+        // ESCキー / パッドBで確認をキャンセルして選択に戻る
+        if (input.IsKeyPressed(KEY_INPUT_ESCAPE) || input.IsPadCancelPressed()) {
             SoundManager::GetInstance().PlayTapSE();
             m_state = SelectState::SELECTING;
             m_hasReleasedConfirm = false;
@@ -242,17 +253,23 @@ void CharacterSelectScene::Update() {
 }
 
 void CharacterSelectScene::Draw() {
-    // 背景画像の描画（配列番号から呼び出し）
-    if (m_bgImageIndex != -1) {
-        DrawFullScreen2DImage(m_bgImageIndex, false);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
-        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    } else {
-        DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
-    }
+    int count = static_cast<int>(m_characters.size());
+    int cardW = 316;
+    int cardH = 440;
+    int gap = 24;
+    int totalW = count * cardW + (count - 1) * gap;
+    int startX = (1920 - totalW) / 2;
+    int startY = 185;
 
-    // 画面左上: タイトルに戻るボタンの描画
+    // 選択中カード背後を照らす懐中電灯スポットライト座標
+    int spotX = (m_selectedIndex >= 0 && m_selectedIndex < count)
+        ? (startX + m_selectedIndex * (cardW + gap) + cardW / 2)
+        : 960;
+    int spotY = startY + cardH / 2 - 20;
+
+    HudStyle::DrawTacticalBackdrop(1920, 1080, Get2DImage(m_bgImageIndex), spotX, spotY, 440);
+
+    // 画面左上: 戻るボタン
     int mouseX = 0, mouseY = 0;
     GetMousePoint(&mouseX, &mouseY);
     int drawW = 1920, drawH = 1080;
@@ -263,120 +280,114 @@ void CharacterSelectScene::Draw() {
     }
     const int backBtnX = 50;
     const int backBtnY = 40;
-    const int backBtnW = 240;
-    const int backBtnH = 50;
+    const int backBtnW = 160;
+    const int backBtnH = 44;
     bool isBackHovered = (mouseX >= backBtnX && mouseX <= backBtnX + backBtnW && mouseY >= backBtnY && mouseY <= backBtnY + backBtnH);
 
-    HudStyle::DrawRoundPanel(backBtnX, backBtnY, backBtnW, backBtnH, HudStyle::RadiusButton,
-                             isBackHovered ? GetColor(35, 50, 75) : GetColor(18, 25, 38),
-                             isBackHovered ? GetColor(0, 220, 255) : GetColor(60, 85, 115),
-                             isBackHovered ? 240 : 180);
-    FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 14, "← タイトルへ戻る", isBackHovered ? GetColor(255, 235, 80) : GetColor(200, 215, 230), 20);
+    HudStyle::DrawTexturedPanel(backBtnX, backBtnY, backBtnW, backBtnH,
+                                Get2DImage(isBackHovered ? m_btnSelImgIndex : m_btnIdleImgIndex),
+                                isBackHovered ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                isBackHovered ? HudStyle::ColAmber() : HudStyle::ColBorderSoft(),
+                                235);
+    FontManager::GetInstance().DrawStringCenter(backBtnX + backBtnW / 2, backBtnY + 12, "← 戻る", isBackHovered ? HudStyle::ColAmber() : HudStyle::ColText(), 18);
 
-    FontManager::GetInstance().DrawStringCenter(960, 56, "CHARACTER SELECT", GetColor(255, 220, 0), 48);
-    FontManager::GetInstance().DrawStringCenter(960, 120, "使用するキャラクターを選択してください ( [←][→] または クリック/タップ で選択、[Enter] で決定 )", GetColor(200, 210, 225), 22);
-
-    int count = static_cast<int>(m_characters.size());
-    int cardW = 310;
-    int cardH = 450;
-    int gap = 20;
-    int totalW = count * cardW + (count - 1) * gap;
-    int startX = (1920 - totalW) / 2;
-    int startY = 175;
+    HudStyle::DrawSectionHeading(960, 52, "キャラクター選択", Get2DImage(m_underlineImgIndex), 46);
 
     for (int i = 0; i < count; i++) {
         const auto& chara = m_characters[i];
         int cardX = startX + i * (cardW + gap);
         bool isSelected = (i == m_selectedIndex);
+        int cardY = isSelected ? (startY - 12) : startY;
 
-        if (isSelected) {
-            HudStyle::DrawRoundBox(cardX, startY, cardX + cardW, startY + cardH, HudStyle::RadiusPanel, GetColor(32, 44, 68), TRUE);
-            // 均一なセレクション角丸太枠線
-            HudStyle::DrawRoundBox(cardX - 3, startY - 3, cardX + cardW + 3, startY + cardH + 3, HudStyle::RadiusPanel + 3, chara.themeColor, FALSE);
-            HudStyle::DrawRoundBox(cardX - 2, startY - 2, cardX + cardW + 2, startY + cardH + 2, HudStyle::RadiusPanel + 2, chara.themeColor, FALSE);
-            HudStyle::DrawRoundBox(cardX - 1, startY - 1, cardX + cardW + 1, startY + cardH + 1, HudStyle::RadiusPanel + 1, GetColor(255, 255, 255), FALSE);
-            HudStyle::DrawRoundBox(cardX, startY, cardX + cardW, startY + cardH, HudStyle::RadiusPanel, chara.themeColor, FALSE);
-        } else {
-            HudStyle::DrawRoundPanel(cardX, startY, cardW, cardH, HudStyle::RadiusPanel, GetColor(20, 26, 38), GetColor(60, 75, 95));
-        }
+        HudStyle::DrawTexturedPanel(cardX, cardY, cardW, cardH,
+                                    Get2DImage(isSelected ? m_cardSelImgIndex : m_cardIdleImgIndex),
+                                    isSelected ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                    isSelected ? HudStyle::ColAmber() : HudStyle::ColBorderSoft(),
+                                    isSelected ? 250 : 210);
 
-        // アバター領域
-        int avatarMargin = 16;
-        int avatarH = 160;
+        // アバター領域（手描き立ち絵を主役に大きく表示）
+        int avatarMargin = 20;
+        int avatarH = 196;
         int avX1 = cardX + avatarMargin;
-        int avY1 = startY + avatarMargin;
+        int avY1 = cardY + 20;
         int avX2 = cardX + cardW - avatarMargin;
         int avY2 = avY1 + avatarH;
 
-        HudStyle::DrawRoundBox(avX1, avY1, avX2, avY2, HudStyle::RadiusBadge, GetColor(12, 16, 24), TRUE);
+        DrawBox(avX1, avY1, avX2, avY2, HudStyle::ColCanvas(), TRUE);
 
         if (i < static_cast<int>(m_previewHandles.size()) && m_previewHandles[i] != -1) {
             int imgW = 0, imgH = 0;
             GetGraphSize(m_previewHandles[i], &imgW, &imgH);
+            if (!isSelected) {
+                SetDrawBright(152, 148, 138);
+            }
             if (imgW > 0 && imgH > 0) {
-                float targetW = static_cast<float>(avX2 - avX1 - 4);
-                float targetH = static_cast<float>(avY2 - avY1 - 4);
+                float targetW = static_cast<float>(avX2 - avX1 - 8);
+                float targetH = static_cast<float>(avY2 - avY1 - 8);
                 float scale = (std::min)(targetW / imgW, targetH / imgH);
                 int fitW = static_cast<int>(imgW * scale);
                 int fitH = static_cast<int>(imgH * scale);
-                int fitX = avX1 + 2 + static_cast<int>((targetW - fitW) / 2.0f);
-                int fitY = avY1 + 2 + static_cast<int>((targetH - fitH) / 2.0f);
+                int fitX = avX1 + 4 + static_cast<int>((targetW - fitW) / 2.0f);
+                int fitY = avY1 + 4 + static_cast<int>((targetH - fitH) / 2.0f);
                 DrawExtendGraph(fitX, fitY, fitX + fitW, fitY + fitH, m_previewHandles[i], TRUE);
             } else {
-                DrawExtendGraph(avX1 + 1, avY1 + 1, avX2 - 1, avY2 - 1, m_previewHandles[i], TRUE);
+                DrawExtendGraph(avX1 + 2, avY1 + 2, avX2 - 2, avY2 - 2, m_previewHandles[i], TRUE);
+            }
+            if (!isSelected) {
+                SetDrawBright(255, 255, 255);
             }
         } else {
             int circleX = cardX + cardW / 2;
             int circleY = avY1 + avatarH / 2;
-            DrawCircle(circleX, circleY, 36, chara.themeColor, TRUE);
-            FontManager::GetInstance().DrawFormatString(circleX - 8, circleY - 12, GetColor(255, 255, 255), 24, "%d", chara.id);
+            DrawCircle(circleX, circleY, 34, isSelected ? HudStyle::ColAmber() : HudStyle::ColAlly(), TRUE);
+            FontManager::GetInstance().DrawFormatString(circleX - 7, circleY - 12, GetColor(255, 255, 255), 24, "%d", chara.id);
         }
-        HudStyle::DrawRoundBox(avX1, avY1, avX2, avY2, HudStyle::RadiusBadge, chara.themeColor, FALSE);
+        DrawBox(avX1, avY1, avX2, avY2, isSelected ? HudStyle::ColAmberDim() : HudStyle::ColBorderDim(), FALSE);
 
-        // キャラ情報テキスト (読める文字サイズを保ち、はみ出しを厳密に防止)
-        int textY = avY2 + 16;
-        int nameSize = FontManager::GetInstance().GetFittingFontSize(chara.name.c_str(), cardW - 24, 24, 18);
-        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.name.c_str(), isSelected ? GetColor(255, 240, 100) : GetColor(235, 235, 235), nameSize);
-        textY += 32;
+        // キャラ名（太字でくっきり）
+        int textY = avY2 + 14;
+        int nameSize = FontManager::GetInstance().GetFittingFontSize(chara.name.c_str(), cardW - 36, 26, 18);
+        FontManager::GetInstance().DrawStringCenterShadow(cardX + cardW / 2, textY, chara.name.c_str(), isSelected ? HudStyle::ColAmber() : HudStyle::ColText(), nameSize, 7);
+        textY += 40;
 
-        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, chara.typeName.c_str(), GetColor(160, 190, 220), 18);
-        textY += 32;
+        // ステータスバー (体力 / 素早さ)
+        int statX = cardX + 26;
+        int statW = cardW - 52;
+        char hpVal[16], spdVal[16];
+        snprintf(hpVal, sizeof(hpVal), "%d", chara.maxHp);
+        snprintf(spdVal, sizeof(spdVal), "%.1f", chara.moveSpeed);
+        HudStyle::DrawStatBar(statX, textY,      statW, "体力",   hpVal,  (std::min)(1.0f, chara.maxHp / 55.0f),    isSelected ? HudStyle::ColEnemy() : HudStyle::ColBorder(), 14);
+        HudStyle::DrawStatBar(statX, textY + 44, statW, "素早さ", spdVal, (std::min)(1.0f, chara.moveSpeed / 2.2f), isSelected ? HudStyle::ColAlly() : HudStyle::ColBorder(), 14);
+        textY += 94;
 
-        FontManager::GetInstance().DrawFormatString(cardX + 20, textY, GetColor(110, 255, 120), 18, "HP      : %d", chara.maxHp);
-        textY += 26;
-        FontManager::GetInstance().DrawFormatString(cardX + 20, textY, GetColor(110, 210, 255), 18, "SPEED   : %.1f", chara.moveSpeed);
-        textY += 26;
-
-        std::string skillLine = std::string("SKILL   : ") + chara.skillName;
-        int skillMaxW = cardW - 36;
-        int skillFitSize = FontManager::GetInstance().GetFittingFontSize(skillLine.c_str(), skillMaxW, 18, 16);
-        if (FontManager::GetInstance().GetStringWidth(skillLine.c_str(), skillFitSize) <= skillMaxW) {
-            FontManager::GetInstance().DrawString(cardX + 20, textY, skillLine.c_str(), GetColor(255, 220, 60), skillFitSize);
-        } else {
-            FontManager::GetInstance().DrawStringWrapped(cardX + 20, textY, skillMaxW, skillLine.c_str(), GetColor(255, 220, 60), 17, 4);
-        }
-
-        // 選択案内
-        if (isSelected) {
-            HudStyle::DrawRoundBox(cardX + 16, startY + cardH - 48, cardX + cardW - 16, startY + cardH - 12, HudStyle::RadiusBadge, chara.themeColor, TRUE);
-            FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, startY + cardH - 40, "[ タップ / ENTER ] 決定", GetColor(10, 10, 15), 18);
-        }
+        // スキル表示（日本語ラベルでシンプルに1行）
+        std::string skillLine = std::string("スキル：") + chara.skillName;
+        int skillFit = FontManager::GetInstance().GetFittingFontSize(skillLine.c_str(), statW + 8, 15, 13);
+        FontManager::GetInstance().DrawStringCenter(cardX + cardW / 2, textY, skillLine.c_str(), isSelected ? HudStyle::ColText() : HudStyle::ColSubText(), skillFit);
     }
 
-    // 画面下部の詳細説明枠 (枠内に収まるよう自動折り返し・大きめ文字)
+    // 画面下部の詳細説明枠（手描き質感プレート）
     if (m_selectedIndex >= 0 && m_selectedIndex < count) {
         const auto& curChara = m_characters[m_selectedIndex];
         int infoX = startX;
-        int infoY = startY + cardH + 22;
+        int infoY = startY + cardH + 34;
         int infoW = totalW;
-        int infoH = 148;
+        int infoH = 114;
 
-        HudStyle::DrawRoundPanel(infoX, infoY, infoW, infoH, HudStyle::RadiusPanel, GetColor(20, 28, 44), curChara.themeColor, 230);
-        HudStyle::DrawRoundBox(infoX + 1, infoY + 1, infoX + infoW - 1, infoY + infoH - 1, HudStyle::RadiusPanel - 1, curChara.themeColor, FALSE);
+        HudStyle::DrawTexturedPanel(infoX, infoY, infoW, infoH, Get2DImage(m_stripImgIndex), HudStyle::ColCard(), HudStyle::ColBorderSoft(), 238);
 
-        FontManager::GetInstance().DrawFormatString(infoX + 35, infoY + 16, GetColor(255, 220, 0), 24, "【%s】  タイプ: %s", curChara.name.c_str(), curChara.typeName.c_str());
-        DrawLine(infoX + 35, infoY + 48, infoX + infoW - 35, infoY + 48, GetColor(60, 90, 130));
-        FontManager::GetInstance().DrawStringWrapped(infoX + 35, infoY + 58, infoW - 70, curChara.description.c_str(), GetColor(225, 235, 245), 22, 6);
+        FontManager::GetInstance().DrawFormatString(infoX + 34, infoY + 18, HudStyle::ColAmber(), 22, "%s", curChara.name.c_str());
+        int nameW = FontManager::GetInstance().GetStringWidth(curChara.name.c_str(), 22);
+        FontManager::GetInstance().DrawFormatString(infoX + 34 + nameW + 20, infoY + 21, HudStyle::ColSubText(), 17, "固有スキル：%s", curChara.skillName.c_str());
+        FontManager::GetInstance().DrawStringWrapped(infoX + 34, infoY + 54, infoW - 68, curChara.description.c_str(), HudStyle::ColText(), 18, 4);
+    }
+
+    // 画面下部の控えめなキーバッジ案内
+    {
+        int hx = 670;
+        hx += HudStyle::DrawKeyHintItem(hx, 936, "← / →", "選ぶ") + 28;
+        hx += HudStyle::DrawKeyHintItem(hx, 936, "Enter / クリック", "決定") + 28;
+        HudStyle::DrawKeyHintItem(hx, 936, "Esc", "戻る");
     }
 
     // ========================================================
@@ -386,121 +397,95 @@ void CharacterSelectScene::Draw() {
         const auto& curChara = m_characters[m_selectedIndex];
 
         // 1. 全面暗転オーバーレイ
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 215);
-        DrawBox(0, 0, 1920, 1080, GetColor(6, 10, 16), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+        DrawBox(0, 0, 1920, 1080, GetColor(5, 6, 4), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 2. メインモーダル枠 (980 x 540 でゆったり見やすく)
-        const int modalW = 980;
-        const int modalH = 540;
+        // 2. メインモーダル枠（手描き質感）
+        const int modalW = 880;
+        const int modalH = 460;
         const int modalX = (1920 - modalW) / 2;
         const int modalY = (1080 - modalH) / 2;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 245);
-        HudStyle::DrawRoundBox(modalX, modalY, modalX + modalW, modalY + modalH, HudStyle::RadiusModal, GetColor(16, 22, 34), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        HudStyle::DrawTexturedPanel(modalX, modalY, modalW, modalH, Get2DImage(m_modalImgIndex), HudStyle::ColBg(), HudStyle::ColBorder(), 252);
 
-        HudStyle::DrawRoundBox(modalX, modalY, modalX + modalW, modalY + modalH, HudStyle::RadiusModal, GetColor(0, 180, 255), FALSE);
-        HudStyle::DrawRoundBox(modalX + 2, modalY + 2, modalX + modalW - 2, modalY + modalH - 2, HudStyle::RadiusModal - 2, GetColor(0, 120, 180), FALSE);
-        HudStyle::DrawRoundBox(modalX + 4, modalY + 4, modalX + modalW - 4, modalY + modalH - 4, HudStyle::RadiusModal - 4, GetColor(30, 50, 80), FALSE);
+        int headerY = modalY + 38;
+        FontManager::GetInstance().DrawStringCenterShadow(960, headerY, "このキャラクターで出撃しますか？", HudStyle::ColText(), 28, 7);
+        DrawLine(modalX + 55, headerY + 48, modalX + modalW - 55, headerY + 48, HudStyle::ColBorderSoft());
 
-        // ヘッダータイトル
-        int headerY = modalY + 24;
-        FontManager::GetInstance().DrawStringCenter(960, headerY, "CONFIRM CHARACTER (キャラクター決定確認)", GetColor(255, 220, 0), 28);
-        DrawLine(modalX + 45, headerY + 40, modalX + modalW - 45, headerY + 40, GetColor(0, 140, 200));
+        // キャラクター情報エリア
+        int infoCardX = modalX + 55;
+        int infoCardY = headerY + 68;
+        int infoCardW = modalW - 110;
+        int infoCardH = 216;
 
-        // メッセージ
-        FontManager::GetInstance().DrawStringCenter(960, headerY + 54, "このキャラクターで出撃します。よろしいですか？", GetColor(255, 255, 255), 22);
-
-        // キャラクター情報カード
-        int infoCardX = modalX + 45;
-        int infoCardY = headerY + 94;
-        int infoCardW = modalW - 90;
-        int infoCardH = 236;
-
-        HudStyle::DrawRoundPanel(infoCardX, infoCardY, infoCardW, infoCardH, HudStyle::RadiusPanel, GetColor(10, 15, 24), curChara.themeColor, 200);
+        HudStyle::DrawTexturedPanel(infoCardX, infoCardY, infoCardW, infoCardH, Get2DImage(m_stripImgIndex), HudStyle::ColCard(), HudStyle::ColBorderSoft(), 230);
 
         // アバター画像
         int avW = 176;
         int avH = infoCardH - 28;
         int avX = infoCardX + 18;
         int avY = infoCardY + 14;
-        HudStyle::DrawRoundBox(avX, avY, avX + avW, avY + avH, HudStyle::RadiusBadge, GetColor(18, 24, 34), TRUE);
+        DrawBox(avX, avY, avX + avW, avY + avH, HudStyle::ColCanvas(), TRUE);
         if (m_selectedIndex < static_cast<int>(m_previewHandles.size()) && m_previewHandles[m_selectedIndex] != -1) {
             int imgW = 0, imgH = 0;
             GetGraphSize(m_previewHandles[m_selectedIndex], &imgW, &imgH);
             if (imgW > 0 && imgH > 0) {
-                float targetW = static_cast<float>(avW - 4);
-                float targetH = static_cast<float>(avH - 4);
+                float targetW = static_cast<float>(avW - 6);
+                float targetH = static_cast<float>(avH - 6);
                 float scale = (std::min)(targetW / imgW, targetH / imgH);
                 int fitW = static_cast<int>(imgW * scale);
                 int fitH = static_cast<int>(imgH * scale);
-                int fitX = avX + 2 + static_cast<int>((targetW - fitW) / 2.0f);
-                int fitY = avY + 2 + static_cast<int>((targetH - fitH) / 2.0f);
+                int fitX = avX + 3 + static_cast<int>((targetW - fitW) / 2.0f);
+                int fitY = avY + 3 + static_cast<int>((targetH - fitH) / 2.0f);
                 DrawExtendGraph(fitX, fitY, fitX + fitW, fitY + fitH, m_previewHandles[m_selectedIndex], TRUE);
             } else {
-                DrawExtendGraph(avX + 1, avY + 1, avX + avW - 1, avY + avH - 1, m_previewHandles[m_selectedIndex], TRUE);
+                DrawExtendGraph(avX + 2, avY + 2, avX + avW - 2, avY + avH - 2, m_previewHandles[m_selectedIndex], TRUE);
             }
         } else {
             int circleX = avX + avW / 2;
             int circleY = avY + avH / 2;
-            DrawCircle(circleX, circleY, 36, curChara.themeColor, TRUE);
-            FontManager::GetInstance().DrawFormatString(circleX - 8, circleY - 12, GetColor(255, 255, 255), 24, "%d", curChara.id);
+            DrawCircle(circleX, circleY, 34, HudStyle::ColAmber(), TRUE);
+            FontManager::GetInstance().DrawFormatString(circleX - 7, circleY - 12, GetColor(255, 255, 255), 24, "%d", curChara.id);
         }
-        HudStyle::DrawRoundBox(avX, avY, avX + avW, avY + avH, HudStyle::RadiusBadge, curChara.themeColor, FALSE);
+        DrawBox(avX, avY, avX + avW, avY + avH, HudStyle::ColAmberDim(), FALSE);
 
-        // キャラステータス & スキル (テキストは右枠を絶対に超えないよう折り返し＆フィットサイズ保護)
+        // キャラステータス & スキル（日本語）
         int statX = avX + avW + 26;
         int textMaxW = (infoCardX + infoCardW - 24) - statX;
-        int statY = infoCardY + 16;
+        int statY = infoCardY + 22;
 
-        std::string titleText = curChara.name + "  [" + curChara.typeName + "]";
-        int titleSize = FontManager::GetInstance().GetFittingFontSize(titleText.c_str(), textMaxW, 26, 20);
-        FontManager::GetInstance().DrawString(statX, statY, titleText.c_str(), GetColor(255, 235, 80), titleSize);
-        statY += 36;
+        FontManager::GetInstance().DrawFormatString(statX, statY, HudStyle::ColAmber(), 26, "%s", curChara.name.c_str());
+        statY += 42;
 
-        FontManager::GetInstance().DrawFormatString(statX, statY, GetColor(100, 255, 100), 20, "最大HP     : %d", curChara.maxHp);
-        FontManager::GetInstance().DrawFormatString(statX + 240, statY, GetColor(100, 200, 255), 20, "移動速度   : %.1f", curChara.moveSpeed);
-        statY += 30;
+        FontManager::GetInstance().DrawFormatString(statX, statY, HudStyle::ColText(), 18, "体力：%d　　素早さ：%.1f　　スキル：%s",
+                                                    curChara.maxHp, curChara.moveSpeed, curChara.skillName.c_str());
+        statY += 38;
 
-        std::string skillStr = std::string("スキル     : ") + curChara.skillName;
-        int skillSize = FontManager::GetInstance().GetFittingFontSize(skillStr.c_str(), textMaxW, 20, 17);
-        FontManager::GetInstance().DrawString(statX, statY, skillStr.c_str(), GetColor(255, 215, 0), skillSize);
-        statY += 34;
+        FontManager::GetInstance().DrawStringWrapped(statX, statY, textMaxW, curChara.description.c_str(), HudStyle::ColSubText(), 18, 6);
 
-        // 説明文を20ptで自動折り返し描画（絶対に枠をはみ出さず文字化けもしない）
-        FontManager::GetInstance().DrawStringWrapped(statX, statY, textMaxW, curChara.description.c_str(), GetColor(220, 232, 248), 20, 6);
-
-        // 3. 2つのボタン (YES / CANCEL)
-        const int btnW = 380;
-        const int btnH = 62;
-        const int btnY = modalY + modalH - 92;
+        // 3. 2つのボタン
+        const int btnW = 340;
+        const int btnH = 56;
+        const int btnY = modalY + modalH - 84;
         const int btn0X = modalX + 70;
         const int btn1X = modalX + modalW - 70 - btnW;
 
-        // ボタン0: 決定して武器選択へ (YES)
         bool isSel0 = (m_confirmCursor == 0);
-        HudStyle::DrawRoundPanel(btn0X, btnY, btnW, btnH, HudStyle::RadiusButton,
-                                 isSel0 ? GetColor(20, 50, 40) : GetColor(18, 28, 38),
-                                 isSel0 ? GetColor(0, 255, 180) : GetColor(50, 90, 80),
-                                 isSel0 ? 240 : 180);
-        if (isSel0) {
-            HudStyle::DrawRoundBox(btn0X + 1, btnY + 1, btn0X + btnW - 1, btnY + btnH - 1, HudStyle::RadiusButton - 1, GetColor(0, 255, 180), FALSE);
-            HudStyle::DrawAccentPill(btn0X + 6, btnY + 8, btnH - 16, GetColor(0, 255, 180), 5);
-        }
-        FontManager::GetInstance().DrawStringCenter(btn0X + btnW / 2, btnY + 18, "○  決定して武器選択へ (YES)", isSel0 ? GetColor(255, 255, 255) : GetColor(180, 220, 200), 21);
+        HudStyle::DrawTexturedPanel(btn0X, btnY, btnW, btnH,
+                                    Get2DImage(isSel0 ? m_btnSelImgIndex : m_btnIdleImgIndex),
+                                    isSel0 ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                    isSel0 ? HudStyle::ColAmber() : HudStyle::ColBorderSoft(),
+                                    245);
+        FontManager::GetInstance().DrawStringCenter(btn0X + btnW / 2, btnY + 17, "武器を選ぶ", isSel0 ? HudStyle::ColAmber() : HudStyle::ColText(), 20, isSel0 ? 7 : 5);
 
-        // ボタン1: 選び直す (CANCEL)
         bool isSel1 = (m_confirmCursor == 1);
-        HudStyle::DrawRoundPanel(btn1X, btnY, btnW, btnH, HudStyle::RadiusButton,
-                                 isSel1 ? GetColor(50, 25, 30) : GetColor(28, 20, 25),
-                                 isSel1 ? GetColor(255, 100, 100) : GetColor(80, 50, 60),
-                                 isSel1 ? 240 : 180);
-        if (isSel1) {
-            HudStyle::DrawRoundBox(btn1X + 1, btnY + 1, btn1X + btnW - 1, btnY + btnH - 1, HudStyle::RadiusButton - 1, GetColor(255, 100, 100), FALSE);
-            HudStyle::DrawAccentPill(btn1X + 6, btnY + 8, btnH - 16, GetColor(255, 100, 100), 5);
-        }
-        FontManager::GetInstance().DrawStringCenter(btn1X + btnW / 2, btnY + 18, "×  選び直す (CANCEL)", isSel1 ? GetColor(255, 255, 255) : GetColor(220, 180, 180), 21);
+        HudStyle::DrawTexturedPanel(btn1X, btnY, btnW, btnH,
+                                    Get2DImage(isSel1 ? m_btnSelImgIndex : m_btnIdleImgIndex),
+                                    isSel1 ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                    isSel1 ? HudStyle::ColAmber() : HudStyle::ColBorderSoft(),
+                                    245);
+        FontManager::GetInstance().DrawStringCenter(btn1X + btnW / 2, btnY + 17, "選び直す", isSel1 ? HudStyle::ColText() : HudStyle::ColSubText(), 20, isSel1 ? 7 : 5);
     }
 }
 

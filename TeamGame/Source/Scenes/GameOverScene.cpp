@@ -20,6 +20,9 @@ GameOverScene::GameOverScene()
     if (gameOverBgIndex == -1) {
         gameOverBgIndex = Load2DImage("result_gameover_bg.png");
     }
+    if (gameOverBgIndex == -1) {
+        gameOverBgIndex = Load2DImage("Titleu.jpg");
+    }
     windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
 
     // ゲームオーバーロゴ画像の読み込み
@@ -30,6 +33,9 @@ GameOverScene::GameOverScene()
     if (gameOverLogoIndex == -1) {
         gameOverLogoIndex = Load2DImage("Images/UI/GameOver/logo_gameover.png");
     }
+    uiModalImgIndex   = Load2DImage("Images/UI/PreGame/panel_modal.png");
+    uiBtnIdleImgIndex = Load2DImage("Images/UI/PreGame/btn_idle.png");
+    uiBtnSelImgIndex  = Load2DImage("Images/UI/PreGame/btn_selected.png");
 
     // UITextWindow によるパネル枠の初期化
     defeatWindow = new UI::UITextWindow();
@@ -53,9 +59,14 @@ void GameOverScene::Init()
     // 敗北音・ゲームオーバーBGMを再生
     SoundManager::GetInstance().PlayBGM("defeat_bgm", 0.85f);
     Scene::Init();
+    SetMouseDispFlag(TRUE);
     animTimer = 0.0f;
     menuCursor = 0;
     prevEnter = true; // 前のシーンのボタン押しっぱなし事故防止
+    prevClick = true;
+    prevMouseX = -1;
+    prevMouseY = -1;
+    hasReleasedConfirm = false;
 }
 
 void GameOverScene::Update()
@@ -64,28 +75,29 @@ void GameOverScene::Update()
 
     animTimer += 0.016f;
 
+    auto& input = InputManager::GetInstance();
     bool currUp = (CheckHitKey(KEY_INPUT_UP) != 0 || CheckHitKey(KEY_INPUT_W) != 0);
     bool currDown = (CheckHitKey(KEY_INPUT_DOWN) != 0 || CheckHitKey(KEY_INPUT_S) != 0);
     bool currEnterKey = (CheckHitKey(KEY_INPUT_RETURN) != 0 || CheckHitKey(KEY_INPUT_SPACE) != 0);
     bool currClick = ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
 
-    if (!currEnterKey && !currClick)
+    if (!currEnterKey && !currClick && !input.IsPadConfirmHeld())
     {
         hasReleasedConfirm = true;
     }
 
-    if (currUp && !prevUp)
+    if ((currUp && !prevUp) || input.IsPadUpPressed())
     {
         menuCursor = (menuCursor - 1 + 2) % 2;
         SoundManager::GetInstance().PlayTapSE(0.4f);
     }
-    if (currDown && !prevDown)
+    if ((currDown && !prevDown) || input.IsPadDownPressed())
     {
         menuCursor = (menuCursor + 1) % 2;
         SoundManager::GetInstance().PlayTapSE(0.4f);
     }
 
-    // マウスホバー＆クリック判定
+    // マウスホバー＆クリック判定（ウィンドウ拡縮対応）
     const int centerX = 1920 / 2;
     const int panelW = 620;
     const int panelH = 300;
@@ -100,6 +112,14 @@ void GameOverScene::Update()
 
     int mouseX = 0, mouseY = 0;
     GetMousePoint(&mouseX, &mouseY);
+    int drawW = 1920, drawH = 1080;
+    GetDrawScreenSize(&drawW, &drawH);
+    if (drawW > 0 && drawH > 0 && (drawW != 1920 || drawH != 1080))
+    {
+        mouseX = static_cast<int>(mouseX * (1920.0f / drawW));
+        mouseY = static_cast<int>(mouseY * (1080.0f / drawH));
+    }
+    bool mouseMoved = (prevMouseX != -1 && (mouseX != prevMouseX || mouseY != prevMouseY));
     bool mouseClickedItem = false;
 
     for (int i = 0; i < 2; i++)
@@ -108,20 +128,21 @@ void GameOverScene::Update()
         if (mouseX >= btnX && mouseX <= btnX + btnW &&
             mouseY >= by && mouseY <= by + btnH)
         {
-            if (menuCursor != i)
+            if (mouseMoved && menuCursor != i)
             {
                 menuCursor = i;
             }
             if (currClick && !prevClick)
             {
+                menuCursor = i;
                 mouseClickedItem = true;
             }
         }
     }
 
-    // シーン遷移後1.5秒間＆一度キーを離すまでは決定操作をロック（連打事故防止）
-    bool canConfirm = (animTimer >= 1.5f) && hasReleasedConfirm;
-    if (canConfirm && ((currEnterKey && !prevEnter) || mouseClickedItem))
+    // シーン遷移後1.0秒間＆一度キーを離すまでは決定操作をロック（連打事故防止）
+    bool canConfirm = (animTimer >= 1.0f) && hasReleasedConfirm;
+    if (canConfirm && ((currEnterKey && !prevEnter) || input.IsPadConfirmPressed() || mouseClickedItem))
     {
         SoundManager::GetInstance().PlayTapSE();
         if (menuCursor == 0)
@@ -140,85 +161,56 @@ void GameOverScene::Update()
     prevDown = currDown;
     prevEnter = currEnterKey;
     prevClick = currClick;
+    prevMouseX = mouseX;
+    prevMouseY = mouseY;
 }
 
 void GameOverScene::Draw()
 {
     Scene::Draw();
 
-    // 背景描画（配列番号から呼び出し）
-    if (gameOverBgIndex != -1)
-    {
-        DrawFullScreen2DImage(gameOverBgIndex, false);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
-        DrawBox(0, 0, 1920, 1080, GetColor(30, 5, 5), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
-    else
-    {
-        // 暗い赤基調のグラデーション背景
-        DrawBox(0, 0, 1920, 1080, GetColor(20, 5, 5), TRUE);
-    }
-
-    // 装飾背景ライン (赤色の警告ライン風 走査線アニメーション演出)
-    for (int i = 0; i < 10; ++i)
-    {
-        int y = (i * 120 + static_cast<int>(animTimer * 40.0f)) % 1080;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
-        DrawLine(0, y, 1920, y, GetColor(255, 50, 50), 1);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
+    // タクティカル・ステルス暗黒背景＋赤みのあるスポットライト
+    HudStyle::DrawTacticalBackdrop(1920, 1080, Get2DImage(gameOverBgIndex), 1920 / 2, 540, 500);
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 45);
+    DrawBox(0, 0, 1920, 1080, GetColor(40, 6, 8), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
     const int centerX = 1920 / 2;
+    const std::string& dispFont = FontManager::GetInstance().GetDisplayFontName();
 
-    // タイトルアニメーション (鼓動風の振動)
-    float pulse = sinf(animTimer * 5.0f) * 6.0f;
+    // タイトルアニメーション (控えめな鼓動)
+    float pulse = sinf(animTimer * 4.0f) * 4.0f;
     int logoW = 840;
-    int logoH = 189; // 960x216 のアスペクト比維持
+    int logoH = 189;
     int logoX = centerX - logoW / 2;
     int logoY = static_cast<int>(160 + pulse);
 
     int logoHandle = Get2DImage(gameOverLogoIndex);
     if (logoHandle != -1)
     {
-        // 背後のおどろおどろしい赤黒いグロー光彩
-        float glowPulse = std::abs(sinf(animTimer * 4.0f));
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(45 + glowPulse * 35));
-        HudStyle::DrawRoundBox(logoX - 25, logoY - 15, logoX + logoW + 25, logoY + logoH + 15, HudStyle::RadiusModal, GetColor(180, 20, 20), TRUE);
+        float glowPulse = std::abs(sinf(animTimer * 3.0f));
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(25 + glowPulse * 25));
+        HudStyle::DrawRoundBox(logoX - 25, logoY - 15, logoX + logoW + 25, logoY + logoH + 15, HudStyle::RadiusModal, HudStyle::ColEnemy(), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // GAME OVER ロゴ画像の描画
         DrawExtendGraph(logoX, logoY, logoX + logoW, logoY + logoH, logoHandle, TRUE);
     }
     else
     {
-        // 画像未検出時のフォールバックテキスト
-        FontManager::GetInstance().DrawStringCenter(centerX + 2, logoY + 4, "=== GAME OVER ===", GetColor(0, 0, 0), 40);
-        FontManager::GetInstance().DrawStringCenter(centerX, logoY, "=== GAME OVER ===", GetColor(255, 60, 60), 40);
+        FontManager::GetInstance().DrawStringCenterShadow(centerX, logoY + 20, "GAME OVER", HudStyle::ColEnemy(), 64, -1, dispFont);
     }
 
-    // パネル枠
+    // パネル枠（手描き質感）
     const int panelW = 620;
     const int panelH = 300;
     const int panelX = centerX - panelW / 2;
     const int panelY = 160 + logoH + 65;
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
-    HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(25, 8, 12), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    HudStyle::DrawTexturedPanel(panelX, panelY, panelW, panelH, Get2DImage(uiModalImgIndex), HudStyle::ColBg(), HudStyle::ColEnemy(), 245);
 
-    // 多重レッドネオン角丸枠
-    HudStyle::DrawRoundBox(panelX, panelY, panelX + panelW, panelY + panelH, HudStyle::RadiusModal, GetColor(220, 45, 45), FALSE);
-    HudStyle::DrawRoundBox(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, HudStyle::RadiusModal - 2, GetColor(140, 25, 25), FALSE);
-
-    // メニュー選択肢カード
-    struct GameOverOption {
-        const char* titleJa;
-        const char* titleEn;
-    };
-    const GameOverOption options[2] = {
-        { "もう一度プレイ", "RETRY MATCH" },
-        { "タイトル画面へ", "BACK TO TITLE" }
+    const char* options[2] = {
+        "もう一度プレイ",
+        "タイトルへ戻る"
     };
 
     const int btnW = 540;
@@ -232,31 +224,20 @@ void GameOverScene::Draw()
         int by = startBtnY + i * spacing;
         bool isSelected = (i == menuCursor);
 
-        if (isSelected)
-        {
-            HudStyle::DrawRoundPanel(btnX, by, btnW, btnH, HudStyle::RadiusButton, GetColor(60, 20, 26), GetColor(255, 80, 80), 240);
-            HudStyle::DrawRoundBorder(btnX, by, btnW, btnH, HudStyle::RadiusButton, GetColor(255, 80, 80), 2);
+        HudStyle::DrawTexturedPanel(btnX, by, btnW, btnH,
+                                    Get2DImage(isSelected ? uiBtnSelImgIndex : uiBtnIdleImgIndex),
+                                    isSelected ? HudStyle::ColCardHover() : HudStyle::ColCard(),
+                                    isSelected ? HudStyle::ColEnemy() : HudStyle::ColBorderSoft(),
+                                    isSelected ? 248 : 205);
 
-            // 左端インセットアクティブバー
-            HudStyle::DrawAccentPill(btnX + 5, by + 8, btnH - 16, GetColor(255, 80, 80), 5);
-
-            // 選択矢印
-            FontManager::GetInstance().DrawString(btnX + btnW - 35, by + 26, "▶", GetColor(255, 80, 80), 22);
-        }
-        else
-        {
-            HudStyle::DrawRoundPanel(btnX, by, btnW, btnH, HudStyle::RadiusButton, GetColor(20, 7, 10), GetColor(100, 35, 40), 180);
-        }
-
-        unsigned int titleCol = isSelected ? GetColor(255, 230, 230) : GetColor(180, 150, 150);
-        FontManager::GetInstance().DrawString(btnX + 35, by + 24, options[i].titleJa, titleCol, 24);
-
-        unsigned int enCol = isSelected ? GetColor(220, 110, 110) : GetColor(140, 85, 85);
-        FontManager::GetInstance().DrawString(btnX + 230, by + 29, options[i].titleEn, enCol, 16);
+        unsigned int titleCol = isSelected ? HudStyle::ColAmber() : HudStyle::ColSubText();
+        FontManager::GetInstance().DrawStringCenter(centerX, by + 27, options[i], titleCol, 24, isSelected ? 7 : 5);
     }
 
-    if (animTimer >= 1.5f)
+    if (animTimer >= 1.0f)
     {
-        FontManager::GetInstance().DrawStringCenter(centerX, 880, "[ W / S / ↑ / ↓ / マウス ] 選択    [ Enter / クリック ] 決定", GetColor(180, 120, 120), 16);
+        int hx = 770;
+        hx += HudStyle::DrawKeyHintItem(hx, 880, "W / S", "選ぶ") + 28;
+        HudStyle::DrawKeyHintItem(hx, 880, "Enter / クリック", "決定");
     }
 }

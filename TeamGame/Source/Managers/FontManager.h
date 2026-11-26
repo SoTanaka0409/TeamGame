@@ -19,19 +19,39 @@ public:
     static FontManager& GetInstance();
 
     /**
+     * @brief 同梱TTFフォントをリソースから明示的に読み込む（GetFont初回呼び出し時にも自動実行）
+     */
+    void EnsureBundledFontsLoaded();
+
+    /**
+     * @brief 通常UI用フォント名（同梱M PLUS 1p Medium、未ロード時はフォールバック）
+     */
+    const std::string& GetUiFontName() const;
+
+    /**
+     * @brief 英字タイトル・数値用ディスプレイフォント名（同梱Rajdhani、未ロード時はフォールバック）
+     */
+    const std::string& GetDisplayFontName() const;
+
+    /**
      * @brief 指定した条件のフォントハンドルを取得（なければ自動生成してキャッシュ）
      * @param fontSize フォントサイズ (px)
      * @param thick 太さ (1~9, -1でデフォルト)
-     * @param fontName フォント名 (空文字列でデフォルトフォント)
-     * @param fontType フォントタイプ (DX_FONTTYPE_ANTIALIASING 等)
+     * @param fontName フォント名 (空文字列で同梱UIフォント)
+     * @param fontType フォントタイプ (DX_FONTTYPE_ANTIALIASING_4X4 等)
      * @return int DXライブラリのフォントハンドル
      */
-    int GetFont(int fontSize, int thick = -1, const std::string& fontName = "", int fontType = DX_FONTTYPE_ANTIALIASING);
+    int GetFont(int fontSize, int thick = -1, const std::string& fontName = "", int fontType = DX_FONTTYPE_ANTIALIASING_4X4);
 
     /**
      * @brief 指定フォントサイズで文字列を描画 (左揃え)
      */
     void DrawString(int x, int y, const char* str, unsigned int color, int fontSize, int thick = -1, const std::string& fontName = "");
+
+    /**
+     * @brief 薄いドロップシャドウ付きで文字列を描画 (左揃え)
+     */
+    void DrawStringShadow(int x, int y, const char* str, unsigned int color, int fontSize, int thick = -1, const std::string& fontName = "", int shadowAlpha = 170);
 
     /**
      * @brief 指定フォントサイズでフォーマット文字列を描画 (左揃え)
@@ -44,6 +64,11 @@ public:
      * @param y 描画Y座標
      */
     void DrawStringCenter(int centerX, int y, const char* str, unsigned int color, int fontSize, int thick = -1, const std::string& fontName = "");
+
+    /**
+     * @brief 薄いドロップシャドウ付きで文字列を中央揃え描画
+     */
+    void DrawStringCenterShadow(int centerX, int y, const char* str, unsigned int color, int fontSize, int thick = -1, const std::string& fontName = "", int shadowAlpha = 170);
 
     /**
      * @brief 指定フォントサイズで文字列を右揃え描画
@@ -106,4 +131,8 @@ private:
 
 private:
     std::unordered_map<std::string, int> m_fontMap;
+    bool m_bundledFontsLoaded = false;
+    std::vector<std::wstring> m_loadedFontPaths;
+    std::string m_uiFontName = "Yu Gothic UI";
+    std::string m_displayFontName = "Bahnschrift";
 };

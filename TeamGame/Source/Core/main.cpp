@@ -77,7 +77,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     SetWindowSize(1280, 720);
 
     // ウィンドウタイトルの設定
-    SetMainWindowText("TeamGame");
+    SetMainWindowText("Blind ZOne");
 
     // DXライブラリの文字列処理をUTF-8に設定6
     SetUseCharCodeFormat(DX_CHARCODEFORMAT_UTF8);
@@ -126,11 +126,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // 入力の更新
         InputManager::GetInstance().Update();
 
-        // [F3]キーでFPSメーター表示のON/OFF切り替え
+        // [F3]キーでFPSメーター表示のON/OFF切り替え（Debugビルド時のみ有効）
+#ifdef _DEBUG
         if (InputManager::GetInstance().IsKeyPressed(KEY_INPUT_F3))
         {
             showFps = !showFps;
         }
+#endif
 
         // シーンの更新と描画
         SceneManager::GetInstance().Update();

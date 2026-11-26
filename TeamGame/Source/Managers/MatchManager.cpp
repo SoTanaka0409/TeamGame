@@ -10,6 +10,7 @@
 
 #include "FontManager.h"
 #include "../UI/HudStyle.h"
+#include "../Scenes/Scene.h"
 #include <DxLib.h>
 
 void MatchManager::Reset()
@@ -163,6 +164,13 @@ void MatchManager::DrawKillNotifications()
     int logH = 38;
     int spacing = 6;
 
+    static int s_killStripIdx = -2;
+    static int s_killSelIdx = -2;
+    if (s_killStripIdx == -2) {
+        s_killStripIdx = Scene::Load2DImage("Images/UI/PreGame/panel_strip.png");
+        s_killSelIdx   = Scene::Load2DImage("Images/UI/PreGame/btn_selected.png");
+    }
+
     for (size_t i = 0; i < killLogs.size(); ++i)
     {
         const auto& log = killLogs[i];
@@ -170,25 +178,23 @@ void MatchManager::DrawKillNotifications()
         int y = baseTopY + static_cast<int>(i) * (logH + spacing);
 
         // フェードアウト処理 (残り40フレームで透明化)
-        int alpha = HudStyle::DefaultBgAlpha;
+        int alpha = 225;
         if (log.remainingFrames < 40) {
-            alpha = static_cast<int>(HudStyle::DefaultBgAlpha * (log.remainingFrames / 40.0f));
+            alpha = static_cast<int>(225 * (log.remainingFrames / 40.0f));
         }
 
-        // 1. パネル背景と枠線（自分のキルは琥珀、自分のデスは赤）
-        if (log.isPlayerKill) {
-            HudStyle::DrawPanel(x, y, logW, logH, true, HudStyle::ColAmber(), alpha);
-        } else if (log.isPlayerDeath) {
-            HudStyle::DrawPanel(x, y, logW, logH, true, HudStyle::ColEnemy(), alpha);
+        // 1. 手描き質感パネル背景
+        if (log.isPlayerKill || log.isPlayerDeath) {
+            HudStyle::DrawTexturedPanel(x, y, logW, logH, Scene::Get2DImage(s_killSelIdx), HudStyle::ColBg(),
+                                        log.isPlayerKill ? HudStyle::ColAmber() : HudStyle::ColEnemy(), alpha);
         } else {
-            HudStyle::DrawPanel(x, y, logW, logH, false, 0, alpha);
+            HudStyle::DrawTexturedPanel(x, y, logW, logH, Scene::Get2DImage(s_killStripIdx), HudStyle::ColBg(), HudStyle::ColBorderSoft(), alpha);
         }
 
-        // 2. テキスト描画 (Killer > Victim)
-        int fontSz = 17;
-        int textY = y + (logH - fontSz) / 2;
+        // 2. テキスト描画 (日本語表記で統一)
+        int fontSz = 16;
 
-        std::string killerText = log.isPlayerKill ? "YOU" : log.attackerName;
+        std::string killerText = log.isPlayerKill ? "自分" : log.attackerName;
         unsigned int killerCol = HudStyle::ColEnemy();
         if (log.isPlayerKill) {
             killerCol = HudStyle::ColAmber();
@@ -196,7 +202,7 @@ void MatchManager::DrawKillNotifications()
             killerCol = HudStyle::ColAlly();
         }
 
-        std::string victimText = log.isPlayerDeath ? "YOU" : log.victimName;
+        std::string victimText = log.isPlayerDeath ? "自分" : log.victimName;
         unsigned int victimCol = HudStyle::ColEnemy();
         if (log.isPlayerDeath) {
             victimCol = HudStyle::ColEnemy();
@@ -204,28 +210,28 @@ void MatchManager::DrawKillNotifications()
             victimCol = HudStyle::ColAlly();
         }
 
-        int badgeAreaW = (log.isPlayerKill || log.isPlayerDeath) ? 62 : 16;
-        int maxTextW = logW - 16 - badgeAreaW;
-        std::string fullLine = killerText + " > " + victimText;
-        int fitSz = FontManager::GetInstance().GetFittingFontSize(fullLine.c_str(), maxTextW, fontSz, 14);
+        int badgeAreaW = (log.isPlayerKill || log.isPlayerDeath) ? 68 : 16;
+        int maxTextW = logW - 20 - badgeAreaW;
+        std::string fullLine = killerText + " ▶ " + victimText;
+        int fitSz = FontManager::GetInstance().GetFittingFontSize(fullLine.c_str(), maxTextW, fontSz, 13);
         int drawY = y + (logH - fitSz) / 2;
 
         // Killer
-        FontManager::GetInstance().DrawString(x + 14, drawY, killerText.c_str(), killerCol, fitSz);
-        int killerW = FontManager::GetInstance().GetStringWidth(killerText.c_str(), fitSz);
+        FontManager::GetInstance().DrawString(x + 14, drawY, killerText.c_str(), killerCol, fitSz, 6);
+        int killerW = FontManager::GetInstance().GetStringWidth(killerText.c_str(), fitSz, 6);
 
-        // Separator (>)
-        FontManager::GetInstance().DrawString(x + 14 + killerW + 6, drawY, ">", HudStyle::ColSubText(), fitSz);
-        int sepW = FontManager::GetInstance().GetStringWidth(">", fitSz);
+        // Separator
+        FontManager::GetInstance().DrawString(x + 14 + killerW + 6, drawY, "▶", HudStyle::ColSubText(), fitSz);
+        int sepW = FontManager::GetInstance().GetStringWidth("▶", fitSz);
 
         // Victim
         FontManager::GetInstance().DrawString(x + 14 + killerW + 6 + sepW + 6, drawY, victimText.c_str(), victimCol, fitSz);
 
-        // 右端バッジ (自分のキル: KILL / 自分のデス: DEAD)
+        // 右端バッジ (自分のキル: 撃破 / 自分のデス: ダウン)
         if (log.isPlayerKill) {
-            FontManager::GetInstance().DrawStringRight(x + logW - 14, y + (logH - 16) / 2, "KILL", HudStyle::ColAmber(), 16);
+            FontManager::GetInstance().DrawStringRight(x + logW - 14, y + (logH - 15) / 2, "撃破", HudStyle::ColAmber(), 15, 7);
         } else if (log.isPlayerDeath) {
-            FontManager::GetInstance().DrawStringRight(x + logW - 14, y + (logH - 16) / 2, "DEAD", HudStyle::ColEnemy(), 16);
+            FontManager::GetInstance().DrawStringRight(x + logW - 14, y + (logH - 15) / 2, "ダウン", HudStyle::ColEnemy(), 15, 7);
         }
     }
 }

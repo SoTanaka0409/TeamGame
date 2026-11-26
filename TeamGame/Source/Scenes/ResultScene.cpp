@@ -13,23 +13,24 @@ ResultScene::ResultScene()
     // 一度読み込むと内部配列にキャッシュされ、配列番号（インデックス）で何度でも呼び出せます。
     // =========================================================================
     resultBgIndex    = Load2DImage("result_bg.png");
+    if (resultBgIndex == -1) resultBgIndex = Load2DImage("Titleu.jpg");
     resultLogoIndex  = Load2DImage("result_logo.png");
     windowFrameIndex = Load2DImage("ui_window.png"); // 9スライス用枠画像
 
     // UITextWindow によるリザルトパネルの初期化
     resultPanelWindow = new UI::UITextWindow();
-    resultPanelWindow->SetFontHandle(FontManager::GetInstance().GetFont(24));
-    resultPanelWindow->SetFixedSize(800, 320);
-    resultPanelWindow->SetMaxTextWidth(740);
-    resultPanelWindow->SetPadding(UI::Margin(40, 25, 40, 25));
+    resultPanelWindow->SetFontHandle(FontManager::GetInstance().GetFont(22));
+    resultPanelWindow->SetFixedSize(760, 300);
+    resultPanelWindow->SetMaxTextWidth(680);
+    resultPanelWindow->SetPadding(UI::Margin(44, 28, 44, 28));
     resultPanelWindow->SetLineSpacing(12);
-    resultPanelWindow->SetBoxColor(GetColor(15, 22, 35), GetColor(60, 90, 130), 190);
+    resultPanelWindow->SetBoxColor(HudStyle::ColBg(), HudStyle::ColBorder(), 225);
     if (windowFrameIndex != -1) {
         resultPanelWindow->SetBgGraphHandle(Get2DImage(windowFrameIndex));
     }
 
-    resultPanelWindow->SetTitle("BATTLE RESULT", GetColor(255, 220, 0));
-    resultPanelWindow->SetText("MATCH COMPLETED\n\nThank you for playing!\n戦闘が終了しました。お疲れ様でした！");
+    resultPanelWindow->SetTitle("BATTLE RESULT", HudStyle::ColAmber());
+    resultPanelWindow->SetText("MATCH COMPLETED\n\n戦闘が終了しました。");
 }
 
 ResultScene::~ResultScene()
@@ -65,30 +66,11 @@ void ResultScene::Draw()
 {
     Scene::Draw();
 
-    // 1. 背景画像の描画（配列番号から呼び出し）
-    if (resultBgIndex != -1)
-    {
-        DrawFullScreen2DImage(resultBgIndex, false);
-        // 背景画像の上に半透明の暗幕を重ねて文字を際立たせる
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
-        DrawBox(0, 0, 1920, 1080, GetColor(10, 15, 25), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
-    else
-    {
-        DrawBox(0, 0, 1920, 1080, GetColor(15, 20, 30), TRUE);
-    }
+    HudStyle::DrawTacticalBackdrop(1920, 1080, Get2DImage(resultBgIndex), 1920 / 2, 390, 480);
 
-    // 装飾背景ライン (走査線アニメーション演出 - sou からの復元)
-    for (int i = 0; i < 10; ++i)
-    {
-        int y = (i * 120 + static_cast<int>(animTimer * 50.0f)) % 1080;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
-        DrawLine(0, y, 1920, y, GetColor(0, 200, 255), 1);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
+    const std::string& dispFont = FontManager::GetInstance().GetDisplayFontName();
 
-    // 2. リザルトロゴ/バナー画像の描画（配列番号から呼び出し）
+    // ロゴ画像またはタイトル表示
     int logoHandle = Get2DImage(resultLogoIndex);
     if (logoHandle != -1)
     {
@@ -100,12 +82,11 @@ void ResultScene::Draw()
     }
     else
     {
-        HudStyle::DrawRoundPanel(1920 / 2 - 250, 120, 500, 60, HudStyle::RadiusButton, GetColor(20, 35, 55), GetColor(0, 200, 255));
-        FontManager::GetInstance().DrawStringCenter(1920 / 2, 134, "=== RESULT ===", GetColor(255, 220, 0), 32);
+        FontManager::GetInstance().DrawStringCenterShadow(1920 / 2, 134, "RESULT", HudStyle::ColText(), 54, -1, dispFont);
     }
 
-    // 3. リザルト中央パネル（UITextWindow による描画）
-    int panelW = 800;
+    // リザルト中央パネル
+    int panelW = 760;
     int panelX = (1920 - panelW) / 2;
     int panelY = 240;
 
@@ -115,11 +96,11 @@ void ResultScene::Draw()
     }
 
     // ボタン案内
-    int btnW = 480;
-    int btnH = 56;
+    int btnW = 400;
+    int btnH = 52;
     int btnX = (1920 - btnW) / 2;
     int btnY = panelY + 340;
 
-    HudStyle::DrawRoundPanel(btnX, btnY, btnW, btnH, HudStyle::RadiusButton, GetColor(25, 40, 65), GetColor(0, 180, 255), 180);
-    FontManager::GetInstance().DrawStringCenter(1920 / 2, btnY + 17, "[ ENTER / SPACE ] タイトルへ戻る", GetColor(255, 255, 255), 22);
+    HudStyle::DrawRoundPanel(btnX, btnY, btnW, btnH, HudStyle::RadiusButton, HudStyle::ColCard(), HudStyle::ColBorder(), 210);
+    FontManager::GetInstance().DrawStringCenter(1920 / 2, btnY + 15, "[ ENTER / SPACE ] タイトルへ戻る", HudStyle::ColSubText(), 19);
 }

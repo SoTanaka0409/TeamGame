@@ -367,11 +367,18 @@ void Player::Update()
             }
             prevAimLockKey = isEKeyPressed;
 
-            // 視点固定が解除されている時のみマウス方向へ更新
+            // 視点固定が解除されている時のみマウス方向へ更新（ウィンドウ拡縮対応）
             if (!isAimLocked)
             {
-                int mouseX, mouseY;
+                int mouseX = 0, mouseY = 0;
                 GetMousePoint(&mouseX, &mouseY);
+                int drawW = 1920, drawH = 1080;
+                GetDrawScreenSize(&drawW, &drawH);
+                if (drawW > 0 && drawH > 0 && (drawW != 1920 || drawH != 1080))
+                {
+                    mouseX = static_cast<int>(mouseX * (1920.0f / drawW));
+                    mouseY = static_cast<int>(mouseY * (1080.0f / drawH));
+                }
                 float dx = mouseX - Camera::WorldToScreenX(position.x);
                 float dy = mouseY - Camera::WorldToScreenY(position.y);
                 float dirLen = std::sqrt(dx * dx + dy * dy);
@@ -1312,31 +1319,41 @@ void Player::DrawUI(int screenX, int screenY)
     }
     if (plateX < 20) plateX = 20;
 
-    // 3. 上部: コンパクトな武器・弾薬 (AMMO) バナー
-    const int bannerH = 26;
-    const int bannerY = plateY - bannerH - 6;
-    HudStyle::DrawPanel(plateX, bannerY, plateW, bannerH, false);
+    // 3. 上部: 手描き質感の武器・弾薬バー（選択画面と統一デザイン）
+    static int s_weaponStripIdx = -2;
+    if (s_weaponStripIdx == -2) {
+        s_weaponStripIdx = Scene::Load2DImage("Images/UI/PreGame/panel_strip.png");
+    }
 
-    // 武器名
-    std::string wName = currentWeapon->GetName();
-    if (isAimLocked) wName += " [LOCK]";
-    char weaponTitle[64];
-    snprintf(weaponTitle, sizeof(weaponTitle), "[%d] %s", currentWeaponIndex + 1, wName.c_str());
-    FontManager::GetInstance().DrawString(plateX + 12, bannerY + 5, weaponTitle, isAimLocked ? HudStyle::ColAmber() : HudStyle::ColText(), 14);
+    const int bannerH = 30;
+    const int bannerY = plateY - bannerH - 8;
+    HudStyle::DrawTexturedPanel(plateX, bannerY, plateW, bannerH, Scene::Get2DImage(s_weaponStripIdx), HudStyle::ColBg(), HudStyle::ColBorder(), 235);
+
+    // 武器名（日本語表記に統一）
+    std::string rawName = currentWeapon->GetName();
+    std::string wName = rawName;
+    if (rawName.find("Handgun") != std::string::npos) wName = "ハンドガン";
+    else if (rawName.find("Shotgun") != std::string::npos) wName = "ショットガン";
+    else if (rawName.find("Sniper") != std::string::npos) wName = "スナイパー";
+    else if (rawName.find("SMG") != std::string::npos || rawName.find("Submachine") != std::string::npos) wName = "サブマシンガン";
+    if (isAimLocked) wName += "（固定）";
+    char weaponTitle[96];
+    snprintf(weaponTitle, sizeof(weaponTitle), "%d. %s", currentWeaponIndex + 1, wName.c_str());
+    FontManager::GetInstance().DrawString(plateX + 14, bannerY + 7, weaponTitle, isAimLocked ? HudStyle::ColAmber() : HudStyle::ColText(), 15, 6);
 
     // 弾薬数
     int currentAmmo = currentWeapon->GetCurrentAmmo();
     int maxAmmo = currentWeapon->GetMaxAmmo();
     if (currentWeapon->IsReloading())
     {
-        FontManager::GetInstance().DrawStringRight(plateX + plateW - 12, bannerY + 5, "RELOADING...", HudStyle::ColAmber(), 14);
+        FontManager::GetInstance().DrawStringRight(plateX + plateW - 14, bannerY + 7, "リロード中...", HudStyle::ColAmber(), 15, 6);
     }
     else
     {
         char ammoText[32];
-        snprintf(ammoText, sizeof(ammoText), "AMMO  %d / %d", currentAmmo, maxAmmo);
+        snprintf(ammoText, sizeof(ammoText), "弾薬 %d / %d", currentAmmo, maxAmmo);
         unsigned int ammoColor = HudStyle::GetAmmoColor(currentAmmo, maxAmmo);
-        FontManager::GetInstance().DrawStringRight(plateX + plateW - 12, bannerY + 5, ammoText, ammoColor, 14);
+        FontManager::GetInstance().DrawStringRight(plateX + plateW - 14, bannerY + 7, ammoText, ammoColor, 15, 6);
     }
 
     // 4. キャラクター別HUDプレート画像の描画
@@ -1397,59 +1414,58 @@ void Player::DrawUI(int screenX, int screenY)
             activeFrames = GetEffectRemainingFrames(SkillMinorTag::HighRisk);
         }
 
-        // 下地トラック（半透明ブラック・角丸）
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-        HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(10, 15, 20), TRUE);
+        // 下地トラック（半透明ダーク・角丸）
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+        HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(14, 15, 12), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
         if (activeFrames > 0)
         {
-            // スキル効果発動中（アンバー色で効果持続時間を表示）
+            // スキル効果発動中（暖かいアンバー色）
             float actRatio = static_cast<float>(activeFrames) / static_cast<float>(maxDuration);
             if (actRatio > 1.0f) actRatio = 1.0f; else if (actRatio < 0.0f) actRatio = 0.0f;
             int fillW = static_cast<int>(mpW * actRatio);
 
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, GetColor(255, 180, 20), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, HudStyle::ColAmber(), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(255, 220, 80), FALSE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(245, 220, 140), FALSE);
 
             char actText[32];
-            snprintf(actText, sizeof(actText), "ACTIVE %.1fs", activeFrames / 60.0f);
-            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, actText, GetColor(255, 255, 255), 13);
+            snprintf(actText, sizeof(actText), "発動中 %.1f秒", activeFrames / 60.0f);
+            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, actText, GetColor(255, 255, 255), 13, 6);
         }
         else if (ct > 0)
         {
-            // クールタイム中: MPが0%から徐々に100%(MAX)に向かってチャージされる
+            // クールタイム中: 落ち着いたティール色でチャージ表示
             float mpRatio = 1.0f - static_cast<float>(ct) / static_cast<float>(maxCt);
             if (mpRatio < 0.0f) mpRatio = 0.0f; else if (mpRatio > 1.0f) mpRatio = 1.0f;
             int fillW = static_cast<int>(mpW * mpRatio);
 
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 175);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, GetColor(0, 160, 240), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 185);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, GetColor(62, 138, 132), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(30, 70, 110), FALSE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(46, 78, 74), FALSE);
 
             char ctText[32];
-            snprintf(ctText, sizeof(ctText), "MP CHARGING %.1fs", ct / 60.0f);
-            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, ctText, GetColor(210, 235, 255), 13);
+            snprintf(ctText, sizeof(ctText), "チャージ中 %.1f秒", ct / 60.0f);
+            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, ctText, HudStyle::ColText(), 13);
         }
         else
         {
-            // MPがMAXに到達！ スキル発動可能（Readyパルス発光）
+            // MPがMAXに到達！ スキル発動可能（温かみのあるティール発光）
             static int readyTimer = 0;
             readyTimer++;
-            int pulseAlpha = 180 + static_cast<int>(55.0f * std::sin(readyTimer * 0.08f));
+            int pulseAlpha = 185 + static_cast<int>(50.0f * std::sin(readyTimer * 0.08f));
 
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, pulseAlpha);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(0, 205, 255), TRUE);
+            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(68, 174, 164), TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-            // 発光枠
-            HudStyle::DrawRoundBox(mpX - 1, mpY - 1, mpX + mpW + 1, mpY + mpH + 1, HudStyle::RadiusGauge + 1, GetColor(220, 250, 255), FALSE);
+            HudStyle::DrawRoundBox(mpX - 1, mpY - 1, mpX + mpW + 1, mpY + mpH + 1, HudStyle::RadiusGauge + 1, HudStyle::ColAmber(), FALSE);
 
-            const char* readyKey = (m_inputType == PlayerInputType::KEYBOARD_MOUSE) ? "READY [F]" : "READY [RT]";
-            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 15) / 2, readyKey, GetColor(255, 255, 255), 14);
+            const char* readyKey = (m_inputType == PlayerInputType::KEYBOARD_MOUSE) ? "スキル発動 [F]" : "スキル発動 [RT]";
+            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, readyKey, GetColor(255, 255, 255), 14, 7);
         }
     }
 
@@ -1459,33 +1475,33 @@ void Player::DrawUI(int screenX, int screenY)
     float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / static_cast<float>(maxHp) : 0.0f;
     if (hpRatio < 0.0f) hpRatio = 0.0f; else if (hpRatio > 1.0f) hpRatio = 1.0f;
 
-    // 下地トラック（半透明ブラック・角丸）
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, GetColor(10, 15, 20), TRUE);
+    // 下地トラック（半透明ダーク・角丸）
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, GetColor(14, 15, 12), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-    // HPゲージ充填 (緑 -> 黄 -> 赤)
+    // HPゲージ充填 (モスグリーン -> 琥珀 -> 血赤)
     int hpFillW = static_cast<int>(hpW * hpRatio);
-    unsigned int hpCol = GetColor(40, 220, 100);
-    if (hpRatio <= 0.25f) hpCol = GetColor(230, 50, 50);
-    else if (hpRatio <= 0.50f) hpCol = GetColor(240, 180, 40);
+    unsigned int hpCol = GetColor(112, 174, 82);
+    if (hpRatio <= 0.25f) hpCol = HudStyle::ColEnemy();
+    else if (hpRatio <= 0.50f) hpCol = HudStyle::ColAmber();
 
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 195);
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 205);
     HudStyle::DrawRoundBox(hpX, hpY, hpX + hpFillW, hpY + hpH, HudStyle::RadiusGauge, hpCol, TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, GetColor(50, 60, 70), FALSE);
+    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, HudStyle::ColBorderSoft(), FALSE);
 
     // HP数値表示
     char hpStr[32];
     snprintf(hpStr, sizeof(hpStr), "%d / %d", curHp, maxHp);
-    FontManager::GetInstance().DrawStringCenter(hpX + hpW / 2, hpY + (hpH - 14) / 2, hpStr, GetColor(255, 255, 255), 14);
+    FontManager::GetInstance().DrawStringCenter(hpX + hpW / 2, hpY + (hpH - 14) / 2, hpStr, GetColor(255, 255, 255), 14, 6);
 
-    // 8. 2P等のオートエイム状態インジケーター表示（必要時）
+    // 8. ゲームパッド等のオートエイム状態インジケーター表示（必要時）
     if (m_inputType != PlayerInputType::KEYBOARD_MOUSE)
     {
         if (m_autoAimTarget)
         {
-            FontManager::GetInstance().DrawString(plateX + 10, bannerY - 18, "[ AUTO-AIM: LOCKED ]", HudStyle::ColEnemy(), 11);
+            FontManager::GetInstance().DrawString(plateX + 10, bannerY - 20, "オートエイム中", HudStyle::ColEnemy(), 13);
         }
     }
 }

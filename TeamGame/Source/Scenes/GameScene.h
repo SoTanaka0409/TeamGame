@@ -42,6 +42,11 @@ class GameScene : public Scene
     int pauseMenuCursor = 0;             ///< ポーズメニューのカーソル位置
     int settingsMenuCursor = 0;          ///< 設定メニューのカーソル位置
     int pauseIconHandles[6] = { -1, -1, -1, -1, -1, -1 }; ///< ポーズメニュー用アイコン画像ハンドル
+    int uiModalImgIndex = -1;            ///< 手描き質感モーダル枠画像
+    int uiStripImgIndex = -1;            ///< 手描き質感バー・枠画像
+    int uiBtnIdleImgIndex = -1;          ///< 非選択ボタン質感画像
+    int uiBtnSelImgIndex = -1;           ///< 選択中ボタン質感画像
+    int uiUnderlineImgIndex = -1;        ///< 見出し血痕アンダーライン画像
 
     bool prevEsc = false;                ///< 前フレームでのESC入力状態
     bool prevUp = false;                 ///< 前フレームでの上入力状態
@@ -51,6 +56,8 @@ class GameScene : public Scene
     bool prevEnter = false;              ///< 前フレームでの決定入力状態
     bool prevHelpKey = false;            ///< 前フレームでのヘルプキー入力状態
     bool prevClick = false;              ///< 前フレームでのマウスクリック状態
+    int prevMouseX = -1;                 ///< 前フレームのマウスX座標
+    int prevMouseY = -1;                 ///< 前フレームのマウスY座標
     bool isShowingControlsGuide = false; ///< ゲーム中の操作説明オーバーレイ表示フラグ
 
     float gameTimer = 0.0f;              ///< 経過時間のタイマー

@@ -30,6 +30,9 @@ class ClearScene : public Scene
     bool prevUp = false;             ///< 前フレームでの上入力状態
     bool prevDown = false;           ///< 前フレームでの下入力状態
     bool prevEnter = false;          ///< 前フレームでの決定入力状態
+    bool prevMouseLeft = false;      ///< 前フレームでのマウス左クリック状態
+    int prevMouseX = -1;             ///< 前フレームのマウスX座標
+    int prevMouseY = -1;             ///< 前フレームのマウスY座標
     bool hasReleasedConfirm = false; ///< シーン開始後に決定キーが一度離されたかのフラグ
 
     // ========================================================
@@ -39,6 +42,9 @@ class ClearScene : public Scene
     int clearBgIndex = -1;           ///< クリアリザルト背景画像の配列番号
     int windowFrameIndex = -1;       ///< UITextWindow枠画像の配列番号
     int clearLogoIndex = -1;         ///< ゲームクリアロゴ画像の配列番号
+    int uiModalImgIndex = -1;        ///< 手描き質感モーダル枠画像
+    int uiBtnIdleImgIndex = -1;      ///< 非選択ボタン質感画像
+    int uiBtnSelImgIndex = -1;       ///< 選択中ボタン質感画像
 
     // UITextWindow によるクリアリザルト情報枠描画
     UI::UITextWindow* statsWindow = nullptr; ///< リザルト統計用テキストウィンドウ
