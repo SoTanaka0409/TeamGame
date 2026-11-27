@@ -30,10 +30,10 @@ Player* CharacterFactory::CreatePlayer(float startX, float startY, Stage* stage,
     player->SetEquippedSkillById(charaData.skillId);
 
     // 選択された武器 (スロット1: 固定ハンドガン, スロット2: 自由選択武器) を装備
-    std::vector<Weapon*> playerWeapons;
+    std::vector<std::unique_ptr<Weapon>> playerWeapons;
     playerWeapons.push_back(CreateWeaponByName(selection.slot1Weapon.name));
     playerWeapons.push_back(CreateWeaponByName(selection.slot2Weapon.name));
-    player->SetWeapons(playerWeapons);
+    player->SetWeapons(std::move(playerWeapons));
 
     // 注意: ここでは objectManager->AddObject(player) を行いません (呼び出し側での重複登録・メモリ破壊を防ぐため)
     return player;
@@ -99,20 +99,20 @@ std::vector<int> CharacterFactory::GenerateUniqueCharacterIds(int count, int exc
     return candidateIds;
 }
 
-Weapon* CharacterFactory::CreateWeaponByName(const std::string& name) {
+std::unique_ptr<Weapon> CharacterFactory::CreateWeaponByName(const std::string& name) {
     const auto& selection = PlayerSelectionManager::GetInstance().GetSelection();
     int charaId = selection.selectedCharacter.id;
     return CreateWeaponForCharacter(name, charaId);
 }
 
-Weapon* CharacterFactory::CreateWeaponForCharacter(const std::string& name, int characterId) {
-    if (name.find("Shotgun") != std::string::npos) return new Shotgun();
-    if (name.find("Sniper") != std::string::npos) return new SniperRifle();
+std::unique_ptr<Weapon> CharacterFactory::CreateWeaponForCharacter(const std::string& name, int characterId) {
+    if (name.find("Shotgun") != std::string::npos) return std::make_unique<Shotgun>();
+    if (name.find("Sniper") != std::string::npos) return std::make_unique<SniperRifle>();
     if (name.find("Submachine") != std::string::npos || name.find("SMG") != std::string::npos || name.find("Assault") != std::string::npos) {
         // キャラクター別の派生SMG（パラメータ＆弾・銃身の描画アセット）を生成
-        return SubmachineGunFactory::CreateForCharacter(characterId);
+        return std::unique_ptr<Weapon>(SubmachineGunFactory::CreateForCharacter(characterId));
     }
-    return new Handgun();
+    return std::make_unique<Handgun>();
 }
 
 void CharacterFactory::SpawnMatchBots(const Stage& stage, float cellSize, Player* player, ObjectManager* objectManager, std::vector<Enemy*>& enemiesOut) {

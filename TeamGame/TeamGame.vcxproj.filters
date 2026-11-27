@@ -213,6 +213,9 @@
     <ClCompile Include="Source\UI\ControlsGuide.cpp">
       <Filter>ソース ファイル\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\UI\PlayerHudRenderer.cpp">
+      <Filter>ソース ファイル\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\UI\UITextWindow.cpp">
       <Filter>ソース ファイル\UI</Filter>
     </ClCompile>
@@ -238,6 +241,9 @@
       <Filter>ソース ファイル\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Animation.cpp">
+      <Filter>ソース ファイル\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\LightMaskRenderer.cpp">
       <Filter>ソース ファイル\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Model.cpp">
@@ -288,6 +294,9 @@
       <Filter>ヘッダー ファイル\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\Animation.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\LightMaskRenderer.h">
       <Filter>ヘッダー ファイル\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\Model.h">
@@ -396,6 +405,9 @@
       <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\HudStyle.h">
+      <Filter>ヘッダー ファイル\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UI\PlayerHudRenderer.h">
       <Filter>ヘッダー ファイル\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\UITextWindow.h">

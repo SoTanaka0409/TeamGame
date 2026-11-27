@@ -1,7 +1,11 @@
 ﻿#pragma once
 #include "Character.h"
 #include <vector>
+#include <memory>
 #include <cmath>
+
+class PlayerHudRenderer;
+struct LightMaskParams;
 
 /**
  * @brief プレイヤーの操作入力タイプ
@@ -26,12 +30,15 @@ private:
     class Stage* currentStage = nullptr; ///< 現在のステージ
     float cellSize = 1.0f;               ///< ステージのマス目サイズ
     int damageColorTimer;                ///< 被弾イエロー点滅タイマー
-    Vector2 facingDir;                   ///< エイム向きベクトル
-    std::vector<Weapon *> weapons;       ///< 所持武器リスト
-    int currentWeaponIndex;              ///< 現在装備中の武器インデックス
-    int autoPingTimer;                   ///< オートピン送信タイマー
-    bool m_isMoving = false;             ///< 移動中フラグ
-    int m_footstepTimer = 0;             ///< 歩行足音SE用タイマー (草・土)
+    Vector2 facingDir;                              ///< エイム向きベクトル
+    std::vector<std::unique_ptr<Weapon>> weapons;   ///< 所持武器リスト（所有権をunique_ptrで管理）
+    int currentWeaponIndex;                         ///< 現在装備中の武器インデックス
+    int autoPingTimer;                              ///< オートピン送信タイマー
+    bool m_isMoving = false;                        ///< 移動中フラグ
+    int m_footstepTimer = 0;                        ///< 歩行足音SE用タイマー (草・土)
+    std::unique_ptr<PlayerHudRenderer> m_hudRenderer; ///< プレイヤー専用HUD・オーバーレイ描画コンポーネント
+
+    LightMaskParams BuildLightMaskParams(float brightRatio = 0.0f) const;
 
 
 public:
@@ -47,10 +54,15 @@ public:
     {
         if (currentWeaponIndex >= 0 && currentWeaponIndex < static_cast<int>(weapons.size()))
         {
-            return weapons[currentWeaponIndex];
+            return weapons[currentWeaponIndex].get();
         }
         return nullptr;
     }
+
+    /**
+     * @brief 現在装備中の武器スロット番号を取得
+     */
+    int GetCurrentWeaponIndex() const { return currentWeaponIndex; }
 
     /**
      * @brief X座標の取得
@@ -131,6 +143,11 @@ public:
     void RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX = 0, float startDrawY = 0, float brightRatio = 0.0f) const;
 
     /**
+     * @brief ライトマスク用の共有オフスクリーンリソースを解放
+     */
+    static void ReleaseLightMaskResources();
+
+    /**
      * @brief 暗闇より優先して敵位置・距離・矢印を描画（悪魔 HighRiskスキル用）
      */
     void RenderHighRiskEnemyIndicators() const;
@@ -187,9 +204,9 @@ public:
     void SetSkill(std::unique_ptr<Skill> skill) { SetEquippedSkill(std::move(skill)); }
     
     /**
-     * @brief 装備武器リストの設定
+     * @brief 装備武器リストの設定（所有権をムーブ移譲）
      */
-    void SetWeapons(const std::vector<class Weapon*>& newWeapons);
+    void SetWeapons(std::vector<std::unique_ptr<Weapon>> newWeapons);
 
     /**
      * @brief テーマカラーの設定
@@ -275,5 +292,4 @@ private:
     std::string m_cutinImagePath;             ///< カットイン専用画像パス
     Character* m_autoAimTarget = nullptr;     ///< オートエイムでロックオン中の敵
     bool m_isAutoAimActive = false;           ///< オートエイム発動中フラグ
-    int m_hudPlateHandle = -1;                ///< 画面左下のキャラクター別HUDプレート画像ハンドル
 };

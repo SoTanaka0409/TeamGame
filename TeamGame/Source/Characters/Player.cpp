@@ -21,8 +21,11 @@
 #include "../Skills/SkillData.h"
 #include "../Managers/SkillManager.h"
 #include "../UI/HudStyle.h"
+#include "../UI/PlayerHudRenderer.h"
+#include "../Graphics/LightMaskRenderer.h"
 #include <cmath>
 #include <algorithm>
+#include <utility>
 
 Player::Player(float startX, float startY)
     : Character(ObjectTag::Player, startX, startY, 8.9f), damageColorTimer(0),
@@ -49,35 +52,20 @@ Player::Player(float startX, float startY)
     }
 
     collider->SetTag("Player");
-    weapons.push_back(new Handgun());
-    weapons.push_back(new Shotgun());
-    weapons.push_back(new SniperRifle());
+    weapons.push_back(std::make_unique<Handgun>());
+    weapons.push_back(std::make_unique<Shotgun>());
+    weapons.push_back(std::make_unique<SniperRifle>());
     currentWeaponIndex = 0;
     SetEquippedSkillById(1);
     SetModelPath("Resource/GreenCharacter/character.mv1");
-    
+    m_hudRenderer = std::make_unique<PlayerHudRenderer>();
 }
 
-Player::~Player()
+Player::~Player() = default;
+
+void Player::SetWeapons(std::vector<std::unique_ptr<Weapon>> newWeapons)
 {
-    for (auto w : weapons)
-        delete w;
-    weapons.clear();
-
-    if (m_hudPlateHandle != -1)
-    {
-        DeleteGraph(m_hudPlateHandle);
-        m_hudPlateHandle = -1;
-    }
-}
-
-void Player::SetWeapons(const std::vector<Weapon*>& newWeapons)
-{
-    for (auto w : weapons)
-        delete w;
-    weapons.clear();
-
-    weapons = newWeapons;
+    weapons = std::move(newWeapons);
     currentWeaponIndex = 0;
 }
 
@@ -827,137 +815,18 @@ void Player::Draw()
 
 void Player::RenderHighRiskEnemyIndicators() const
 {
-    if (!IsActive() || !IsHighRisk()) return;
-
-    auto scene = SceneManager::GetInstance().GetCurrentScene();
-    if (!scene || !scene->GetObjectManager()) return;
-
-    for (auto obj : scene->GetObjectManager()->GetObjects())
+    if (m_hudRenderer)
     {
-        Enemy* enemy = dynamic_cast<Enemy*>(obj);
-        if (enemy && enemy->IsActive() && enemy->teamId != this->teamId)
-        {
-            Vector2 ePos = enemy->GetPosition();
-            float eScreenX = Camera::WorldToScreenX(ePos.x);
-            float eScreenY = Camera::WorldToScreenY(ePos.y);
-
-            float dx = ePos.x - position.x;
-            float dy = ePos.y - position.y;
-            float distPx = std::sqrt(dx * dx + dy * dy);
-            float distMeter = distPx / 40.0f; // 40px = 1m換算
-
-            // 敵が画面外にある場合は画面端に追跡矢印を配置、画面内なら敵の直上に表示
-            float arrowScreenX = eScreenX;
-            float arrowScreenY = eScreenY;
-            bool isOffScreen = false;
-
-            float margin = 80.0f;
-            if (arrowScreenX < margin || arrowScreenX > 1920.0f - margin ||
-                arrowScreenY < margin || arrowScreenY > 1080.0f - margin)
-            {
-                isOffScreen = true;
-                float dirX = dx / (distPx > 0.001f ? distPx : 1.0f);
-                float dirY = dy / (distPx > 0.001f ? distPx : 1.0f);
-                // 画面中心から画面端へ投影
-                float cScreenX = 1920.0f / 2.0f;
-                float cScreenY = 1080.0f / 2.0f;
-                arrowScreenX = cScreenX + dirX * 420.0f;
-                arrowScreenY = cScreenY + dirY * 420.0f;
-            }
-
-            // 1. 敵頭上/画面端インジケータ（矢印 ＋ 「〇.〇m」距離表示）
-            float angleToEnemy = std::atan2(dy, dx);
-            float tipX = arrowScreenX;
-            float tipY = isOffScreen ? arrowScreenY : (eScreenY - 35.0f);
-
-            // 矢印（三角形）の描画（暗闇に埋もれないよう黒縁取り＋鮮烈な赤色）
-            float arrowLen = 16.0f;
-            float p1X = tipX + std::cos(angleToEnemy) * arrowLen;
-            float p1Y = tipY + std::sin(angleToEnemy) * arrowLen;
-            float p2X = tipX + std::cos(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
-            float p2Y = tipY + std::sin(angleToEnemy + 2.4f) * (arrowLen * 0.8f);
-            float p3X = tipX + std::cos(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
-            float p3Y = tipY + std::sin(angleToEnemy - 2.4f) * (arrowLen * 0.8f);
-
-            // 矢印の外枠（黒縁取りで暗闇でも明瞭に輪郭を浮き立たせる）
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
-            DrawTriangle(static_cast<int>(p1X), static_cast<int>(p1Y),
-                         static_cast<int>(p2X), static_cast<int>(p2Y),
-                         static_cast<int>(p3X), static_cast<int>(p3Y),
-                         GetColor(0, 0, 0), FALSE);
-
-            // 矢印本体塗りつぶし（ビビッドな赤）
-            DrawTriangle(static_cast<int>(p1X), static_cast<int>(p1Y),
-                         static_cast<int>(p2X), static_cast<int>(p2Y),
-                         static_cast<int>(p3X), static_cast<int>(p3Y),
-                         GetColor(255, 40, 40), TRUE);
-
-            // 距離表示「あと 〇.〇m」の背景黒帯（文字が暗闇でも確実にくっきり読めるようにする）
-            char distText[32];
-            snprintf(distText, sizeof(distText), "あと %.1fm", distMeter);
-            int textW = 86;
-            int textH = 18;
-            int textX = static_cast<int>(tipX) - textW / 2;
-            int textY = static_cast<int>(tipY) - 26;
-
-            HudStyle::DrawRoundPanel(textX - 4, textY - 2, textW + 4, textH + 2, HudStyle::RadiusBadge, GetColor(0, 0, 0), GetColor(255, 220, 0), 200);
-
-            // 距離テキスト（鮮やかな黄色で最前面表示）
-            DrawString(textX, textY, distText, GetColor(255, 230, 40));
-
-            // 2. 敵本体の強調サークル（画面内なら敵の足元・頭部位置を壁透過でハイライト）
-            if (!isOffScreen)
-            {
-                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-                DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 26, GetColor(255, 30, 30), FALSE);
-                DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 24, GetColor(255, 210, 0), FALSE);
-                DrawCircle(static_cast<int>(eScreenX), static_cast<int>(eScreenY), 22, GetColor(255, 50, 50), FALSE);
-                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            }
-        }
+        m_hudRenderer->DrawHighRiskEnemyIndicators(*this);
     }
 }
 
 void Player::RenderBloodSplatterOverlay(int screenWidth, int screenHeight) const
 {
-    if (!IsActive()) return;
-    int lowHpThreshold = GameBalanceManager::GetInstance().GetInt("LowHpThreshold", 3);
-    if (status.GetCurrentHp() > lowHpThreshold) return;
-
-    // HP 3 以下の時に画面外枠にパルス赤枠エフェクトを描画
-    static float pulseTimer = 0.0f;
-    pulseTimer += 0.08f;
-    float pulse = (std::sin(pulseTimer) + 1.0f) * 0.5f; // 0.0 ~ 1.0
-
-    int hpGap = 4 - status.GetCurrentHp(); // 1(HP=3), 2(HP=2), 3(HP=1)
-    int baseAlpha = 70 + hpGap * 35;
-    int currentAlpha = static_cast<int>(baseAlpha + pulse * 60);
-    if (currentAlpha > 240) currentAlpha = 240;
-
-    int borderSteps = 6;
-    for (int i = 0; i < borderSteps; ++i)
+    if (m_hudRenderer)
     {
-        int bandThickness = (borderSteps - i) * 10;
-        int stepAlpha = static_cast<int>(currentAlpha * (0.3f + 0.7f * (float)(borderSteps - i) / borderSteps));
-
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, stepAlpha);
-        // 上
-        DrawBox(0, 0, screenWidth, bandThickness, GetColor(180, 0, 0), TRUE);
-        // 下
-        DrawBox(0, screenHeight - bandThickness, screenWidth, screenHeight, GetColor(180, 0, 0), TRUE);
-        // 左
-        DrawBox(0, 0, bandThickness, screenHeight, GetColor(180, 0, 0), TRUE);
-        // 右
-        DrawBox(screenWidth - bandThickness, 0, screenWidth, screenHeight, GetColor(180, 0, 0), TRUE);
+        m_hudRenderer->DrawBloodSplatterOverlay(*this, screenWidth, screenHeight);
     }
-
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(currentAlpha * 0.95f));
-    DrawBox(0, 0, screenWidth, screenHeight, GetColor(255, 30, 30), FALSE);
-    DrawBox(3, 3, screenWidth - 3, screenHeight - 3, GetColor(220, 10, 10), FALSE);
-
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(160 + pulse * 85));
-    DrawString(screenWidth / 2 - 80, 30, "!! LOW HP DANGER !!", GetColor(255, 60, 60));
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
 void Player::TakeDamage(int amount, const std::string& attackerName, int attackerTeamId)
@@ -996,513 +865,52 @@ void Player::OnCollisionExit(Collider *otherCollider)
 {
 }
 
+LightMaskParams Player::BuildLightMaskParams(float brightRatio) const
+{
+    LightMaskParams params;
+    params.stage = currentStage;
+    params.worldPos = position;
+    params.facingDir = facingDir;
+    params.cellSize = cellSize;
+    params.bodyRadius = radius;
+    params.closeRadiusCells = m_closeRadiusCells;
+    params.maxSpotDistCells = m_maxSpotDistCells;
+    params.fanAngleHalf = m_fanAngleHalf;
+    params.sightMultiplier = GetSightMultiplier();
+    params.brightRatio = brightRatio;
+    params.isLightOn = m_isLightOn;
+    params.isConductorMode = (m_characterId == 1);
+    return params;
+}
+
 bool Player::IsWorldPosInLight(const Vector2& targetPos) const
 {
-    if (!currentStage || cellSize <= 0.0f) return false;
+    return LightMaskRenderer::IsWorldPosInLight(BuildLightMaskParams(0.0f), targetPos);
+}
 
-    float dx = targetPos.x - position.x;
-    float dy = targetPos.y - position.y;
-    float distSq = dx * dx + dy * dy;
-
-    int stageWidth = currentStage->GetWidth();
-    int stageHeight = currentStage->GetHeight();
-
-    // 遮蔽物レイキャスト判定ラムダ
-    auto isRayBlocked = [&](float toX, float toY, float totalDist) -> bool {
-        if (totalDist <= cellSize * 0.5f) return false;
-        int raySteps = static_cast<int>(totalDist / (cellSize * 0.35f));
-        if (raySteps < 2) raySteps = 2;
-        for (int s = 1; s < raySteps; ++s)
-        {
-            float t = static_cast<float>(s) / raySteps;
-            float wx = position.x + (toX - position.x) * t;
-            float wy = position.y + (toY - position.y) * t;
-            int gx = static_cast<int>(wx / cellSize);
-            int gy = static_cast<int>(wy / cellSize);
-            if (gx < 0 || gx >= stageWidth || gy < 0 || gy >= stageHeight || currentStage->IsLightBlockingWall(gx, gy))
-            {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    // 1. 足元の全方位明かり範囲（指揮者の時は至近距離のみ）
-    bool isConductor = (m_characterId == 1);
-    float closeRadius = isConductor ? (radius + 4.0f) : (cellSize * m_closeRadiusCells * GetSightMultiplier());
-    if (distSq < closeRadius * closeRadius)
-    {
-        float dist = std::sqrt(distSq);
-        if (!isRayBlocked(targetPos.x, targetPos.y, dist))
-        {
-            return true;
-        }
-    }
-
-    // 2. 前方60度扇形スポットライト範囲（指揮者以外かつライトON時のみ）
-    if (m_characterId != 1 && m_isLightOn)
-    {
-        float maxSpotDist = cellSize * m_maxSpotDistCells * GetSightMultiplier();
-        if (distSq < maxSpotDist * maxSpotDist)
-        {
-            float dist = std::sqrt(distSq);
-            if (dist > 0.001f)
-            {
-                // エイム向きベクトルとの内積
-                float forwardProj = (dx * facingDir.x + dy * facingDir.y) / dist;
-                float cosHalfAngle = std::cos(m_fanAngleHalf); // 約0.866 (30度)
-
-                if (forwardProj >= cosHalfAngle)
-                {
-                    if (!isRayBlocked(targetPos.x, targetPos.y, dist))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-
-    return false;
+void Player::ReleaseLightMaskResources()
+{
+    LightMaskRenderer::ReleaseSharedResources();
 }
 
 void Player::RenderLightMask(int rectX, int rectY, int rectW, int rectH, float startDrawX, float startDrawY, float brightRatio) const
 {
-    if (!currentStage || cellSize <= 0.0f) return;
+    (void)startDrawX;
+    (void)startDrawY;
+    LightMaskRenderer::Render(BuildLightMaskParams(brightRatio), rectX, rectY, rectW, rectH);
 
-    // プレイヤーの画面上での中心位置 (960, 540)
-    float playerPixelX = Camera::WorldToScreenX(position.x);
-    float playerPixelY = Camera::WorldToScreenY(position.y);
-
-    float zoomCellSize = cellSize * Camera::ZoomScale;
-    float zoomScale = Camera::ZoomScale;
-
-    bool isConductor = (m_characterId == 1); // 指揮者判定
-
-    float maxSpotDist = zoomCellSize * m_maxSpotDistCells * GetSightMultiplier();
-    // 指揮者の時は足元の全方位明かりを自身の身体直近のみに抑え、前方ライト光以外は見えないようにする
-    float closeRadius = isConductor ? (radius * zoomScale + 4.0f) : (zoomCellSize * m_closeRadiusCells * GetSightMultiplier());
-
-    int stageWidth = currentStage->GetWidth();
-    int stageHeight = currentStage->GetHeight();
-
-    const int resolutionStep = 8; // 8pxステップで高精細かつ大幅軽量化
-
-    float lightAngle = std::atan2(facingDir.y, facingDir.x);
-
-    // 月明かり（薄明時間帯）の環境光ブーストと最大暗闇アルファ
-    // 指揮者の時は完全な漆黒(255)かつ環境光ブーストなし（ライトの光以外は見えない）
-    float globalBrightVal = isConductor ? 0.0f : (brightRatio * 0.05f);
-    float maxDarkAlpha = isConductor ? 255.0f : (248.0f * (1.0f - brightRatio * 0.10f));
-
-    float maxSpotDistSq = maxSpotDist * maxSpotDist;
-    float closeRadiusSq = closeRadius * closeRadius;
-
-    // 扇形コサイン事前計算
-    float cosHalfAngle = std::cos(m_fanAngleHalf);
-    float cosHalfAngleSq = cosHalfAngle * cosHalfAngle;
-
-    unsigned int darkColor = isConductor ? GetColor(0, 0, 0) : GetColor(4, 5, 10);
-    int currentBlendAlpha = -1;
-
-    for (int py = rectY; py < rectY + rectH; py += resolutionStep)
+    // オートエイム発動中: ロックオン対象の敵にHUDターゲットレティクルを描画
+    if (m_hudRenderer)
     {
-        int bottomY = (std::min)(py + resolutionStep, rectY + rectH);
-        int runStartX = -1;
-        int runAlpha = -1;
-
-        for (int px = rectX; px < rectX + rectW; px += resolutionStep)
-        {
-            float dx = (px + resolutionStep * 0.5f) - playerPixelX;
-            float dy = (py + resolutionStep * 0.5f) - playerPixelY;
-            float distSq = dx * dx + dy * dy;
-
-            float lightVal = 0.0f;
-
-            // A. プレイヤー周囲の足元明かり
-            if (distSq < closeRadiusSq)
-            {
-                float dist = std::sqrt(distSq);
-                float ambientLight = 0.38f * (1.0f - (dist / closeRadius) * 0.6f);
-                lightVal = (std::max)(lightVal, ambientLight);
-            }
-
-            // B. 前方60°扇形スポットライト（指揮者は無能キャラ仕様のためライトが一切見えない・光が照射されない）
-            if (m_characterId != 1 && m_isLightOn && distSq < maxSpotDistSq)
-            {
-                // 向きベクトルとの内積（前方方向への投影）
-                float forwardProj = dx * facingDir.x + dy * facingDir.y;
-
-                // 前方かつ扇形角度内（cosの比較による高速内外判定）
-                if (forwardProj > 0.0f && (forwardProj * forwardProj >= cosHalfAngleSq * distSq))
-                {
-                    float dist = std::sqrt(distSq);
-                    bool isBlocked = false;
-
-                    if (dist > zoomCellSize * 0.8f)
-                    {
-                        int raySteps = static_cast<int>(dist / (zoomCellSize * 0.60f));
-                        if (raySteps < 2) raySteps = 2;
-
-                        float stepX = dx / raySteps;
-                        float stepY = dy / raySteps;
-
-                        float currPx = playerPixelX + stepX;
-                        float currPy = playerPixelY + stepY;
-
-                        for (int s = 1; s < raySteps; ++s)
-                        {
-                            float worldX = Camera::ScreenToWorldX(currPx);
-                            float worldY = Camera::ScreenToWorldY(currPy);
-
-                            int gX = static_cast<int>(worldX / cellSize);
-                            int gY = static_cast<int>(worldY / cellSize);
-
-                            if (gX < 0 || gX >= stageWidth || gY < 0 || gY >= stageHeight || currentStage->IsLightBlockingWall(gX, gY))
-                            {
-                                isBlocked = true;
-                                break;
-                            }
-                            currPx += stepX;
-                            currPy += stepY;
-                        }
-                    }
-
-                    if (!isBlocked)
-                    {
-                        float distFade = 1.0f - (dist / maxSpotDist);
-                        distFade = distFade * distFade;
-
-                        float angleCos = forwardProj / dist;
-                        float angleDiff = std::acos((std::min)(1.0f, (std::max)(-1.0f, angleCos)));
-                        float angleFade = 1.0f - (angleDiff / m_fanAngleHalf);
-                        if (angleFade < 0.0f) angleFade = 0.0f;
-                        float spotLight = distFade * angleFade * 0.95f;
-
-                        lightVal = (std::max)(lightVal, spotLight);
-                    }
-                }
-            }
-
-            float effectiveLightVal = (std::max)(lightVal, globalBrightVal);
-
-            int alpha = 0;
-            if (effectiveLightVal < 0.98f)
-            {
-                alpha = static_cast<int>((1.0f - (std::min)(1.0f, effectiveLightVal)) * maxDarkAlpha);
-                if (alpha <= 8) alpha = 0;
-            }
-
-            // アルファ値のクオンタイズ（微細な差をまとめてDrawBoxのランレングス結合率を最大化）
-            int qAlpha = (alpha / 4) * 4;
-            if (alpha >= 250) qAlpha = 255;
-
-            if (qAlpha != runAlpha)
-            {
-                if (runAlpha > 0 && runStartX >= 0)
-                {
-                    if (currentBlendAlpha != runAlpha)
-                    {
-                        if (runAlpha >= 255)
-                        {
-                            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                        }
-                        else
-                        {
-                            SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
-                        }
-                        currentBlendAlpha = runAlpha;
-                    }
-                    DrawBox(runStartX, py, px, bottomY, darkColor, TRUE);
-                }
-                runStartX = px;
-                runAlpha = qAlpha;
-            }
-        }
-
-        // 行末のランをフラッシュ描画
-        if (runAlpha > 0 && runStartX >= 0)
-        {
-            if (currentBlendAlpha != runAlpha)
-            {
-                if (runAlpha >= 255)
-                {
-                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                }
-                else
-                {
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, runAlpha);
-                }
-                currentBlendAlpha = runAlpha;
-            }
-            DrawBox(runStartX, py, rectX + rectW, bottomY, darkColor, TRUE);
-        }
-    }
-
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-    // ★ 2P等のオートエイム発動中：ロックオン対象の敵にHUDターゲットレティクルを描画
-    if (m_autoAimTarget && m_autoAimTarget->IsActive() && !m_autoAimTarget->status.IsDead())
-    {
-        Vector2 targetPos = m_autoAimTarget->GetPosition();
-        float tScreenX = Camera::WorldToScreenX(targetPos.x);
-        float tScreenY = Camera::WorldToScreenY(targetPos.y);
-
-        // 画面内に存在する場合のみ描画
-        if (tScreenX >= -100.0f && tScreenX <= 2020.0f && tScreenY >= -100.0f && tScreenY <= 1180.0f)
-        {
-            float targetR = m_autoAimTarget->GetRadius() * Camera::ZoomScale + 12.0f;
-            float timeSec = GetNowCount() / 1000.0f;
-            float pulse = std::sin(timeSec * 8.0f) * 3.0f;
-            float drawR = targetR + pulse;
-
-            unsigned int lockColor = GetColor(255, 60, 60);
-
-            // ロックオンリング (赤色)
-            DrawCircle(static_cast<int>(tScreenX), static_cast<int>(tScreenY), static_cast<int>(drawR), lockColor, FALSE);
-
-            // カッコ型レティクル [  ]
-            int len = 10;
-            int offset = static_cast<int>(drawR);
-            // 左上
-            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX - offset + len), static_cast<int>(tScreenY - offset), lockColor, 2);
-            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY - offset + len), lockColor, 2);
-            // 右上
-            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX + offset - len), static_cast<int>(tScreenY - offset), lockColor, 2);
-            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY - offset), static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY - offset + len), lockColor, 2);
-            // 左下
-            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX - offset + len), static_cast<int>(tScreenY + offset), lockColor, 2);
-            DrawLine(static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX - offset), static_cast<int>(tScreenY + offset - len), lockColor, 2);
-            // 右下
-            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX + offset - len), static_cast<int>(tScreenY + offset), lockColor, 2);
-            DrawLine(static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset), static_cast<int>(tScreenX + offset), static_cast<int>(tScreenY + offset - len), lockColor, 2);
-
-            // LOCK-ON テキスト
-            FontManager::GetInstance().DrawString(static_cast<int>(tScreenX - 32), static_cast<int>(tScreenY - offset - 18), "LOCK ON", lockColor, 16);
-        }
+        m_hudRenderer->DrawAutoAimReticle(*this);
     }
 }
 
 void Player::DrawUI(int screenX, int screenY)
 {
-    if (weapons.empty()) return;
-
-    Weapon* currentWeapon = weapons[currentWeaponIndex];
-    if (!currentWeapon) return;
-
-    // 1. キャラクター別HUDプレート画像のロード（未ロード時）
-    if (m_hudPlateHandle == -1)
+    if (m_hudRenderer)
     {
-        static const std::string hudFiles[5] = {
-            "Resource/Images/UI/HUD/hud_conductor.png",
-            "Resource/Images/UI/HUD/hud_rebel.png",
-            "Resource/Images/UI/HUD/hud_baka.png",
-            "Resource/Images/UI/HUD/hud_housewife.png",
-            "Resource/Images/UI/HUD/hud_devil.png"
-        };
-        int idx = m_characterId - 1;
-        if (idx >= 0 && idx < 5)
-        {
-            m_hudPlateHandle = Scene::LoadGraphWithSearch(hudFiles[idx]);
-        }
-    }
-
-    // 2. HUDプレートの配置・スケール設定 (1024x480 -> スケール0.42: 430x201)
-    const float scale = 0.42f;
-    const int plateW = static_cast<int>(1024 * scale); // 430
-    const int plateH = static_cast<int>(480 * scale);  // 201
-    
-    int plateX = screenX;
-    int plateY = screenY;
-    if (plateY + plateH > 1060) {
-        plateY = 1060 - plateH;
-    }
-    if (plateX < 20) plateX = 20;
-
-    // 3. 上部: 手描き質感の武器・弾薬バー（選択画面と統一デザイン）
-    static int s_weaponStripIdx = -2;
-    if (s_weaponStripIdx == -2) {
-        s_weaponStripIdx = Scene::Load2DImage("Images/UI/PreGame/panel_strip.png");
-    }
-
-    const int bannerH = 30;
-    const int bannerY = plateY - bannerH - 8;
-    HudStyle::DrawTexturedPanel(plateX, bannerY, plateW, bannerH, Scene::Get2DImage(s_weaponStripIdx), HudStyle::ColBg(), HudStyle::ColBorder(), 235);
-
-    // 武器名（日本語表記に統一）
-    std::string rawName = currentWeapon->GetName();
-    std::string wName = rawName;
-    if (rawName.find("Handgun") != std::string::npos) wName = "ハンドガン";
-    else if (rawName.find("Shotgun") != std::string::npos) wName = "ショットガン";
-    else if (rawName.find("Sniper") != std::string::npos) wName = "スナイパー";
-    else if (rawName.find("SMG") != std::string::npos || rawName.find("Submachine") != std::string::npos) wName = "サブマシンガン";
-    if (isAimLocked) wName += "（固定）";
-    char weaponTitle[96];
-    snprintf(weaponTitle, sizeof(weaponTitle), "%d. %s", currentWeaponIndex + 1, wName.c_str());
-    FontManager::GetInstance().DrawString(plateX + 14, bannerY + 7, weaponTitle, isAimLocked ? HudStyle::ColAmber() : HudStyle::ColText(), 15, 6);
-
-    // 弾薬数
-    int currentAmmo = currentWeapon->GetCurrentAmmo();
-    int maxAmmo = currentWeapon->GetMaxAmmo();
-    if (currentWeapon->IsReloading())
-    {
-        FontManager::GetInstance().DrawStringRight(plateX + plateW - 14, bannerY + 7, "リロード中...", HudStyle::ColAmber(), 15, 6);
-    }
-    else
-    {
-        char ammoText[32];
-        snprintf(ammoText, sizeof(ammoText), "弾薬 %d / %d", currentAmmo, maxAmmo);
-        unsigned int ammoColor = HudStyle::GetAmmoColor(currentAmmo, maxAmmo);
-        FontManager::GetInstance().DrawStringRight(plateX + plateW - 14, bannerY + 7, ammoText, ammoColor, 15, 6);
-    }
-
-    // 4. キャラクター別HUDプレート画像の描画
-    if (m_hudPlateHandle != -1)
-    {
-        DrawExtendGraph(plateX, plateY, plateX + plateW, plateY + plateH, m_hudPlateHandle, TRUE);
-    }
-    else
-    {
-        // フォールバック描画
-        HudStyle::DrawPanel(plateX, plateY, plateW, plateH, true);
-    }
-
-    // 5. 各キャラクター固有のバー座標（1024x480画像内の矩形座標）
-    struct BarRect {
-        int x0, y0, x1, y1;
-    };
-    static const BarRect mpSlots[5] = {
-        { 200, 102, 880, 155 }, // 1: 指揮者（ト音記号の右から終止線まで）
-        { 136, 104, 990, 168 }, // 2: 反逆者（有刺鉄線フレーム内）
-        { 140, 105, 880, 165 }, // 3: バカ（黄色キャンバス）
-        { 140, 105, 880, 165 }, // 4: 主婦（桜吹雪の軌道上）
-        { 140, 105, 750, 165 }  // 5: 悪魔（月手前の境界まで）
-    };
-    static const BarRect hpSlots[5] = {
-        { 200, 324, 880, 377 }, // 1: 指揮者（ヘ音記号の右から終止線まで）
-        { 136, 326, 990, 390 }, // 2: 反逆者（有刺鉄線フレーム内）
-        { 140, 320, 880, 380 }, // 3: バカ（黄色キャンバス）
-        { 140, 320, 880, 380 }, // 4: 主婦（桜吹雪の軌道上）
-        { 140, 320, 750, 380 }  // 5: 悪魔
-    };
-
-    int charIdx = m_characterId - 1;
-    if (charIdx < 0 || charIdx >= 5) charIdx = 0;
-
-    int mpX = plateX + static_cast<int>(mpSlots[charIdx].x0 * scale);
-    int mpY = plateY + static_cast<int>(mpSlots[charIdx].y0 * scale);
-    int mpW = static_cast<int>((mpSlots[charIdx].x1 - mpSlots[charIdx].x0) * scale);
-    int mpH = static_cast<int>((mpSlots[charIdx].y1 - mpSlots[charIdx].y0) * scale);
-
-    int hpX = plateX + static_cast<int>(hpSlots[charIdx].x0 * scale);
-    int hpY = plateY + static_cast<int>(hpSlots[charIdx].y0 * scale);
-    int hpW = static_cast<int>((hpSlots[charIdx].x1 - hpSlots[charIdx].x0) * scale);
-    int hpH = static_cast<int>((hpSlots[charIdx].y1 - hpSlots[charIdx].y0) * scale);
-
-    // 6. MPバー（スキルクールタイム：MAXで使用可能）の描画
-    Skill* skill = GetEquippedSkill();
-    if (skill)
-    {
-        int ct = skill->GetCoolTimeTimer();
-        int maxCt = (skill->GetData() && skill->GetData()->coolTime > 0) ? skill->GetData()->coolTime : 300;
-        int activeFrames = 0;
-        int maxDuration = (skill->GetData() && skill->GetData()->duration > 0) ? skill->GetData()->duration : 300;
-
-        if (IsTransparent()) {
-            activeFrames = GetEffectRemainingFrames(SkillMinorTag::Transparency);
-        } else if (IsHighRisk()) {
-            activeFrames = GetEffectRemainingFrames(SkillMinorTag::HighRisk);
-        }
-
-        // 下地トラック（半透明ダーク・角丸）
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
-        HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(14, 15, 12), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-        if (activeFrames > 0)
-        {
-            // スキル効果発動中（暖かいアンバー色）
-            float actRatio = static_cast<float>(activeFrames) / static_cast<float>(maxDuration);
-            if (actRatio > 1.0f) actRatio = 1.0f; else if (actRatio < 0.0f) actRatio = 0.0f;
-            int fillW = static_cast<int>(mpW * actRatio);
-
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, HudStyle::ColAmber(), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(245, 220, 140), FALSE);
-
-            char actText[32];
-            snprintf(actText, sizeof(actText), "発動中 %.1f秒", activeFrames / 60.0f);
-            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, actText, GetColor(255, 255, 255), 13, 6);
-        }
-        else if (ct > 0)
-        {
-            // クールタイム中: 落ち着いたティール色でチャージ表示
-            float mpRatio = 1.0f - static_cast<float>(ct) / static_cast<float>(maxCt);
-            if (mpRatio < 0.0f) mpRatio = 0.0f; else if (mpRatio > 1.0f) mpRatio = 1.0f;
-            int fillW = static_cast<int>(mpW * mpRatio);
-
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 185);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + fillW, mpY + mpH, HudStyle::RadiusGauge, GetColor(62, 138, 132), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(46, 78, 74), FALSE);
-
-            char ctText[32];
-            snprintf(ctText, sizeof(ctText), "チャージ中 %.1f秒", ct / 60.0f);
-            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, ctText, HudStyle::ColText(), 13);
-        }
-        else
-        {
-            // MPがMAXに到達！ スキル発動可能（温かみのあるティール発光）
-            static int readyTimer = 0;
-            readyTimer++;
-            int pulseAlpha = 185 + static_cast<int>(50.0f * std::sin(readyTimer * 0.08f));
-
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, pulseAlpha);
-            HudStyle::DrawRoundBox(mpX, mpY, mpX + mpW, mpY + mpH, HudStyle::RadiusGauge, GetColor(68, 174, 164), TRUE);
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-            HudStyle::DrawRoundBox(mpX - 1, mpY - 1, mpX + mpW + 1, mpY + mpH + 1, HudStyle::RadiusGauge + 1, HudStyle::ColAmber(), FALSE);
-
-            const char* readyKey = (m_inputType == PlayerInputType::KEYBOARD_MOUSE) ? "スキル発動 [F]" : "スキル発動 [RT]";
-            FontManager::GetInstance().DrawStringCenter(mpX + mpW / 2, mpY + (mpH - 14) / 2, readyKey, GetColor(255, 255, 255), 14, 7);
-        }
-    }
-
-    // 7. HPバー（プレイヤー体力）の描画
-    int curHp = status.GetCurrentHp();
-    int maxHp = status.GetMaxHp();
-    float hpRatio = (maxHp > 0) ? static_cast<float>(curHp) / static_cast<float>(maxHp) : 0.0f;
-    if (hpRatio < 0.0f) hpRatio = 0.0f; else if (hpRatio > 1.0f) hpRatio = 1.0f;
-
-    // 下地トラック（半透明ダーク・角丸）
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
-    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, GetColor(14, 15, 12), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-    // HPゲージ充填 (モスグリーン -> 琥珀 -> 血赤)
-    int hpFillW = static_cast<int>(hpW * hpRatio);
-    unsigned int hpCol = GetColor(112, 174, 82);
-    if (hpRatio <= 0.25f) hpCol = HudStyle::ColEnemy();
-    else if (hpRatio <= 0.50f) hpCol = HudStyle::ColAmber();
-
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 205);
-    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpFillW, hpY + hpH, HudStyle::RadiusGauge, hpCol, TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    HudStyle::DrawRoundBox(hpX, hpY, hpX + hpW, hpY + hpH, HudStyle::RadiusGauge, HudStyle::ColBorderSoft(), FALSE);
-
-    // HP数値表示
-    char hpStr[32];
-    snprintf(hpStr, sizeof(hpStr), "%d / %d", curHp, maxHp);
-    FontManager::GetInstance().DrawStringCenter(hpX + hpW / 2, hpY + (hpH - 14) / 2, hpStr, GetColor(255, 255, 255), 14, 6);
-
-    // 8. ゲームパッド等のオートエイム状態インジケーター表示（必要時）
-    if (m_inputType != PlayerInputType::KEYBOARD_MOUSE)
-    {
-        if (m_autoAimTarget)
-        {
-            FontManager::GetInstance().DrawString(plateX + 10, bannerY - 20, "オートエイム中", HudStyle::ColEnemy(), 13);
-        }
+        m_hudRenderer->DrawStatusHud(*this, screenX, screenY);
     }
 }
 

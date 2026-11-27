@@ -2,6 +2,9 @@
 #include "Character.h"
 #include "PathfindingComponent.h"
 #include "Vector2.h"
+#include <memory>
+
+class Weapon;
 
 /**
  * @brief 敵AIの行動ステートを表す列挙型
@@ -71,7 +74,7 @@ private:
     int strafeTimer;                  ///< かに歩き切り替えタイマー
     float effectiveRangeCells = 10.0f;///< 攻撃有効射程（10セル）
     float sightRangeCells = 8.5f;     ///< 索敵視界（8.5セル: プレイヤーのカメラ画面サイズ・ライト照射範囲に合わせて同期）
-    class Weapon* equippedWeapon = nullptr; ///< 装備武器
+    std::unique_ptr<Weapon> equippedWeapon; ///< 装備武器（所有権をunique_ptrで管理）
     bool wasPanic = false;                  ///< 直前フレームでパニック状態だったかどうかのフラグ
     int m_characterId = 1;                  ///< キャラクターID (1:指揮者, 2:反逆者, 3:バカ, 4:主婦, 5:悪魔)
     BotPersonality personality;             ///< キャラクター固有の性格・思考ルーチン
@@ -117,14 +120,14 @@ public:
     Vector2 FindCoverPosition(const Vector2& threatPos);
 
     /**
-     * @brief 装備武器の設定
+     * @brief 装備武器の設定（所有権をムーブ移譲）
      */
-    void SetEquippedWeapon(class Weapon* w);
+    void SetEquippedWeapon(std::unique_ptr<Weapon> w);
 
     /**
      * @brief 装備武器の取得
      */
-    class Weapon* GetEquippedWeapon() const { return equippedWeapon; }
+    Weapon* GetEquippedWeapon() const { return equippedWeapon.get(); }
 
     /**
      * @brief フレーム更新処理（AI意思決定・移動・攻撃）

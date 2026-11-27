@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "DxLib.h"
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "../Core/Vector2.h"
 
@@ -13,6 +14,7 @@ class SoundManager
 {
   private:
     std::unordered_map<std::string, int> sounds;
+    std::unordered_set<std::string> failedSounds; // 読み込み失敗済みキー（再生ごとの再探索I/Oを防止）
     
     // 空間オーディオ用（3Dサウンド）のリスナー情報
     Vector2 listenerPos;

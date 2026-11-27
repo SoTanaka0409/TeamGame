@@ -286,6 +286,9 @@
     <ClCompile Include="Source\UI\ControlsGuide.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\UI\PlayerHudRenderer.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\UI\UITextWindow.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -313,6 +316,9 @@
     <ClCompile Include="Source\Graphics\Animation.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\LightMaskRenderer.cpp">
+      <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Graphics\Model.cpp">
       <AdditionalOptions>/utf-8 /wd4828 /wd4010 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -333,6 +339,7 @@
     <ClInclude Include="Source\Core\ScopedFontSize.h" />
     <ClInclude Include="Source\Core\Vector2.h" />
     <ClInclude Include="Source\Graphics\Animation.h" />
+    <ClInclude Include="Source\Graphics\LightMaskRenderer.h" />
     <ClInclude Include="Source\Graphics\Model.h" />
     <ClInclude Include="Source\Graphics\Texture.h" />
     <ClInclude Include="Source\Managers\CharacterManager.h" />
@@ -371,6 +378,7 @@
     <ClInclude Include="Source\Stage\StageTypes.h" />
     <ClInclude Include="Source\UI\ControlsGuide.h" />
     <ClInclude Include="Source\UI\HudStyle.h" />
+    <ClInclude Include="Source\UI\PlayerHudRenderer.h" />
     <ClInclude Include="Source\UI\UITextWindow.h" />
     <ClInclude Include="Source\Weapons\Bullet.h" />
     <ClInclude Include="Source\Weapons\EnemyBullet.h" />

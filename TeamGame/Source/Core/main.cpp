@@ -10,7 +10,14 @@
 #include "DebugManager.h"
 #include "../UI/HudStyle.h"
 #include "../Skills/SkillData.h"
+#include "../Characters/Player.h"
 #include <string>
+
+// ハイブリッドGPU環境（ノートPC等）で省電力内蔵GPUではなく高性能GPUを優先使用させる
+extern "C" {
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
 /**
  * @brief .exeを直接開いて起動した場合でもResourceフォルダが見つかるようカレントディレクトリを自動設定する
@@ -65,6 +72,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
     // .exe直接起動時でもResourceフォルダを正しく参照できるようカレントディレクトリを調整
     EnsureResourceWorkingDirectory();
+
+#ifndef _DEBUG
+    // ReleaseビルドではLog.txtへの同期書き込みによるI/O負荷・肥大化を防止
+    SetOutApplicationLogValidFlag(FALSE);
+#endif
 
     // ウィンドウモードで起動設定
     ChangeWindowMode(TRUE);
@@ -155,11 +167,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // 裏画面の内容を表画面に反映
         ScreenFlip();
 
-        // 60FPS固定制御（16.66ms待機：高速モニターでの過剰描画やスタッターを防止）
+        // 60FPS固定制御（残り時間が2ms以上ある時はSleep(1)でCPU占有と発熱を抑制）
         const LONGLONG targetFrameMicro = 1000000 / 60;
-        while (GetNowHiPerformanceCount() - frameStart < targetFrameMicro)
+        while (true)
         {
-            Sleep(0);
+            LONGLONG remaining = targetFrameMicro - (GetNowHiPerformanceCount() - frameStart);
+            if (remaining <= 0) break;
+            if (remaining > 2000)
+            {
+                Sleep(1);
+            }
+            else
+            {
+                Sleep(0);
+            }
         }
 
         // FPS・フレームタイムの計測更新（0.5秒おきに安定更新）
@@ -176,6 +197,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     WeaponManager::GetInstance().Cleanup();
     SoundManager::GetInstance().Clear();
+    Player::ReleaseLightMaskResources();
 
     // DXライブラリの使用終了処理
     DxLib_End();

@@ -8,18 +8,19 @@
 
 namespace
 {
+    constexpr int kRockAngleVariants = 2;
     bool s_rocksBaked = false;
-    int s_bakedWallRocks[4][5] = {
-        { -1, -1, -1, -1, -1 },
-        { -1, -1, -1, -1, -1 },
-        { -1, -1, -1, -1, -1 },
-        { -1, -1, -1, -1, -1 }
+    int s_bakedWallRocks[4][kRockAngleVariants] = {
+        { -1, -1 },
+        { -1, -1 },
+        { -1, -1 },
+        { -1, -1 }
     };
-    int s_bakedSubRocks[4][5] = {
-        { -1, -1, -1, -1, -1 },
-        { -1, -1, -1, -1, -1 },
-        { -1, -1, -1, -1, -1 },
-        { -1, -1, -1, -1, -1 }
+    int s_bakedSubRocks[4][kRockAngleVariants] = {
+        { -1, -1 },
+        { -1, -1 },
+        { -1, -1 },
+        { -1, -1 }
     };
 
     bool s_grassBaked = false;
@@ -33,8 +34,10 @@ namespace
         if (s_rocksBaked || hRockModels[0] == -1) return;
 
         int prevScreen = GetDrawScreen();
-        const int texSize = 256;
-        const float bakeCell = 128.0f;
+        const int texSize = 192;
+        const float halfTex = texSize * 0.5f;
+        const float bakeCell = texSize * 0.5f;
+        const float padOffset = texSize * 0.25f;
         const float rockTilt = 32.0f * (DX_PI_F / 180.0f);
 
         for (int r = 0; r < 4; ++r)
@@ -43,8 +46,10 @@ namespace
             float rBase = (hRockModels[r] != -1) ? rockBaseSizes[r] : rockBaseSizes[0];
             if (rBase <= 0.001f) rBase = 7.0f;
 
-            for (int a = 0; a < 5; ++a)
+            for (int a = 0; a < kRockAngleVariants; ++a)
             {
+                float angleSign = (a == 0) ? -1.0f : 1.0f;
+
                 // 1. WALL_BLOCK用3D岩ベイク
                 int hWallScr = MakeScreen(texSize, texSize, TRUE);
                 if (hWallScr != -1)
@@ -52,26 +57,26 @@ namespace
                     SetDrawScreen(hWallScr);
                     ClearDrawScreen();
                     SetCameraPositionAndTargetAndUpVec(
-                        VGet(128.0f, 2000.0f, 128.0f),
-                        VGet(128.0f, 0.0f, 128.0f),
+                        VGet(halfTex, 2000.0f, halfTex),
+                        VGet(halfTex, 0.0f, halfTex),
                         VGet(0.0f, 0.0f, 1.0f)
                     );
-                    SetupCamera_Ortho(256.0f);
+                    SetupCamera_Ortho(static_cast<float>(texSize));
                     SetUseLighting(TRUE);
                     SetGlobalAmbientLight(GetColorF(0.82f, 0.85f, 0.82f, 1.0f));
                     ChangeLightTypeDir(VGet(0.3f, -0.8f, -0.5f));
 
                     float s = (bakeCell * 1.28f) / rBase;
-                    float cx_f = 64.0f + bakeCell * 0.5f;
-                    float cy_f = 64.0f + bakeCell * 0.66f;
-                    float rotY = (a - 2) * 0.14f;
+                    float cx_f = padOffset + bakeCell * 0.5f;
+                    float cy_f = padOffset + bakeCell * 0.66f;
+                    float rotY = angleSign * 0.22f;
 
                     MATRIX mScale = MGetScale(VGet(s, s, s));
                     MATRIX mRotY  = MGetRotY(rotY);
                     MATRIX mTilt  = MGetRotX(rockTilt);
                     MATRIX mWorld = MMult(mRotY, mTilt);
                     mWorld = MMult(mScale, mWorld);
-                    MATRIX mTrans = MGetTranslate(VGet(cx_f, 0.0f, 256.0f - cy_f));
+                    MATRIX mTrans = MGetTranslate(VGet(cx_f, 0.0f, static_cast<float>(texSize) - cy_f));
                     mWorld = MMult(mWorld, mTrans);
 
                     MV1SetMatrix(hRock, mWorld);
@@ -86,26 +91,26 @@ namespace
                     SetDrawScreen(hSubScr);
                     ClearDrawScreen();
                     SetCameraPositionAndTargetAndUpVec(
-                        VGet(128.0f, 2000.0f, 128.0f),
-                        VGet(128.0f, 0.0f, 128.0f),
+                        VGet(halfTex, 2000.0f, halfTex),
+                        VGet(halfTex, 0.0f, halfTex),
                         VGet(0.0f, 0.0f, 1.0f)
                     );
-                    SetupCamera_Ortho(256.0f);
+                    SetupCamera_Ortho(static_cast<float>(texSize));
                     SetUseLighting(TRUE);
                     SetGlobalAmbientLight(GetColorF(0.82f, 0.85f, 0.82f, 1.0f));
                     ChangeLightTypeDir(VGet(0.3f, -0.8f, -0.5f));
 
                     float s = (bakeCell * 1.12f) / rBase;
-                    float cx_f = 64.0f + bakeCell * 0.5f;
-                    float cy_f = 64.0f + bakeCell * 0.64f;
-                    float rotY = (a - 2) * 0.16f;
+                    float cx_f = padOffset + bakeCell * 0.5f;
+                    float cy_f = padOffset + bakeCell * 0.64f;
+                    float rotY = angleSign * 0.25f;
 
                     MATRIX mScale = MGetScale(VGet(s, s, s));
                     MATRIX mRotY  = MGetRotY(rotY);
                     MATRIX mTilt  = MGetRotX(rockTilt);
                     MATRIX mWorld = MMult(mRotY, mTilt);
                     mWorld = MMult(mScale, mWorld);
-                    MATRIX mTrans = MGetTranslate(VGet(cx_f, 0.0f, 256.0f - cy_f));
+                    MATRIX mTrans = MGetTranslate(VGet(cx_f, 0.0f, static_cast<float>(texSize) - cy_f));
                     mWorld = MMult(mWorld, mTrans);
 
                     MV1SetMatrix(hRock, mWorld);
@@ -127,8 +132,10 @@ namespace
         if (s_grassBaked || hGrassModel == -1) return;
 
         int prevScreen = GetDrawScreen();
-        const int texSize = 256;
-        const float bakeCell = 128.0f;
+        const int texSize = 192;
+        const float halfTex = texSize * 0.5f;
+        const float bakeCell = texSize * 0.5f;
+        const float padOffset = texSize * 0.25f;
         const float unitScale = bakeCell / ((grassBaseSize > 0.001f) ? grassBaseSize : 1.2f);
         const float baseTilt = 35.0f * (DX_PI_F / 180.0f);
         const float fgTilt   = 38.0f * (DX_PI_F / 180.0f);
@@ -149,11 +156,11 @@ namespace
                 SetDrawScreen(hGrassScr);
                 ClearDrawScreen();
                 SetCameraPositionAndTargetAndUpVec(
-                    VGet(128.0f, 2000.0f, 128.0f),
-                    VGet(128.0f, 0.0f, 128.0f),
+                    VGet(halfTex, 2000.0f, halfTex),
+                    VGet(halfTex, 0.0f, halfTex),
                     VGet(0.0f, 0.0f, 1.0f)
                 );
-                SetupCamera_Ortho(256.0f);
+                SetupCamera_Ortho(static_cast<float>(texSize));
                 SetUseLighting(TRUE);
                 SetGlobalAmbientLight(GetColorF(0.82f, 0.86f, 0.80f, 1.0f));
                 ChangeLightTypeDir(VGet(0.3f, -0.8f, -0.5f));
@@ -161,8 +168,8 @@ namespace
                 MV1SetOpacityRate(hGrassModel, 1.0f);
                 for (int k = 0; k < 5; ++k)
                 {
-                    float clumpX = 64.0f + bakeCell * subOffsetsX[k];
-                    float clumpY = 64.0f + bakeCell * subOffsetsY[k];
+                    float clumpX = padOffset + bakeCell * subOffsetsX[k];
+                    float clumpY = padOffset + bakeCell * subOffsetsY[k];
                     float s = unitScale * subScales[k];
                     float rotY = ((v * 73 + k * 53) % 12) * (DX_PI_F / 6.0f);
 
@@ -171,7 +178,7 @@ namespace
                     MATRIX mTilt  = MGetRotX(baseTilt);
                     MATRIX mWorld = MMult(mRotY, mTilt);
                     mWorld = MMult(mScale, mWorld);
-                    MATRIX mTrans = MGetTranslate(VGet(clumpX, 0.0f, 256.0f - clumpY));
+                    MATRIX mTrans = MGetTranslate(VGet(clumpX, 0.0f, static_cast<float>(texSize) - clumpY));
                     mWorld = MMult(mWorld, mTrans);
 
                     MV1SetMatrix(hGrassModel, mWorld);
@@ -180,8 +187,8 @@ namespace
 
                 for (int k = 0; k < 3; ++k)
                 {
-                    float clumpX = 64.0f + bakeCell * fgOffsetsX[k];
-                    float clumpY = 64.0f + bakeCell * fgOffsetsY[k];
+                    float clumpX = padOffset + bakeCell * fgOffsetsX[k];
+                    float clumpY = padOffset + bakeCell * fgOffsetsY[k];
                     float s = unitScale * fgScales[k];
                     float rotY = ((v * 41 + k * 89) % 12) * (DX_PI_F / 6.0f);
 
@@ -190,7 +197,7 @@ namespace
                     MATRIX mTilt  = MGetRotX(fgTilt);
                     MATRIX mWorld = MMult(mRotY, mTilt);
                     mWorld = MMult(mScale, mWorld);
-                    MATRIX mTrans = MGetTranslate(VGet(clumpX, 0.0f, 256.0f - clumpY));
+                    MATRIX mTrans = MGetTranslate(VGet(clumpX, 0.0f, static_cast<float>(texSize) - clumpY));
                     mWorld = MMult(mWorld, mTrans);
 
                     MV1SetMatrix(hGrassModel, mWorld);
@@ -484,7 +491,7 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
                 if (type == CellType::WALL_BLOCK && s_rocksBaked)
                 {
                     int rIdx = wallRockIndices[(x * 31 + y * 17) % 4];
-                    int aIdx = (x * 53 + y * 29) % 5;
+                    int aIdx = (x * 53 + y * 29) % kRockAngleVariants;
                     int hTex = s_bakedWallRocks[rIdx][aIdx];
                     if (hTex != -1)
                     {
@@ -494,7 +501,7 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
                 else if (type == CellType::CACTUS && s_rocksBaked)
                 {
                     int rIdx = subRockIndices[(x * 43 + y * 23) % 4];
-                    int aIdx = (x * 61 + y * 37) % 5;
+                    int aIdx = (x * 61 + y * 37) % kRockAngleVariants;
                     int hTex = s_bakedSubRocks[rIdx][aIdx];
                     if (hTex != -1)
                     {
@@ -540,13 +547,23 @@ void Stage::DrawFitToArea(int rectX, int rectY, int rectW, int rectH, bool isDeb
 
 void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCellSize, float worldCellSize, bool isDebugMode, const char* patternName, int hGrass) const
 {
-    if (m_width <= 0 || m_height <= 0 || worldCellSize <= 0.0f) return;
+    if (m_width <= 0 || m_height <= 0 || worldCellSize <= 0.0f || zoomCellSize <= 0.0f) return;
 
     int useGrass = (hGrass != -1) ? hGrass : m_hGrassGraph;
 
     // プレイヤーの位置(playerWorldX, playerWorldY)が画面中央 (960, 540) にくるような基準オフセット
     float startDrawX = Camera::WorldToScreenX(0.0f);
     float startDrawY = Camera::WorldToScreenY(0.0f);
+
+    int sw = 1920, sh = 1080;
+    GetDrawScreenSize(&sw, &sh);
+    float pad = zoomCellSize * 0.5f;
+
+    // 画面内に映るタイル範囲のみを算出（画面外走査を完全排除）
+    int minTileX = (std::max)(0, static_cast<int>(std::floor((-pad - startDrawX) / zoomCellSize)));
+    int maxTileX = (std::min)(m_width - 1, static_cast<int>(std::ceil((static_cast<float>(sw) + pad - startDrawX) / zoomCellSize)));
+    int minTileY = (std::max)(0, static_cast<int>(std::floor((-pad - startDrawY) / zoomCellSize)));
+    int maxTileY = (std::min)(m_height - 1, static_cast<int>(std::ceil((static_cast<float>(sh) + pad - startDrawY) / zoomCellSize)));
 
     // カラーパレット
     const unsigned int colorFloor1      = GetColor(242, 162, 108);
@@ -563,36 +580,38 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
     const unsigned int colorRockBorder  = GetColor(70, 75, 85);
     const unsigned int colorRockDetail  = GetColor(185, 190, 200);
 
-    for (int y = 0; y < m_height; ++y)
+    // パス1: 不透過ベース（床・外周壁・水場・3D非使用時の2Dオブジェクト）をブレンド切り替えなしで一括描画
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    for (int y = minTileY; y <= maxTileY; ++y)
     {
-        for (int x = 0; x < m_width; ++x)
+        float y1_f = startDrawY + y * zoomCellSize;
+        int y1 = static_cast<int>(y1_f);
+        int y2 = static_cast<int>(y1_f + zoomCellSize);
+
+        for (int x = minTileX; x <= maxTileX; ++x)
         {
             float x1_f = startDrawX + x * zoomCellSize;
-            float y1_f = startDrawY + y * zoomCellSize;
-            float x2_f = x1_f + zoomCellSize;
-            float y2_f = y1_f + zoomCellSize;
-
-            // 画面外のタイルはカリング (高速化)
-            if (x2_f < -100.0f || x1_f > 2020.0f || y2_f < -100.0f || y1_f > 1180.0f)
-            {
-                continue;
-            }
-
             int x1 = static_cast<int>(x1_f);
-            int y1 = static_cast<int>(y1_f);
-            int x2 = static_cast<int>(x2_f);
-            int y2 = static_cast<int>(y2_f);
+            int x2 = static_cast<int>(x1_f + zoomCellSize);
 
             CellType type = GetCell(x, y);
 
-            unsigned int fColor = ((x + y) % 2 == 0) ? colorFloor1 : colorFloor2;
-            if (m_hFloorGraph != -1)
+            // 水場・外周壁が完全不透過テクスチャで覆われる場合は床の下描きを省略してフィルレートを削減
+            bool coveredByOpaqueTile =
+                (type == CellType::WATER && m_hWaterGraph != -1) ||
+                (type == CellType::OUTER_WALL && m_hOuterWallGraph != -1);
+
+            if (!coveredByOpaqueTile)
             {
-                DrawExtendGraph(x1, y1, x2, y2, m_hFloorGraph, TRUE);
-            }
-            else
-            {
-                DrawBox(x1, y1, x2, y2, fColor, TRUE);
+                if (m_hFloorGraph != -1)
+                {
+                    DrawExtendGraph(x1, y1, x2, y2, m_hFloorGraph, FALSE);
+                }
+                else
+                {
+                    unsigned int fColor = ((x + y) % 2 == 0) ? colorFloor1 : colorFloor2;
+                    DrawBox(x1, y1, x2, y2, fColor, TRUE);
+                }
             }
 
             int cx = (x1 + x2) / 2;
@@ -607,7 +626,7 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
             case CellType::OUTER_WALL:
                 if (m_hOuterWallGraph != -1)
                 {
-                    DrawExtendGraph(x1, y1, x2, y2, m_hOuterWallGraph, TRUE);
+                    DrawExtendGraph(x1, y1, x2, y2, m_hOuterWallGraph, FALSE);
                 }
                 else
                 {
@@ -618,23 +637,17 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                 break;
 
             case CellType::BUSH:
-                if (m_hGrassModel != -1)
+                if (m_hGrassModel == -1)
                 {
-                    // 3D草むらの下地に濃緑の芝生ベースと陰影を描画して立体感を強化
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 185);
-                    DrawBox(x1, y1, x2, y2, GetColor(22, 85, 26), TRUE);
-                    DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.58f), GetColor(34, 122, 38), TRUE);
-                    DrawCircle(cx - 4, cy + 4, static_cast<int>(zoomCellSize * 0.42f), GetColor(18, 68, 22), TRUE);
-                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                }
-                else if (useGrass != -1)
-                {
-                    DrawExtendGraph(x1 - 1, y1 - 1, x2 + 1, y2 + 1, useGrass, TRUE);
-                }
-                else
-                {
-                    DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.65f), colorBush, TRUE);
-                    DrawCircle(cx - 3, cy - 3, static_cast<int>(zoomCellSize * 0.40f), colorBushDetail, TRUE);
+                    if (useGrass != -1)
+                    {
+                        DrawExtendGraph(x1 - 1, y1 - 1, x2 + 1, y2 + 1, useGrass, TRUE);
+                    }
+                    else
+                    {
+                        DrawCircle(cx, cy, static_cast<int>(zoomCellSize * 0.65f), colorBush, TRUE);
+                        DrawCircle(cx - 3, cy - 3, static_cast<int>(zoomCellSize * 0.40f), colorBushDetail, TRUE);
+                    }
                 }
                 if (isDebugMode) DrawBox(x1, y1, x2, y2, GetColor(100, 240, 100), FALSE);
                 break;
@@ -642,7 +655,7 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
             case CellType::WATER:
                 if (m_hWaterGraph != -1)
                 {
-                    DrawExtendGraph(x1, y1, x2, y2, m_hWaterGraph, TRUE);
+                    DrawExtendGraph(x1, y1, x2, y2, m_hWaterGraph, FALSE);
                 }
                 else
                 {
@@ -652,83 +665,134 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                 break;
 
             case CellType::WALL_BLOCK:
-                if (m_hRockModels[0] != -1)
+                if (m_hRockModels[0] == -1)
                 {
-                    // 3D大岩の下地に接地影を描画
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 155);
-                    DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(42, 36, 30), TRUE);
-                    DrawCircle(cx, cy + static_cast<int>(zoomCellSize * 0.08f), static_cast<int>(zoomCellSize * 0.48f), GetColor(28, 24, 20), TRUE);
-                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                }
-                else if (m_hWallBlockGraph != -1)
-                {
-                    DrawExtendGraph(x1, y1, x2, y2, m_hWallBlockGraph, TRUE);
-                }
-                else
-                {
-                    DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
-                    DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
-                    DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                    if (m_hWallBlockGraph != -1)
+                    {
+                        DrawExtendGraph(x1, y1, x2, y2, m_hWallBlockGraph, TRUE);
+                    }
+                    else
+                    {
+                        DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBlock, TRUE);
+                        DrawBox(x1 + 1, y1 + 1, x2 - 1, y2 - 1, colorWallBorder, FALSE);
+                        DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, GetColor(212, 142, 92), FALSE);
+                    }
                 }
                 break;
 
             case CellType::CACTUS:
-                if (m_hRockModels[0] != -1)
+                if (m_hRockModels[0] == -1)
                 {
-                    // 3D岩障害物の下地に丸い接地影を描画
-                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
-                    DrawCircle(cx, cy + static_cast<int>(zoomCellSize * 0.08f), static_cast<int>(zoomCellSize * 0.42f), GetColor(30, 26, 22), TRUE);
-                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-                }
-                else if (m_hCactusGraph != -1)
-                {
-                    DrawExtendGraph(x1, y1, x2, y2, m_hCactusGraph, TRUE);
-                }
-                else
-                {
-                    int r = static_cast<int>(zoomCellSize * 0.45f);
-                    DrawCircle(cx, cy, r, colorRock, TRUE);
-                    DrawCircle(cx, cy, r, colorRockBorder, FALSE);
-                    DrawCircle(cx - 2, cy - 2, static_cast<int>(r * 0.45f), colorRockDetail, TRUE);
+                    if (m_hCactusGraph != -1)
+                    {
+                        DrawExtendGraph(x1, y1, x2, y2, m_hCactusGraph, TRUE);
+                    }
+                    else
+                    {
+                        int r = static_cast<int>(zoomCellSize * 0.45f);
+                        DrawCircle(cx, cy, r, colorRock, TRUE);
+                        DrawCircle(cx, cy, r, colorRockBorder, FALSE);
+                        DrawCircle(cx - 2, cy - 2, static_cast<int>(r * 0.45f), colorRockDetail, TRUE);
+                    }
                 }
                 break;
             }
         }
     }
 
-    // 3D岩モデル (rock_01〜04.mv1) の一括描画（初回3Dベイク済みキャッシュによる高速描画）
+    // パス2: 草むら下地・岩の接地影をSetDrawBlendModeの切り替え最小限でバッチ描画
+    if (m_hGrassModel != -1)
+    {
+        const unsigned int bushBaseCol = GetColor(22, 85, 26);
+        const unsigned int bushMidCol  = GetColor(34, 122, 38);
+        const int bushMidRad = static_cast<int>(zoomCellSize * 0.56f);
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 185);
+        for (int y = minTileY; y <= maxTileY; ++y)
+        {
+            float y1_f = startDrawY + y * zoomCellSize;
+            int y1 = static_cast<int>(y1_f);
+            int y2 = static_cast<int>(y1_f + zoomCellSize);
+            int cy = (y1 + y2) / 2;
+
+            for (int x = minTileX; x <= maxTileX; ++x)
+            {
+                if (GetCell(x, y) != CellType::BUSH) continue;
+                float x1_f = startDrawX + x * zoomCellSize;
+                int x1 = static_cast<int>(x1_f);
+                int x2 = static_cast<int>(x1_f + zoomCellSize);
+                int cx = (x1 + x2) / 2;
+
+                DrawBox(x1, y1, x2, y2, bushBaseCol, TRUE);
+                DrawCircle(cx, cy, bushMidRad, bushMidCol, TRUE);
+            }
+        }
+    }
+
+    if (m_hRockModels[0] != -1)
+    {
+        const unsigned int wallShadowBoxCol = GetColor(42, 36, 30);
+        const unsigned int rockShadowCol    = GetColor(30, 26, 22);
+        const int wallShadowRad = static_cast<int>(zoomCellSize * 0.48f);
+        const int subShadowRad  = static_cast<int>(zoomCellSize * 0.42f);
+        const int shadowOffY    = static_cast<int>(zoomCellSize * 0.08f);
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+        for (int y = minTileY; y <= maxTileY; ++y)
+        {
+            float y1_f = startDrawY + y * zoomCellSize;
+            int y1 = static_cast<int>(y1_f);
+            int y2 = static_cast<int>(y1_f + zoomCellSize);
+            int cy = (y1 + y2) / 2 + shadowOffY;
+
+            for (int x = minTileX; x <= maxTileX; ++x)
+            {
+                CellType type = GetCell(x, y);
+                if (type != CellType::WALL_BLOCK && type != CellType::CACTUS) continue;
+                float x1_f = startDrawX + x * zoomCellSize;
+                int x1 = static_cast<int>(x1_f);
+                int x2 = static_cast<int>(x1_f + zoomCellSize);
+                int cx = (x1 + x2) / 2;
+
+                if (type == CellType::WALL_BLOCK)
+                {
+                    DrawBox(x1 + 3, y1 + 3, x2 - 3, y2 - 3, wallShadowBoxCol, TRUE);
+                    DrawCircle(cx, cy, wallShadowRad, rockShadowCol, TRUE);
+                }
+                else
+                {
+                    DrawCircle(cx, cy, subShadowRad, rockShadowCol, TRUE);
+                }
+            }
+        }
+    }
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // パス3: 3D岩モデル (rock_01〜04.mv1) の一括描画（初回3Dベイク済みキャッシュによる高速描画）
     if (m_hRockModels[0] != -1)
     {
         EnsureRockImpostersBaked(m_hRockModels, m_rockModelBaseSizes);
 
-        int sw = 1920, sh = 1080;
-        GetDrawScreenSize(&sw, &sh);
-        float pad = zoomCellSize * 0.5f;
         const int wallRockIndices[4] = { 0, 2, 1, 3 };
         const int subRockIndices[4]  = { 2, 3, 0, 3 };
 
-        for (int y = 0; y < m_height; ++y)
+        for (int y = minTileY; y <= maxTileY; ++y)
         {
-            for (int x = 0; x < m_width; ++x)
+            float y1_f = startDrawY + y * zoomCellSize;
+            float y2_f = y1_f + zoomCellSize;
+
+            for (int x = minTileX; x <= maxTileX; ++x)
             {
                 CellType type = GetCell(x, y);
                 if (type != CellType::WALL_BLOCK && type != CellType::CACTUS) continue;
 
                 float x1_f = startDrawX + x * zoomCellSize;
-                float y1_f = startDrawY + y * zoomCellSize;
                 float x2_f = x1_f + zoomCellSize;
-                float y2_f = y1_f + zoomCellSize;
-
-                if (x2_f < -pad || x1_f > static_cast<float>(sw) + pad ||
-                    y2_f < -pad || y1_f > static_cast<float>(sh) + pad)
-                {
-                    continue;
-                }
 
                 if (type == CellType::WALL_BLOCK && s_rocksBaked)
                 {
                     int rIdx = wallRockIndices[(x * 31 + y * 17) % 4];
-                    int aIdx = (x * 53 + y * 29) % 5;
+                    int aIdx = (x * 53 + y * 29) % kRockAngleVariants;
                     int hTex = s_bakedWallRocks[rIdx][aIdx];
                     if (hTex != -1)
                     {
@@ -738,7 +802,7 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                 else if (type == CellType::CACTUS && s_rocksBaked)
                 {
                     int rIdx = subRockIndices[(x * 43 + y * 23) % 4];
-                    int aIdx = (x * 61 + y * 37) % 5;
+                    int aIdx = (x * 61 + y * 37) % kRockAngleVariants;
                     int hTex = s_bakedSubRocks[rIdx][aIdx];
                     if (hTex != -1)
                     {
@@ -749,67 +813,45 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
         }
     }
 
-    // 3D草むらモデル (grass.mv1) の描画（遠景は3Dベイクキャッシュ、プレイヤー周辺はリアルタイム3Dかき分け描画のハイブリッドLOD）
+    // パス4: 3D草むらモデル (grass.mv1) の描画（遠景はベイクキャッシュ、プレイヤー直近のみリアルタイム3Dかき分け）
     if (m_hGrassModel != -1)
     {
         EnsureGrassImpostersBaked(m_hGrassModel, m_grassModelBaseSize);
 
-        int sw = 1920, sh = 1080;
-        GetDrawScreenSize(&sw, &sh);
-        float centerX = static_cast<float>(sw) / 2.0f;
-        float centerY = static_cast<float>(sh) / 2.0f;
-
-        SetCameraPositionAndTargetAndUpVec(
-            VGet(centerX, 2000.0f, centerY),
-            VGet(centerX, 0.0f, centerY),
-            VGet(0.0f, 0.0f, 1.0f)
-        );
-        SetupCamera_Ortho(static_cast<float>(sh));
-        SetUseLighting(TRUE);
-        SetGlobalAmbientLight(GetColorF(0.82f, 0.86f, 0.80f, 1.0f));
-        ChangeLightTypeDir(VGet(0.3f, -0.8f, -0.5f));
-
-        // カメラターゲットではなくプレイヤー自身の正確な画面座標を取得
         float playerScreenX = Camera::WorldToScreenX(playerWorldX);
         float playerScreenY = Camera::WorldToScreenY(playerWorldY);
-
-        float unitScale = zoomCellSize / ((m_grassModelBaseSize > 0.001f) ? m_grassModelBaseSize : 1.2f);
         float timeSec   = GetNowCount() / 1000.0f;
-        float baseTilt  = 35.0f * (DX_PI_F / 180.0f);
-        float pad       = zoomCellSize * 0.5f;
-        float lodRadius = zoomCellSize * 2.25f;
+        float lodRadius = zoomCellSize * 1.25f;
         float lodRadSq  = lodRadius * lodRadius;
 
-        // 1セル内に配置する背面・中層5株の相対オフセットとスケール倍率
-        const float subOffsetsX[5] = { 0.25f, 0.75f, 0.50f, 0.28f, 0.72f };
-        const float subOffsetsY[5] = { 0.28f, 0.28f, 0.45f, 0.62f, 0.62f };
-        const float subScales[5]   = { 1.05f, 1.08f, 1.22f, 1.10f, 1.12f };
+        struct CloseBushCell { int x; int y; float x1_f; float y1_f; };
+        CloseBushCell closeBushes[16];
+        int closeBushCount = 0;
 
-        for (int y = 0; y < m_height; ++y)
+        // 4A. 遠景の草むらはベイク済み2Dテクスチャで一括描画し、直近セルのみリスト化
+        for (int y = minTileY; y <= maxTileY; ++y)
         {
-            for (int x = 0; x < m_width; ++x)
+            float y1_f = startDrawY + y * zoomCellSize;
+            float y2_f = y1_f + zoomCellSize;
+            float cellCenterY = y1_f + pad;
+            float cellDy = cellCenterY - playerScreenY;
+
+            for (int x = minTileX; x <= maxTileX; ++x)
             {
                 if (GetCell(x, y) != CellType::BUSH) continue;
 
                 float x1_f = startDrawX + x * zoomCellSize;
-                float y1_f = startDrawY + y * zoomCellSize;
                 float x2_f = x1_f + zoomCellSize;
-                float y2_f = y1_f + zoomCellSize;
+                float cellCenterX = x1_f + pad;
+                float cellDx = cellCenterX - playerScreenX;
 
-                if (x2_f < -pad || x1_f > static_cast<float>(sw) + pad ||
-                    y2_f < -pad || y1_f > static_cast<float>(sh) + pad)
+                if (cellDx * cellDx + cellDy * cellDy <= lodRadSq && closeBushCount < 16)
                 {
+                    closeBushes[closeBushCount++] = { x, y, x1_f, y1_f };
                     continue;
                 }
 
-                float cellCenterX = x1_f + pad;
-                float cellCenterY = y1_f + pad;
-                float cellDx = cellCenterX - playerScreenX;
-                float cellDy = cellCenterY - playerScreenY;
-                float cellDistSq = cellDx * cellDx + cellDy * cellDy;
-
-                // プレイヤーから離れた草むらは8株ベイク済みの3D草テクスチャで超高速描画
-                if (cellDistSq > lodRadSq && s_grassBaked)
+                if (s_grassBaked)
                 {
                     int vIdx = (x * 3 + y * 7) % 4;
                     int hTex = s_bakedGrassCells[vIdx];
@@ -817,31 +859,57 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                     {
                         float swayX = std::sin(timeSec * 2.5f + x * 0.6f + y * 0.4f) * (zoomCellSize * 0.025f);
                         DrawExtendGraphF(x1_f - pad + swayX, y1_f - pad, x2_f + pad + swayX, y2_f + pad, hTex, TRUE);
-                        continue;
                     }
                 }
+            }
+        }
 
-                // プレイヤー周辺の草むらはリアルタイム3Dモデルでかき分け＆揺れを描画
-                for (int k = 0; k < 5; ++k)
+        // 4B. プレイヤー直近の草むらがある場合のみ3Dカメラを設定してリアルタイムかき分け描画（3株/セル）
+        if (closeBushCount > 0)
+        {
+            float centerX = static_cast<float>(sw) / 2.0f;
+            float centerY = static_cast<float>(sh) / 2.0f;
+
+            SetCameraPositionAndTargetAndUpVec(
+                VGet(centerX, 2000.0f, centerY),
+                VGet(centerX, 0.0f, centerY),
+                VGet(0.0f, 0.0f, 1.0f)
+            );
+            SetupCamera_Ortho(static_cast<float>(sh));
+            SetUseLighting(TRUE);
+            SetGlobalAmbientLight(GetColorF(0.82f, 0.86f, 0.80f, 1.0f));
+            ChangeLightTypeDir(VGet(0.3f, -0.8f, -0.5f));
+
+            float unitScale = zoomCellSize / ((m_grassModelBaseSize > 0.001f) ? m_grassModelBaseSize : 1.2f);
+            float baseTilt  = 35.0f * (DX_PI_F / 180.0f);
+            float interactRadius = zoomCellSize * 0.78f;
+            float interactRadSq  = interactRadius * interactRadius;
+
+            const float subOffsetsX[3] = { 0.28f, 0.72f, 0.50f };
+            const float subOffsetsY[3] = { 0.32f, 0.34f, 0.56f };
+            const float subScales[3]   = { 1.14f, 1.16f, 1.28f };
+
+            for (int i = 0; i < closeBushCount; ++i)
+            {
+                const auto& b = closeBushes[i];
+                for (int k = 0; k < 3; ++k)
                 {
-                    float clumpX = x1_f + zoomCellSize * subOffsetsX[k];
-                    float clumpY = y1_f + zoomCellSize * subOffsetsY[k];
+                    float clumpX = b.x1_f + zoomCellSize * subOffsetsX[k];
+                    float clumpY = b.y1_f + zoomCellSize * subOffsetsY[k];
 
-                    float windWave = std::sin(timeSec * 2.5f + x * 0.6f + y * 0.4f + k * 0.9f) * 0.10f;
+                    float windWave = std::sin(timeSec * 2.5f + b.x * 0.6f + b.y * 0.4f + k * 0.9f) * 0.10f;
 
-                    // プレイヤーの正確な足元・中心座標との距離で草をかき分ける
                     float dxScreen = clumpX - playerScreenX;
                     float dyScreen = clumpY - playerScreenY;
                     float distSq   = dxScreen * dxScreen + dyScreen * dyScreen;
                     float rustle   = 0.0f;
                     float pushX    = 0.0f;
                     float pushY    = 0.0f;
-                    float interactRadius = zoomCellSize * 0.78f;
-                    if (distSq < interactRadius * interactRadius)
+                    if (distSq < interactRadSq)
                     {
                         float dist = std::sqrt(distSq);
                         float factor = 1.0f - (dist / interactRadius);
-                        rustle = std::sin(timeSec * 15.0f + x + y + k) * 0.20f * factor;
+                        rustle = std::sin(timeSec * 15.0f + b.x + b.y + k) * 0.20f * factor;
                         if (dist > 1.0f)
                         {
                             pushX = (dxScreen / dist) * zoomCellSize * 0.22f * factor;
@@ -850,7 +918,7 @@ void Stage::DrawZoomCamera(float playerWorldX, float playerWorldY, float zoomCel
                     }
 
                     float s = unitScale * subScales[k];
-                    float rotY = ((x * 73 + y * 37 + k * 53) % 12) * (DX_PI_F / 6.0f) + windWave * 0.4f + rustle;
+                    float rotY = ((b.x * 73 + b.y * 37 + k * 53) % 12) * (DX_PI_F / 6.0f) + windWave * 0.4f + rustle;
                     MATRIX mScale = MGetScale(VGet(s, s * 1.25f, s));
                     MATRIX mRotY  = MGetRotY(rotY);
                     MATRIX mTilt  = MGetRotX(baseTilt + windWave + rustle * 0.5f);
@@ -896,9 +964,44 @@ void Stage::DrawForegroundGrass(float playerWorldX, float playerWorldY, float zo
     float startDrawX = Camera::WorldToScreenX(0.0f);
     float startDrawY = Camera::WorldToScreenY(0.0f);
 
-    // プレイヤー自身の正確な画面座標
     float playerScreenX = Camera::WorldToScreenX(playerWorldX);
     float playerScreenY = Camera::WorldToScreenY(playerWorldY);
+
+    float pad       = zoomCellSize * 0.5f;
+    float lodRadius = zoomCellSize * 1.25f;
+    float lodRadSq  = lodRadius * lodRadius;
+
+    // プレイヤー直近のグリッド範囲のみを走査
+    int playerGridX = static_cast<int>(playerWorldX / worldCellSize);
+    int playerGridY = static_cast<int>(playerWorldY / worldCellSize);
+    int minGridX = (std::max)(0, playerGridX - 2);
+    int maxGridX = (std::min)(m_width - 1, playerGridX + 2);
+    int minGridY = (std::max)(0, playerGridY - 2);
+    int maxGridY = (std::min)(m_height - 1, playerGridY + 2);
+
+    struct FgBushCell { int x; int y; float x1_f; float y1_f; };
+    FgBushCell fgBushes[16];
+    int fgCount = 0;
+
+    for (int y = minGridY; y <= maxGridY; ++y)
+    {
+        for (int x = minGridX; x <= maxGridX; ++x)
+        {
+            if (GetCell(x, y) != CellType::BUSH) continue;
+
+            float x1_f = startDrawX + x * zoomCellSize;
+            float y1_f = startDrawY + y * zoomCellSize;
+            float cellDx = (x1_f + pad) - playerScreenX;
+            float cellDy = (y1_f + pad) - playerScreenY;
+            if (cellDx * cellDx + cellDy * cellDy <= lodRadSq && fgCount < 16)
+            {
+                fgBushes[fgCount++] = { x, y, x1_f, y1_f };
+            }
+        }
+    }
+
+    // 周辺に草むらがない場合は3Dカメラ設定自体をスキップ
+    if (fgCount == 0) return;
 
     int sw = 1920, sh = 1080;
     GetDrawScreenSize(&sw, &sh);
@@ -918,84 +1021,57 @@ void Stage::DrawForegroundGrass(float playerWorldX, float playerWorldY, float zo
     float unitScale = zoomCellSize / ((m_grassModelBaseSize > 0.001f) ? m_grassModelBaseSize : 1.2f);
     float timeSec   = GetNowCount() / 1000.0f;
     float baseTilt  = 38.0f * (DX_PI_F / 180.0f);
-    float pad       = zoomCellSize * 0.5f;
-    float lodRadius = zoomCellSize * 2.25f;
-    float lodRadSq  = lodRadius * lodRadius;
+    float interactRadius = zoomCellSize * 0.72f;
+    float interactRadSq  = interactRadius * interactRadius;
 
-    // プレイヤー周辺のグリッド範囲のみを走査して無駄なループを排除
-    int playerGridX = static_cast<int>(playerWorldX / worldCellSize);
-    int playerGridY = static_cast<int>(playerWorldY / worldCellSize);
-    int minGridX = std::max(0, playerGridX - 3);
-    int maxGridX = std::min(m_width - 1, playerGridX + 3);
-    int minGridY = std::max(0, playerGridY - 3);
-    int maxGridY = std::min(m_height - 1, playerGridY + 3);
+    // キャラクターの下半身〜胴体を手前から覆う前景2株
+    const float fgOffsetsX[2] = { 0.30f, 0.70f };
+    const float fgOffsetsY[2] = { 0.82f, 0.84f };
+    const float fgScales[2]   = { 1.22f, 1.24f };
 
-    // キャラクターの下半身〜胴体を手前から覆い隠して「草むらに潜っている感」を出す前景3株
-    const float fgOffsetsX[3] = { 0.24f, 0.50f, 0.76f };
-    const float fgOffsetsY[3] = { 0.78f, 0.88f, 0.78f };
-    const float fgScales[3]   = { 1.15f, 1.26f, 1.15f };
-
-    for (int y = minGridY; y <= maxGridY; ++y)
+    for (int i = 0; i < fgCount; ++i)
     {
-        for (int x = minGridX; x <= maxGridX; ++x)
+        const auto& b = fgBushes[i];
+        for (int k = 0; k < 2; ++k)
         {
-            if (GetCell(x, y) != CellType::BUSH) continue;
+            float clumpX = b.x1_f + zoomCellSize * fgOffsetsX[k];
+            float clumpY = b.y1_f + zoomCellSize * fgOffsetsY[k];
 
-            float x1_f = startDrawX + x * zoomCellSize;
-            float y1_f = startDrawY + y * zoomCellSize;
+            float windWave = std::sin(timeSec * 2.6f + b.x * 0.65f + b.y * 0.45f + k * 1.1f) * 0.11f;
 
-            float cellCenterX = x1_f + pad;
-            float cellCenterY = y1_f + pad;
-            float cellDx = cellCenterX - playerScreenX;
-            float cellDy = cellCenterY - playerScreenY;
-            if (cellDx * cellDx + cellDy * cellDy > lodRadSq)
+            float dxScreen = clumpX - playerScreenX;
+            float dyScreen = clumpY - playerScreenY;
+            float distSq   = dxScreen * dxScreen + dyScreen * dyScreen;
+            float rustle   = 0.0f;
+            float pushX    = 0.0f;
+            float pushY    = 0.0f;
+            float opacity  = 0.94f;
+            if (distSq < interactRadSq)
             {
-                continue;
-            }
-
-            for (int k = 0; k < 3; ++k)
-            {
-                float clumpX = x1_f + zoomCellSize * fgOffsetsX[k];
-                float clumpY = y1_f + zoomCellSize * fgOffsetsY[k];
-
-                float windWave = std::sin(timeSec * 2.6f + x * 0.65f + y * 0.45f + k * 1.1f) * 0.11f;
-
-                float dxScreen = clumpX - playerScreenX;
-                float dyScreen = clumpY - playerScreenY;
-                float distSq   = dxScreen * dxScreen + dyScreen * dyScreen;
-                float rustle   = 0.0f;
-                float pushX    = 0.0f;
-                float pushY    = 0.0f;
-                float opacity  = 0.94f;
-                float interactRadius = zoomCellSize * 0.72f;
-                if (distSq < interactRadius * interactRadius)
+                float dist = std::sqrt(distSq);
+                float factor = 1.0f - (dist / interactRadius);
+                rustle = std::sin(timeSec * 16.0f + b.x + b.y + k) * 0.22f * factor;
+                opacity = 0.94f - 0.18f * factor;
+                if (dist > 1.0f)
                 {
-                    float dist = std::sqrt(distSq);
-                    float factor = 1.0f - (dist / interactRadius);
-                    rustle = std::sin(timeSec * 16.0f + x + y + k) * 0.22f * factor;
-                    // プレイヤーの頭・上半身が草むらの中から覗くように、直近の草だけわずかに左右へ分けて半透過にする
-                    opacity = 0.94f - 0.18f * factor;
-                    if (dist > 1.0f)
-                    {
-                        pushX = (dxScreen / dist) * zoomCellSize * 0.18f * factor;
-                        pushY = (dyScreen / dist) * zoomCellSize * 0.12f * factor;
-                    }
+                    pushX = (dxScreen / dist) * zoomCellSize * 0.18f * factor;
+                    pushY = (dyScreen / dist) * zoomCellSize * 0.12f * factor;
                 }
-
-                float s = unitScale * fgScales[k];
-                float rotY = ((x * 41 + y * 67 + k * 89) % 12) * (DX_PI_F / 6.0f) + windWave * 0.45f + rustle;
-                MATRIX mScale = MGetScale(VGet(s, s * 1.32f, s));
-                MATRIX mRotY  = MGetRotY(rotY);
-                MATRIX mTilt  = MGetRotX(baseTilt + windWave + rustle * 0.55f);
-                MATRIX mWorld = MMult(mRotY, mTilt);
-                mWorld = MMult(mScale, mWorld);
-                MATRIX mTrans = MGetTranslate(VGet(clumpX + pushX, 0.0f, static_cast<float>(sh) - (clumpY + pushY)));
-                mWorld = MMult(mWorld, mTrans);
-
-                MV1SetOpacityRate(m_hGrassModel, opacity);
-                MV1SetMatrix(m_hGrassModel, mWorld);
-                MV1DrawModel(m_hGrassModel);
             }
+
+            float s = unitScale * fgScales[k];
+            float rotY = ((b.x * 41 + b.y * 67 + k * 89) % 12) * (DX_PI_F / 6.0f) + windWave * 0.45f + rustle;
+            MATRIX mScale = MGetScale(VGet(s, s * 1.32f, s));
+            MATRIX mRotY  = MGetRotY(rotY);
+            MATRIX mTilt  = MGetRotX(baseTilt + windWave + rustle * 0.55f);
+            MATRIX mWorld = MMult(mRotY, mTilt);
+            mWorld = MMult(mScale, mWorld);
+            MATRIX mTrans = MGetTranslate(VGet(clumpX + pushX, 0.0f, static_cast<float>(sh) - (clumpY + pushY)));
+            mWorld = MMult(mWorld, mTrans);
+
+            MV1SetOpacityRate(m_hGrassModel, opacity);
+            MV1SetMatrix(m_hGrassModel, mWorld);
+            MV1DrawModel(m_hGrassModel);
         }
     }
     MV1SetOpacityRate(m_hGrassModel, 1.0f);

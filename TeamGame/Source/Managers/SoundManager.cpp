@@ -1,4 +1,5 @@
-#define NOMINMAX
+﻿#define NOMINMAX
+#include <Windows.h>
 #include "SoundManager.h"
 #include "SoundVisualizer.h"
 #include "SceneManager.h"
@@ -9,6 +10,20 @@
 #include "../Characters/Enemy.h"
 #include <cmath>
 #include <algorithm>
+
+namespace
+{
+    bool SoundFileExistsUtf8(const std::string& utf8Path)
+    {
+        if (utf8Path.empty()) return false;
+        int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, nullptr, 0);
+        if (wlen <= 0) return false;
+        std::wstring wpath(static_cast<size_t>(wlen), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, &wpath[0], wlen);
+        DWORD attr = GetFileAttributesW(wpath.c_str());
+        return (attr != INVALID_FILE_ATTRIBUTES) && !(attr & FILE_ATTRIBUTE_DIRECTORY);
+    }
+}
 
 SoundManager::SoundManager() : listenerPos(0, 0), listenerDir(0, -1)
 {
@@ -143,76 +158,83 @@ bool SoundManager::Play3D(const std::string &key, const Vector2 &sourcePos, floa
 
 void SoundManager::Load(const std::string &key, const std::string &path)
 {
-    if (sounds.find(key) == sounds.end())
+    if (sounds.find(key) != sounds.end() || failedSounds.find(key) != failedSounds.end())
     {
-        int handle = LoadSoundMem(path.c_str());
-        // 開発環境およびexe配置先に対応するフォールバック検索
-        if (handle == -1)
+        return;
+    }
+
+    int handle = SoundFileExistsUtf8(path) ? LoadSoundMem(path.c_str()) : -1;
+    // 開発環境およびexe配置先に対応するフォールバック検索
+    if (handle == -1)
+    {
+        std::vector<std::string> fallbacks;
+        fallbacks.push_back("Resource/" + path);
+        fallbacks.push_back("TeamGame/Resource/" + path);
+        fallbacks.push_back("TeamGame/TeamGame/Resource/" + path);
+        fallbacks.push_back("../Resource/" + path);
+
+        if (key == "title_bgm")
         {
-            std::vector<std::string> fallbacks;
-            fallbacks.push_back("Resource/" + path);
-            fallbacks.push_back("TeamGame/Resource/" + path);
-            fallbacks.push_back("TeamGame/TeamGame/Resource/" + path);
-            fallbacks.push_back("../Resource/" + path);
-
-            if (key == "title_bgm")
-            {
-                fallbacks.push_back("Resource/BGM/bgm_title.mp3");
-                fallbacks.push_back("Resource/BGM/タイトル.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/bgm_title.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/タイトル.mp3");
-            }
-            else if (key == "battle_bgm")
-            {
-                fallbacks.push_back("Resource/BGM/bgm_battle.mp3");
-                fallbacks.push_back("Resource/BGM/戦闘.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/bgm_battle.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/戦闘.mp3");
-            }
-            else if (key == "clear_bgm")
-            {
-                fallbacks.push_back("Resource/BGM/bgm_clear.mp3");
-                fallbacks.push_back("Resource/BGM/クリア.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/bgm_clear.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/クリア.mp3");
-            }
-            else if (key == "defeat_bgm")
-            {
-                fallbacks.push_back("Resource/BGM/bgm_defeat.mp3");
-                fallbacks.push_back("Resource/BGM/敗北音.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/bgm_defeat.mp3");
-                fallbacks.push_back("TeamGame/Resource/BGM/敗北音.mp3");
-            }
-            else if (key == "se_tap")
-            {
-                fallbacks.push_back("Resource/SE/システム/se_tap.mp3");
-                fallbacks.push_back("Resource/SE/システム/タップ音.mp3");
-                fallbacks.push_back("TeamGame/Resource/SE/システム/se_tap.mp3");
-                fallbacks.push_back("TeamGame/Resource/SE/システム/タップ音.mp3");
-            }
-            else if (key == "skill_activate")
-            {
-                fallbacks.push_back("Resource/SE/システム/se_skill.mp3");
-                fallbacks.push_back("Resource/SE/システム/スキル発動.mp3");
-                fallbacks.push_back("TeamGame/Resource/SE/システム/se_skill.mp3");
-                fallbacks.push_back("TeamGame/Resource/SE/システム/スキル発動.mp3");
-            }
-
-            for (const auto& fb : fallbacks)
-            {
-                handle = LoadSoundMem(fb.c_str());
-                if (handle != -1) break;
-            }
+            fallbacks.push_back("Resource/BGM/bgm_title.mp3");
+            fallbacks.push_back("Resource/BGM/タイトル.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/bgm_title.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/タイトル.mp3");
+        }
+        else if (key == "battle_bgm")
+        {
+            fallbacks.push_back("Resource/BGM/bgm_battle.mp3");
+            fallbacks.push_back("Resource/BGM/戦闘.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/bgm_battle.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/戦闘.mp3");
+        }
+        else if (key == "clear_bgm")
+        {
+            fallbacks.push_back("Resource/BGM/bgm_clear.mp3");
+            fallbacks.push_back("Resource/BGM/クリア.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/bgm_clear.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/クリア.mp3");
+        }
+        else if (key == "defeat_bgm")
+        {
+            fallbacks.push_back("Resource/BGM/bgm_defeat.mp3");
+            fallbacks.push_back("Resource/BGM/敗北音.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/bgm_defeat.mp3");
+            fallbacks.push_back("TeamGame/Resource/BGM/敗北音.mp3");
+        }
+        else if (key == "se_tap")
+        {
+            fallbacks.push_back("Resource/SE/システム/se_tap.mp3");
+            fallbacks.push_back("Resource/SE/システム/タップ音.mp3");
+            fallbacks.push_back("TeamGame/Resource/SE/システム/se_tap.mp3");
+            fallbacks.push_back("TeamGame/Resource/SE/システム/タップ音.mp3");
+        }
+        else if (key == "skill_activate")
+        {
+            fallbacks.push_back("Resource/SE/システム/se_skill.mp3");
+            fallbacks.push_back("Resource/SE/システム/スキル発動.mp3");
+            fallbacks.push_back("TeamGame/Resource/SE/システム/se_skill.mp3");
+            fallbacks.push_back("TeamGame/Resource/SE/システム/スキル発動.mp3");
         }
 
-        if (handle != -1)
+        for (const auto& fb : fallbacks)
         {
-            if (key == "reload")
-            {
-                ChangeVolumeSoundMem(145, handle); // リロード音を抑えめに設定 (約57%)
-            }
-            sounds[key] = handle;
+            if (!SoundFileExistsUtf8(fb)) continue;
+            handle = LoadSoundMem(fb.c_str());
+            if (handle != -1) break;
         }
+    }
+
+    if (handle != -1)
+    {
+        if (key == "reload")
+        {
+            ChangeVolumeSoundMem(145, handle); // リロード音を抑えめに設定 (約57%)
+        }
+        sounds[key] = handle;
+    }
+    else
+    {
+        failedSounds.insert(key);
     }
 }
 
@@ -361,5 +383,7 @@ void SoundManager::Clear()
     currentBGMKey = "";
     InitSoundMem();
     sounds.clear();
+    failedSounds.clear();
+    playing3DSounds.clear();
 }
 

@@ -273,15 +273,11 @@ Vector2 Enemy::FindCoverPosition(const Vector2& threatPos)
     return bestCover;
 }
 
-Enemy::~Enemy()
-{
-    delete equippedWeapon;
-}
+Enemy::~Enemy() = default;
 
-void Enemy::SetEquippedWeapon(Weapon* w)
+void Enemy::SetEquippedWeapon(std::unique_ptr<Weapon> w)
 {
-    if (equippedWeapon) delete equippedWeapon;
-    equippedWeapon = w;
+    equippedWeapon = std::move(w);
     if (equippedWeapon)
     {
         equippedWeapon->SetDamageMultiplier(0.5f); // Botの武器攻撃力（ダメージ）を半分にする

@@ -1,8 +1,26 @@
 ﻿#include "Scene.h"
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
 #include "DebugManager.h"
 #include "DxLib.h"
 #include <vector>
 #include <unordered_map>
+
+namespace
+{
+    bool SceneFileExistsUtf8(const std::string& utf8Path)
+    {
+        if (utf8Path.empty()) return false;
+        int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, nullptr, 0);
+        if (wlen <= 0) return false;
+        std::wstring wpath(static_cast<size_t>(wlen), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, &wpath[0], wlen);
+        DWORD attr = GetFileAttributesW(wpath.c_str());
+        return (attr != INVALID_FILE_ATTRIBUTES) && !(attr & FILE_ATTRIBUTE_DIRECTORY);
+    }
+}
 
 Scene::Scene()
 {
@@ -53,8 +71,11 @@ int Scene::LoadGraphWithSearch(const std::string& fileName)
     if (fileName.empty()) return -1;
 
     // 既に直接開けるか確認
-    int handle = LoadGraph(fileName.c_str());
-    if (handle != -1) return handle;
+    if (SceneFileExistsUtf8(fileName))
+    {
+        int handle = LoadGraph(fileName.c_str());
+        if (handle != -1) return handle;
+    }
 
     // 複数の相対ディレクトリ候補を順番に検索
     const std::vector<std::string> baseDirs = {
@@ -75,7 +96,8 @@ int Scene::LoadGraphWithSearch(const std::string& fileName)
     for (const auto& dir : baseDirs)
     {
         std::string fullPath = dir + fileName;
-        handle = LoadGraph(fullPath.c_str());
+        if (!SceneFileExistsUtf8(fullPath)) continue;
+        int handle = LoadGraph(fullPath.c_str());
         if (handle != -1) return handle;
     }
 
@@ -109,6 +131,7 @@ int Scene::Load2DImage(const std::string& fileName)
     int handle = LoadGraphWithSearch(fileName);
     if (handle == -1)
     {
+        s_pathTo2DIndex[fileName] = -1; // 失敗もキャッシュして再探索を防止
         return -1; // 読み込み失敗
     }
 

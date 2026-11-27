@@ -1,7 +1,25 @@
 ﻿#include "StageManager.h"
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
 #include "DxLib.h"
 #include <ctime>
 #include <vector>
+
+namespace
+{
+    bool FileExistsUtf8(const std::string& utf8Path)
+    {
+        if (utf8Path.empty()) return false;
+        int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, nullptr, 0);
+        if (wlen <= 0) return false;
+        std::wstring wpath(static_cast<size_t>(wlen), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, &wpath[0], wlen);
+        DWORD attr = GetFileAttributesW(wpath.c_str());
+        return (attr != INVALID_FILE_ATTRIBUTES) && !(attr & FILE_ATTRIBUTE_DIRECTORY);
+    }
+}
 
 StageManager::StageManager()
 {
@@ -45,6 +63,7 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
             for (const auto& dir : baseDirs)
             {
                 std::string fullPath = std::string(dir) + fileName;
+                if (!FileExistsUtf8(fullPath)) continue;
                 int handle = LoadGraph(fullPath.c_str());
                 if (handle != -1) return handle;
             }
@@ -80,6 +99,7 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
         };
         for (const char* path : grassModelPaths)
         {
+            if (!FileExistsUtf8(path)) continue;
             m_hGrassModel = MV1LoadModel(path);
             if (m_hGrassModel != -1) break;
         }
@@ -101,6 +121,7 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
                     m_grassModelBaseSize = maxSpan;
                 }
             }
+            MV1TerminateReferenceMesh(m_hGrassModel, -1, TRUE);
 
             int matNum = MV1GetMaterialNum(m_hGrassModel);
             for (int m = 0; m < matNum; ++m)
@@ -142,6 +163,7 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
             for (const char* dir : modelSearchDirs)
             {
                 std::string fullPath = std::string(dir) + rockModelNames[r];
+                if (!FileExistsUtf8(fullPath)) continue;
                 m_hRockModels[r] = MV1LoadModel(fullPath.c_str());
                 if (m_hRockModels[r] != -1) break;
             }
@@ -169,6 +191,7 @@ void StageManager::Initialize(int mapWidth, int mapHeight)
                     m_rockModelBaseSizes[r] = horizSpan;
                 }
             }
+            MV1TerminateReferenceMesh(m_hRockModels[r], -1, TRUE);
 
             int matNum = MV1GetMaterialNum(m_hRockModels[r]);
             for (int m = 0; m < matNum; ++m)

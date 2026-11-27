@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 class Player;
 class Enemy;
@@ -32,12 +33,12 @@ public:
     /**
      * @brief 武器名からWeaponインスタンスを生成するヘルパー
      */
-    static Weapon* CreateWeaponByName(const std::string& name);
+    static std::unique_ptr<Weapon> CreateWeaponByName(const std::string& name);
 
     /**
      * @brief 武器名およびキャラクターIDを指定して専用カスタム武器を生成
      */
-    static Weapon* CreateWeaponForCharacter(const std::string& name, int characterId);
+    static std::unique_ptr<Weapon> CreateWeaponForCharacter(const std::string& name, int characterId);
 
     /**
      * @brief 試合開始時のボット（味方ボット・敵ボット）を生成し、チームごとの武器重複防止配分と配置を行う
